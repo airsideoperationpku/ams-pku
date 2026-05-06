@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMS Sheet - PKU</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- LIBRARY SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; overflow-x: hidden; }
+        .wrapper { display: flex; width: 100%; height: 100vh; overflow: hidden; }
+        .sidebar { min-width: 250px; max-width: 250px; background-color: #ffffff; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; transition: all 0.3s ease; z-index: 1050; }
+        .sidebar.collapsed { margin-left: -250px; }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1040; transition: opacity 0.3s ease; }
+        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 15px; }
+        .sidebar-header h5 { margin: 0; font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
+        .sidebar-header small { color: #888; font-size: 0.75rem; letter-spacing: 0.5px; }
+        .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
+        .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
+        .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 20px; }
+        
+        /* Kalender */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+        .calendar-day-name { text-align: center; font-weight: bold; color: #666; font-size: 0.85rem; padding-bottom: 10px; text-transform: uppercase; }
+        .calendar-day { background: #fff; border: 1px solid #eaeaea; border-radius: 10px; padding: 15px 10px; text-align: center; cursor: pointer; transition: all 0.2s; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+        .calendar-day:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.08); border-color: #b3d4fc; }
+        .calendar-day h5 { margin: 0; font-weight: 700; color: #333; }
+        .calendar-day small { font-size: 0.65rem; font-weight: bold; margin-top: 5px; display: block; }
+        .cal-empty { background: #fff; } .cal-empty small { color: #aaa; }
+        .cal-incomplete { background: #fee2e2; border-color: #fca5a5; } .cal-incomplete h5 { color: #b91c1c; } .cal-incomplete small { color: #dc2626; }
+        .cal-complete { background: #dbeafe; border-color: #93c5fd; } .cal-complete h5 { color: #1d4ed8; } .cal-complete small { color: #2563eb; }
+        
+        /* Tabel & Info Panel */
+        .info-panel .form-label { font-size: 0.75rem; font-weight: 700; color: #888; margin-bottom: 4px; text-transform: uppercase; }
+        .info-panel .form-control, .info-panel .form-select { border: 1px solid #e0e0e0; border-radius: 8px; font-weight: 500; color: #333; }
+        .table-responsive { border-radius: 12px; border: 1px solid #eaeaea; background: #fff; }
+        .table-spreadsheet th { background-color: #f8f9fa; color: #666; font-size: 0.65rem; font-weight: 700; border-bottom: 2px solid #eaeaea; text-transform: uppercase; text-align: center; vertical-align: middle; padding: 10px 4px; white-space: nowrap; }
+        .table-spreadsheet td { border-bottom: 1px solid #f4f4f4; padding: 2px; vertical-align: middle; text-align: center; white-space: nowrap; }
+        .table-spreadsheet .form-control, .table-spreadsheet .form-select { border: 1px solid transparent; border-radius: 6px; padding: 4px 4px; font-size: 0.75rem; text-align: center; background-color: transparent; height: 35px; width: 100%; box-shadow: none; font-weight: 600; }
+        .table-spreadsheet .form-control:hover, .table-spreadsheet .form-select:hover { border-color: #e0e0e0; background-color: #fafafa; }
+        .table-spreadsheet .form-control:focus, .table-spreadsheet .form-select:focus { border-color: #0d6efd; background-color: #fff; }
+        
+        .col-cs { min-width: 50px; max-width: 60px; } .col-no { min-width: 60px; max-width: 70px; } .col-rute { min-width: 60px; max-width: 70px; }
+        .col-jadwal { min-width: 80px; max-width: 90px; } .col-reg { min-width: 95px; max-width: 105px; } .col-tipe { min-width: 75px; max-width: 85px; }
+        .col-seat { min-width: 55px; max-width: 65px; } .col-dom { min-width: 65px; max-width: 75px; } .col-leg { min-width: 55px; max-width: 60px; }
+        .col-ron { min-width: 45px; max-width: 50px; } .col-stand { min-width: 65px; max-width: 75px; } .col-avio { min-width: 45px; max-width: 50px; } 
+        .col-bt { min-width: 80px; max-width: 90px; } .col-pax { min-width: 65px; max-width: 75px; } .col-lf { min-width: 65px; max-width: 75px; } 
+        .col-fltype { min-width: 95px; max-width: 105px; } .col-status { min-width: 80px; max-width: 90px; } .col-aksi { min-width: 80px; max-width: 90px; }
+        
+        .checkbox-center { display: flex; justify-content: center; align-items: center; height: 100%; }
+        .btn-delete-row { background: transparent; border: none; color: #dc3545; font-size: 1.1rem; opacity: 0.5; transition: 0.2s; padding: 0 4px; }
+        .btn-delete-row:hover { opacity: 1; transform: scale(1.1); }
+        .search-input-group:focus-within { box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25); }
+
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: -250px; height: 100vh; }
+            .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); }
+            .sidebar-overlay.show { display: block; }
+            .content { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header"><h5>AMC PKU</h5><small>Sultan Syarif Kasim II</small></div>
+        <div class="nav flex-column">
+            <a href="dashboard2.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
+            <a href="#" class="nav-link active" onclick="showCalendar(); closeSidebarMobile()"><i class="bi bi-grid-1x2"></i> Apron Management</a>
+            <a href="database2.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-database"></i> Data Master</a>
+            <a href="download2.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-cloud-arrow-down-fill"></i> Download Center</a>
+            <a href="#" class="nav-link text-danger" onclick="logout(); closeSidebarMobile()"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-light border shadow-sm px-2 py-1 me-2" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
+                <h5 class="fw-bold text-dark m-0 d-none d-sm-block">Sultan Syarif Kasim II</h5>
+                <h6 class="fw-bold text-dark m-0 d-block d-sm-none">AMS PKU</h6>
+            </div>
+            <div><span class="badge bg-primary fs-6 fw-normal shadow-sm"><i class="bi bi-calendar3 me-1"></i> <span id="currentDateHeader">Hari Ini</span></span></div>
+        </div>
+        
+        <!-- VIEW 1: KALENDER -->
+        <div id="calendarView">
+            <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-calendar-check me-2"></i> Kalender Operasional</h6>
+            <div class="card p-3 p-md-4">
+                <div class="calendar-header">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+                    <h5 class="fw-bold m-0 text-primary" id="monthYearDisplay">Bulan Tahun</h5>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(1)"><i class="bi bi-chevron-right"></i></button>
+                </div>
+                <div class="calendar-grid">
+                    <div class="calendar-day-name">Min</div><div class="calendar-day-name">Sen</div><div class="calendar-day-name">Sel</div><div class="calendar-day-name">Rab</div><div class="calendar-day-name">Kam</div><div class="calendar-day-name">Jum</div><div class="calendar-day-name">Sab</div>
+                </div>
+                <div id="calendarDates" class="calendar-grid"></div>
+                <div class="mt-4 d-flex flex-wrap gap-2 justify-content-center border-top pt-3 text-center">
+                    <span class="badge bg-light text-dark border"><i class="bi bi-circle-fill text-white border rounded-circle me-1"></i> Belum Diisi</span>
+                    <span class="badge" style="background:#fee2e2; color:#b91c1c;"><i class="bi bi-circle-fill text-danger me-1"></i> Belum Complete</span>
+                    <span class="badge" style="background:#dbeafe; color:#1d4ed8;"><i class="bi bi-circle-fill text-primary me-1"></i> Data Complete</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: SHEET -->
+        <div id="sheetView" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-light border fw-bold text-secondary shadow-sm" onclick="showCalendar()"><i class="bi bi-arrow-left me-1"></i> Kembali</button>
+                    <button class="btn btn-outline-danger fw-bold shadow-sm" onclick="resetDataHariIni()"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Data</button>
+                </div>
+                <span class="badge bg-primary fs-6 d-none d-md-inline-block shadow-sm"><i class="bi bi-calendar-event me-1"></i> <span id="sheetDateDisplay"></span></span>
+            </div>
+
+            <datalist id="list-petugas"></datalist>
+
+            <div class="card info-panel p-3 border-top border-primary border-3 shadow-sm">
+                <div class="row g-3">
+                    <input type="hidden" id="currentSelectedDate">
+                    
+                    <div class="col-12 border-bottom pb-3">
+                        <label class="form-label text-primary">Daily of Schedule (DOS)</label>
+                        <select class="form-select form-select-sm border-primary text-primary fw-bold bg-light" style="max-width: 250px;" id="dosSelector" onchange="loadScheduleByDOS()">
+                            <option value="">-- PILIH DOS --</option>
+                            <option value="DOS1">DOS 1</option><option value="DOS2">DOS 2</option><option value="DOS3">DOS 3</option><option value="DOS4">DOS 4</option><option value="DOS5">DOS 5</option><option value="DOS6">DOS 6</option><option value="DOS7">DOS 7</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 border-end pe-md-4 pt-2">
+                        <h6 class="fw-bold text-warning mb-3"><i class="bi bi-brightness-high-fill me-1"></i> SHIFT PAGI</h6>
+                        <div class="row g-2">
+                            <div class="col-12"><label class="form-label">PTO Pagi</label><input type="text" class="form-control form-control-sm text-uppercase" id="ptoPagi" list="list-petugas" placeholder="Ketik Nama PTO Pagi" oninput="markAsIncomplete()"></div>
+                            <div class="col-12">
+                                <label class="form-label d-flex justify-content-between align-items-center">Pelaksana Pagi <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.7rem;" onclick="addPelaksana('Pagi')"><i class="bi bi-plus"></i> Tambah</button></label>
+                                <div id="containerPelaksanaPagi"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 ps-md-4 pt-2 border-top mt-3 mt-md-0">
+                        <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-moon-stars-fill me-1"></i> SHIFT MALAM</h6>
+                        <div class="row g-2">
+                            <div class="col-12"><label class="form-label">PTO Malam</label><input type="text" class="form-control form-control-sm text-uppercase" id="ptoMalam" list="list-petugas" placeholder="Ketik Nama PTO Malam" oninput="markAsIncomplete()"></div>
+                            <div class="col-12">
+                                <label class="form-label d-flex justify-content-between align-items-center">Pelaksana Malam <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.7rem;" onclick="addPelaksana('Malam')"><i class="bi bi-plus"></i> Tambah</button></label>
+                                <div id="containerPelaksanaMalam"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-end mb-2 mt-4">
+                <h6 class="fw-bold text-secondary m-0"><i class="bi bi-table me-2"></i> Data Penerbangan</h6>
+                <div class="input-group input-group-sm bg-white border rounded shadow-sm search-input-group" style="max-width: 250px;">
+                    <span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control border-0 ps-1 bg-transparent" placeholder="Cari data di tabel..." oninput="filterTable()">
+                </div>
+            </div>
+
+            <datalist id="list-tipe-pesawat"></datalist>
+
+            <div class="table-responsive shadow-sm mb-3">
+                <table class="table table-spreadsheet table-hover" id="apronTable">
+                    <thead>
+                        <tr>
+                            <th class="col-cs">CS</th><th class="col-no">Fl. No</th><th class="col-rute">Rute</th><th class="col-jadwal">Jadwal</th>
+                            <th class="col-reg">Reg.</th><th class="col-ron">RON</th><th class="col-tipe">Tipe A/C</th><th class="col-seat">Seat</th><th class="col-dom">Tipe</th>
+                            <th class="col-leg">Leg</th><th class="col-stand">Stand</th><th class="col-avio">Avio</th><th class="col-bt">Block Time</th>
+                            <th class="col-pax">Pax</th><th class="col-lf">L/F</th><th class="col-fltype">Flight Type</th><th class="col-status">Status</th>
+                            <th class="col-aksi">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="18" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Pilih DOS untuk memuat jadwal hari ini.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 mb-5">
+                <button class="btn btn-outline-primary fw-bold px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalTambahManual"><i class="bi bi-plus-circle me-1"></i> TAMBAH DATA (MANUAL)</button>
+                <button class="btn btn-success fw-bold px-4 py-2 shadow-sm" onclick="completeData()"><i class="bi bi-check-circle-fill me-1"></i> COMPLETE DATA</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL TAMBAH MANUAL -->
+<div class="modal fade" id="modalTambahManual" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white border-0"><h5 class="modal-title fw-bold">Tambah Penerbangan</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body p-4">
+        <form id="formTambahManual">
+            <div class="row g-3">
+                <div class="col-12 col-md-6"><label class="form-label fw-bold text-muted small mb-1">Callsign</label><input type="text" id="manualCallsign" class="form-control text-uppercase fw-bold" required></div>
+                <div class="col-12 col-md-6"><label class="form-label fw-bold text-muted small mb-1">Flight No</label><input type="text" id="manualFlightNo" class="form-control fw-bold" required></div>
+                <div class="col-12 col-md-6"><label class="form-label fw-bold text-muted small mb-1">Rute</label><input type="text" id="manualRute" class="form-control text-uppercase" required></div>
+                <div class="col-12 col-md-6"><label class="form-label fw-bold text-muted small mb-1">Jadwal</label><input type="time" id="manualJadwal" class="form-control" required></div>
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer border-0 bg-light"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="button" class="btn btn-primary px-4 fw-bold" onclick="simpanDataManualModal()">Tambahkan</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
+    const sbClient = (() => {
+        try {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                return window.supabase.createClient(supabaseUrl, supabaseKey);
+            }
+            console.error("Supabase library gagal dimuat dari CDN.");
+            return null;
+        } catch (e) {
+            console.error("Inisialisasi Supabase gagal:", e);
+            return null;
+        }
+    })();
+
+    let currentDate = new Date();
+    const parkingStands = ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "NA", "SA"];
+    const avioStands = ["D5", "D6", "D7", "D8"];
+    let globalAircraftDb = [];
+
+    document.getElementById('currentDateHeader').innerText = currentDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    function toggleSidebar() { const s = document.getElementById('sidebar'); const o = document.getElementById('sidebarOverlay'); if (window.innerWidth <= 768) { s.classList.toggle('show'); o.classList.toggle('show'); } else { s.classList.toggle('collapsed'); } }
+    function closeSidebarMobile() { if (window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('show'); document.getElementById('sidebarOverlay').classList.remove('show'); } }
+    function logout() {
+        try {
+            localStorage.removeItem('ams_session');
+            sessionStorage.removeItem('ams_session');
+            sessionStorage.clear();
+        } catch (e) {
+            console.warn('Cleanup session gagal:', e);
+        }
+        window.location.href = 'index2.html';
+    }
+
+    async function updatePetugasDatalist() {
+        if (!sbClient) return;
+        try {
+            const { data: records, error } = await sbClient.from('daily_records').select('pto_pagi, pto_malam, pelaksana_pagi, pelaksana_malam');
+            if (error || !records) return;
+            const nameSet = new Set();
+            records.forEach(r => {
+                if (r.pto_pagi) nameSet.add(r.pto_pagi.trim().toUpperCase());
+                if (r.pto_malam) nameSet.add(r.pto_malam.trim().toUpperCase());
+                if (r.pelaksana_pagi) r.pelaksana_pagi.forEach(n => { if(n) nameSet.add(n.trim().toUpperCase()); });
+                if (r.pelaksana_malam) r.pelaksana_malam.forEach(n => { if(n) nameSet.add(n.trim().toUpperCase()); });
+            });
+            document.getElementById('list-petugas').innerHTML = Array.from(nameSet).filter(n => n !== "").map(n => `<option value="${n}"></option>`).join('');
+        } catch(err) { console.error("Error update datalist:", err); }
+    }
+
+    function addPelaksana(shift) {
+        const container = document.getElementById(`containerPelaksana${shift}`);
+        const div = document.createElement('div'); div.className = "d-flex gap-1 mb-1 align-items-center";
+        div.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase pelaksana-${shift.toLowerCase()}" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()"><button type="button" class="btn btn-sm text-danger p-0 px-1" onclick="this.parentElement.remove(); markAsIncomplete()"><i class="bi bi-x-circle-fill"></i></button>`;
+        container.appendChild(div); markAsIncomplete();
+    }
+
+    async function renderCalendar() {
+        document.getElementById('monthYearDisplay').innerText = currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+        const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+        const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+        
+        const startDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-01`;
+        const endDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}-${daysInMonth}`;
+
+        const calendarDates = document.getElementById('calendarDates');
+        calendarDates.innerHTML = '';
+        for (let i = 0; i < firstDay; i++) calendarDates.innerHTML += `<div></div>`;
+
+        if (!sbClient) {
+            for (let day = 1; day <= daysInMonth; day++) {
+                calendarDates.innerHTML += `<div class="calendar-day cal-empty"><h5>${day}</h5><small>KOSONG</small></div>`;
+            }
+            return;
+        }
+        
+        try {
+            const { data: records, error } = await sbClient.from('daily_records').select('date, status').gte('date', startDate).lte('date', endDate);
+            
+            const recordMap = {};
+            if(records && !error) records.forEach(r => recordMap[r.date] = r.status);
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                let statusClass = "cal-empty", statusText = "KOSONG";
+                if (recordMap[dateStr]) {
+                    if (recordMap[dateStr] === 'complete') { statusClass = "cal-complete"; statusText = "COMPLETE"; } 
+                    else { statusClass = "cal-incomplete"; statusText = "DRAFT"; }
+                }
+                calendarDates.innerHTML += `<div class="calendar-day ${statusClass}" onclick="openSheet('${dateStr}')"><h5>${day}</h5><small>${statusText}</small></div>`;
+            }
+        } catch(err) { console.error("Error Calendar:", err); }
+    }
+
+    function changeMonth(offset) { currentDate.setMonth(currentDate.getMonth() + offset); renderCalendar(); }
+    function showCalendar() { document.getElementById('calendarView').classList.remove('d-none'); document.getElementById('sheetView').classList.add('d-none'); renderCalendar(); updatePetugasDatalist(); }
+
+    async function openSheet(dateStr) {
+        if (!sbClient) return;
+        document.getElementById('calendarView').classList.add('d-none'); document.getElementById('sheetView').classList.remove('d-none');
+        document.getElementById('currentSelectedDate').value = dateStr; document.getElementById('sheetDateDisplay').innerText = new Date(dateStr).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        
+        try {
+            const { data: acDb } = await sbClient.from('master_aircraft').select('*');
+            globalAircraftDb = acDb || [];
+            document.getElementById("list-tipe-pesawat").innerHTML = [...new Set(globalAircraftDb.map(i => i.type))].map(t => `<option value="${t}"></option>`).join('');
+
+            const { data: record, error: recErr } = await sbClient.from('daily_records').select('*').eq('date', dateStr).maybeSingle();
+            const { data: flights, error: flErr } = await sbClient.from('daily_flights').select('*').eq('date', dateStr).order('jadwal', {ascending: true});
+
+            if (record) {
+                document.getElementById('dosSelector').value = record.dos || "";
+                document.getElementById('ptoPagi').value = record.pto_pagi || ""; document.getElementById('ptoMalam').value = record.pto_malam || "";
+                
+                const contPagi = document.getElementById('containerPelaksanaPagi'); contPagi.innerHTML = '';
+                if (record.pelaksana_pagi && record.pelaksana_pagi.length > 0) {
+                    record.pelaksana_pagi.forEach((nama, idx) => {
+                        if(idx === 0) { contPagi.innerHTML += `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-pagi" list="list-petugas" value="${nama}" oninput="markAsIncomplete()">`; } 
+                        else { const div = document.createElement('div'); div.className = "d-flex gap-1 mb-1 align-items-center"; div.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase pelaksana-pagi" list="list-petugas" value="${nama}" oninput="markAsIncomplete()"><button type="button" class="btn btn-sm text-danger p-0 px-1" onclick="this.parentElement.remove(); markAsIncomplete()"><i class="bi bi-x-circle-fill"></i></button>`; contPagi.appendChild(div); }
+                    });
+                } else { contPagi.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-pagi" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`; }
+
+                const contMalam = document.getElementById('containerPelaksanaMalam'); contMalam.innerHTML = '';
+                if (record.pelaksana_malam && record.pelaksana_malam.length > 0) {
+                    record.pelaksana_malam.forEach((nama, idx) => {
+                        if(idx === 0) { contMalam.innerHTML += `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-malam" list="list-petugas" value="${nama}" oninput="markAsIncomplete()">`; } 
+                        else { const div = document.createElement('div'); div.className = "d-flex gap-1 mb-1 align-items-center"; div.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase pelaksana-malam" list="list-petugas" value="${nama}" oninput="markAsIncomplete()"><button type="button" class="btn btn-sm text-danger p-0 px-1" onclick="this.parentElement.remove(); markAsIncomplete()"><i class="bi bi-x-circle-fill"></i></button>`; contMalam.appendChild(div); }
+                    });
+                } else { contMalam.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-malam" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`; }
+
+                let flightsToRender = flights || [];
+                if (record.dos) {
+                    try {
+                        const activeMasterFlights = await getActiveMasterFlightsByDOS(record.dos, dateStr);
+                        flightsToRender = filterFlightsByActiveMaster(flightsToRender, activeMasterFlights);
+                    } catch (filterErr) {
+                        console.error("Filter existing flights by schedule failed:", filterErr);
+                    }
+                }
+
+                if (!flightsToRender.length) {
+                    document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="18" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Belum ada data sesuai jadwal aktif.</td></tr>`;
+                } else {
+                    renderSavedTable(flightsToRender);
+                }
+            } else {
+                document.getElementById('dosSelector').value = ""; document.getElementById('ptoPagi').value = ""; document.getElementById('ptoMalam').value = "";
+                document.getElementById('containerPelaksanaPagi').innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-pagi" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`; 
+                document.getElementById('containerPelaksanaMalam').innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-malam" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`;
+                document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="18" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Pilih DOS untuk memuat jadwal.</td></tr>`;
+            }
+        } catch(err) { console.error("Error Open Sheet:", err); }
+    }
+
+    function isDateInValidityRange(dateStr, validFrom, validTo) {
+        const checkDate = new Date(dateStr);
+        checkDate.setHours(0, 0, 0, 0);
+
+        const vStart = validFrom ? new Date(validFrom) : null;
+        const vEnd = validTo ? new Date(validTo) : null;
+        if (vStart) vStart.setHours(0, 0, 0, 0);
+        if (vEnd) vEnd.setHours(0, 0, 0, 0);
+
+        if (!vStart && !vEnd) return true;
+        if (vStart && !vEnd) return checkDate >= vStart;
+        if (!vStart && vEnd) return checkDate <= vEnd;
+        return checkDate >= vStart && checkDate <= vEnd;
+    }
+
+    function normalizeTimeStr(t) {
+        if (!t) return "";
+        return String(t).slice(0, 5);
+    }
+
+    function buildMasterScheduleKey(f) {
+        return [
+            (f.callsign || "").toUpperCase().trim(),
+            (f.flight_number || "").toUpperCase().trim(),
+            (f.rute || "").toUpperCase().trim(),
+            normalizeTimeStr(f.jadwal)
+        ].join("|");
+    }
+
+    async function getActiveMasterFlightsByDOS(dos, dateStr) {
+        if (!sbClient || !dos || !dateStr) return [];
+        const { data: masterFlights, error } = await sbClient.from('master_schedule').select('*').eq('dos', dos);
+        if (error) throw error;
+        if (!masterFlights || masterFlights.length === 0) return [];
+        return masterFlights.filter(f => isDateInValidityRange(dateStr, f.valid_from, f.valid_to));
+    }
+
+    function filterFlightsByActiveMaster(flights, activeMasterFlights) {
+        if (!Array.isArray(flights) || flights.length === 0) return [];
+        const allowedKeys = new Set((activeMasterFlights || []).map(buildMasterScheduleKey));
+        return flights.filter(f => allowedKeys.has(buildMasterScheduleKey(f)));
+    }
+
+    async function loadScheduleByDOS() {
+        if (!sbClient) return;
+        const dos = document.getElementById("dosSelector").value;
+        if (!dos) return document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="18" class="text-center text-muted py-5">Pilih DOS terlebih dahulu.</td></tr>`;
+        if (document.querySelectorAll('.flight-row').length > 0 && !confirm("Mereload DOS akan mereset tabel ini. Lanjut?")) return;
+        
+        try {
+            const dateStr = document.getElementById('currentSelectedDate').value;
+            const activeFlights = await getActiveMasterFlightsByDOS(dos, dateStr);
+
+            if(activeFlights.length === 0) return document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="18" class="text-center text-danger py-4">Ada jadwal DOS, namun tanggal ini di luar masa aktif jadwal master.</td></tr>`;
+
+            renderSavedTable(activeFlights); 
+            markAsIncomplete();
+        } catch(err) { 
+            console.error("Error Load DOS:", err); 
+            document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="18" class="text-center text-danger py-4">Gagal memuat jadwal DOS: ${err.message}</td></tr>`;
+        }
+    }
+
+    function renderSavedTable(flights) {
+        const tbody = document.querySelector("#apronTable tbody");
+        let psOps = '<option value="">-</option>' + parkingStands.map(ps => `<option value="${ps}">${ps}</option>`).join('');
+        let htmlStr = "";
+        
+        flights.forEach(f => {
+            let badgeClass = f.status === 'OPS' ? 'bg-success' : (f.status === 'NOT CLEAR' ? 'bg-warning text-dark' : 'bg-danger');
+            let isRonChecked = f.ron ? 'checked' : '';
+            let isAvioChecked = f.avio ? 'checked' : '';
+            let legClass = f.leg === 'D' ? 'text-primary' : 'text-success';
+            let dNoneRon = f.ron ? '' : 'd-none';
+            let ronLabel = f.ron ? (f.leg === 'A' ? '(RON)' : '(ExRON)') : '';
+            
+            let flTypes = ['REGULER', 'EXTRA', 'PERINTIS', 'CHARTER', 'VIP', 'MILITER', 'DIVERT', 'RTS', 'RTA', 'RTB'];
+            let flTypeOpts = flTypes.map(t => `<option ${f.fl_type === t ? 'selected' : ''}>${t}</option>`).join('');
+
+            htmlStr += `
+            <tr class="flight-row">
+                <td class="col-cs"><input type="text" class="form-control text-primary text-uppercase" value="${f.callsign || ''}" placeholder="CS" onchange="markAsIncomplete()"></td>
+                <td class="col-no"><input type="text" class="form-control" value="${f.flight_number || ''}" placeholder="NO" onchange="markAsIncomplete()"></td>
+                <td class="col-rute"><input type="text" class="form-control text-uppercase" value="${f.rute || ''}" placeholder="RUTE" onchange="markAsIncomplete()"></td>
+                <td class="col-jadwal"><input type="time" class="form-control text-primary" value="${f.jadwal || ''}" onchange="markAsIncomplete()"></td>
+                <td class="col-reg">
+                    <div class="d-flex align-items-center position-relative h-100">
+                        <input type="text" class="form-control text-uppercase input-reg w-100" placeholder="PK-XX" value="${f.reg || ''}" oninput="checkRowStatus(this); markAsIncomplete()" style="${f.ron ? 'padding-right: 45px;' : ''}">
+                        <span class="suffix-reg position-absolute end-0 me-1 fw-bold text-danger ${dNoneRon}" style="font-size: 0.6rem; pointer-events: none;">${ronLabel}</span>
+                    </div>
+                </td>
+                <td class="col-ron"><div class="checkbox-center"><input class="form-check-input ron-checkbox" type="checkbox" ${isRonChecked} onchange="updateRonDisplay(this); markAsIncomplete()"></div></td>
+                <td class="col-tipe"><input list="list-tipe-pesawat" class="form-control text-primary text-uppercase input-tipe" placeholder="Ketik" value="${f.tipe_ac || ''}" onchange="autoFillKapasitas(this); markAsIncomplete()"></td>
+                <td class="col-seat"><input type="number" class="form-control input-seat border-0" value="${f.seat || ''}" readonly style="background:#f8f9fa;" placeholder="-"></td>
+                <td class="col-dom"><select class="form-select input-domintl" onchange="markAsIncomplete()"><option ${f.dom_intl=='DOM'?'selected':''}>DOM</option><option ${f.dom_intl=='INTL'?'selected':''}>INTL</option></select></td>
+                <td class="col-leg"><select class="form-select input-leg ${legClass}" onchange="updateLegColor(this); markAsIncomplete()"><option value="D" ${f.leg=='D'?'selected':''}>D</option><option value="A" ${f.leg=='A'?'selected':''}>A</option></select></td>
+                <td class="col-stand"><select class="form-select input-stand" onchange="checkParkingStand(this); checkRowStatus(this); markAsIncomplete()">${psOps.replace(`value="${f.stand}"`, `value="${f.stand}" selected`)}</select></td>
+                <td class="col-avio"><div class="checkbox-center"><input class="form-check-input avio-checkbox" type="checkbox" ${isAvioChecked} onchange="markAsIncomplete()"></div></td>
+                <td class="col-bt"><input type="time" class="form-control input-blocktime" value="${f.block_time || ''}" oninput="checkRowStatus(this); markAsIncomplete()"></td>
+                <td class="col-pax"><input type="number" class="form-control input-pax" value="${f.pax || ''}" placeholder="0" oninput="calculateLF(this); checkRowStatus(this); markAsIncomplete()"></td>
+                <td class="col-lf"><input type="text" class="form-control input-lf border-0" value="${f.lf || ''}" placeholder="%" readonly style="background:#f8f9fa;"></td>
+                <td class="col-fltype"><select class="form-select input-fltype" onchange="checkRowStatus(this); markAsIncomplete()">${flTypeOpts}</select></td>
+                <td class="col-status"><span class="badge ${badgeClass} rounded-pill status-badge" style="font-size: 0.65rem;">${f.status || 'NO OPS'}</span><input type="hidden" class="status-val" value="${f.status || 'NO OPS'}"></td>
+                <td class="col-aksi"><div class="d-flex justify-content-center gap-1 align-items-center h-100"><button class="btn btn-sm btn-primary fw-bold px-2 py-1" onclick="simpanBaris(this)" title="Save Baris"><i class="bi bi-save"></i></button><button class="btn-delete-row" onclick="hapusBaris(this)" title="Hapus Baris"><i class="bi bi-x-circle-fill"></i></button></div></td>
+            </tr>`;
+        });
+        tbody.innerHTML = htmlStr;
+    }
+
+    function filterTable() { const term = document.getElementById("searchInput").value.toLowerCase(); document.querySelectorAll("#apronTable tbody tr.flight-row").forEach(row => { row.style.display = Array.from(row.querySelectorAll("input, select")).map(i=>i.value.toLowerCase()).join(" ").includes(term) ? "" : "none"; }); }
+    function calculateLF(el) { const row = el.closest("tr"); const pax = parseFloat(row.querySelector(".input-pax").value); const seat = parseFloat(row.querySelector(".input-seat").value); row.querySelector(".input-lf").value = (!isNaN(pax) && !isNaN(seat) && seat > 0) ? ((pax/seat)*100).toFixed(1) + "%" : ""; }
+    function updateRonDisplay(el) { const row = el.closest("tr"); const chk = row.querySelector(".ron-checkbox").checked; const span = row.querySelector(".suffix-reg"); if(chk) { span.classList.remove("d-none"); span.innerText = row.querySelector(".input-leg").value === 'A' ? "(RON)" : "(ExRON)"; row.querySelector(".input-reg").style.paddingRight = "45px"; } else { span.classList.add("d-none"); span.innerText = ""; row.querySelector(".input-reg").style.paddingRight = ""; } }
+    function updateLegColor(sel) { sel.className = `form-select input-leg ${sel.value === 'D' ? 'text-primary' : 'text-success'}`; updateRonDisplay(sel); }
+    function autoFillKapasitas(el) {
+        const row = el.closest("tr");
+        const cs = (row.cells[0].querySelector("input").value || "").toUpperCase();
+        const tipe = (el.value || "").toUpperCase();
+        let match = null;
+
+        if (Array.isArray(globalAircraftDb)) {
+            for (let i = 0; i < globalAircraftDb.length; i++) {
+                const ac = globalAircraftDb[i];
+                if (!ac) continue;
+                if ((ac.callsign || "").toUpperCase() === cs && (ac.type || "").toUpperCase() === tipe) {
+                    match = ac;
+                    break;
+                }
+            }
+        }
+
+        row.querySelector(".input-seat").value = match ? match.seat : "";
+        calculateLF(el);
+    }
+    function checkParkingStand(sel) { sel.closest("tr").querySelector(".avio-checkbox").checked = avioStands.includes(sel.value); }
+    function hapusBaris(btn) { if(confirm("Yakin hapus baris ini?")) { btn.closest("tr").remove(); markAsIncomplete(); } }
+
+    function checkRowStatus(el) { 
+        const r = el.closest("tr"); const reg = r.querySelector(".input-reg").value.trim(); const stand = r.querySelector(".input-stand").value.trim(); const bt = r.querySelector(".input-blocktime").value.trim(); const pax = r.querySelector(".input-pax").value.trim(); const flType = r.querySelector(".input-fltype").value.trim().toUpperCase(); const badge = r.querySelector(".status-badge"); const val = r.querySelector(".status-val");
+        const isStrict = ["REGULER", "EXTRA", "PERINTIS"].includes(flType); let count = 0; if(reg) count++; if(stand) count++; if(bt) count++; if(pax) count++;
+        if (isStrict) { if (count === 0) { badge.className="badge bg-danger rounded-pill status-badge"; badge.innerText="NO OPS"; val.value="NO OPS"; } else { badge.className="badge bg-warning text-dark rounded-pill status-badge"; badge.innerText="NOT CLEAR"; val.value="NOT CLEAR"; } } 
+        else { if (bt) { badge.className="badge bg-warning text-dark rounded-pill status-badge"; badge.innerText="NOT CLEAR"; val.value="NOT CLEAR"; } else { badge.className="badge bg-danger rounded-pill status-badge"; badge.innerText="NO OPS"; val.value="NO OPS"; } }
+    }
+
+    function simpanBaris(btn) { 
+        const r = btn.closest("tr"); const reg = r.querySelector(".input-reg").value.trim(); const stand = r.querySelector(".input-stand").value.trim(); const bt = r.querySelector(".input-blocktime").value.trim(); const pax = r.querySelector(".input-pax").value.trim(); const flType = r.querySelector(".input-fltype").value.trim().toUpperCase(); const badge = r.querySelector(".status-badge"); const val = r.querySelector(".status-val");
+        const isStrict = ["REGULER", "EXTRA", "PERINTIS"].includes(flType); let count = 0; if(reg) count++; if(stand) count++; if(bt) count++; if(pax) count++;
+        if (isStrict) { if (count === 4) { badge.className="badge bg-success rounded-pill status-badge"; badge.innerText="OPS"; val.value="OPS"; } else if (count > 0) { badge.className="badge bg-warning text-dark rounded-pill status-badge"; badge.innerText="NOT CLEAR"; val.value="NOT CLEAR"; } else { badge.className="badge bg-danger rounded-pill status-badge"; badge.innerText="NO OPS"; val.value="NO OPS"; } } 
+        else { if (bt) { badge.className="badge bg-success rounded-pill status-badge"; badge.innerText="OPS"; val.value="OPS"; } else { badge.className="badge bg-danger rounded-pill status-badge"; badge.innerText="NO OPS"; val.value="NO OPS"; } }
+        markAsIncomplete(); btn.classList.replace("btn-primary", "btn-success"); btn.innerHTML = '<i class="bi bi-check-lg"></i>'; setTimeout(() => { btn.classList.replace("btn-success", "btn-primary"); btn.innerHTML = '<i class="bi bi-save"></i>'; }, 1500); 
+    }
+
+    async function simpanDataManualModal() {
+        const cs = document.getElementById('manualCallsign').value.toUpperCase();
+        const fn = document.getElementById('manualFlightNo').value;
+        const rute = document.getElementById('manualRute').value.toUpperCase();
+        const jadwal = document.getElementById('manualJadwal').value;
+        if(!cs || !fn || !rute || !jadwal) return alert("Lengkapi isian.");
+
+        const dos = document.getElementById('dosSelector').value;
+        const dateStr = document.getElementById('currentSelectedDate').value;
+        if (!dos || !dateStr) return alert("Pilih DOS dan tanggal terlebih dahulu.");
+
+        try {
+            const activeMasterFlights = await getActiveMasterFlightsByDOS(dos, dateStr);
+            const manualCandidate = { callsign: cs, flight_number: fn, rute: rute, jadwal: jadwal };
+            const isAllowed = filterFlightsByActiveMaster([manualCandidate], activeMasterFlights).length > 0;
+
+            if (!isAllowed) {
+                return alert("Data manual tidak sesuai jadwal aktif (DOS + tanggal) sehingga tidak ditambahkan.");
+            }
+        } catch (err) {
+            console.error("Validasi data manual gagal:", err);
+            return alert("Gagal memvalidasi jadwal aktif: " + err.message);
+        }
+
+        const tbody = document.querySelector("#apronTable tbody");
+        if(tbody.querySelector('td[colspan="18"]')) tbody.innerHTML = ''; 
+        
+        let psOps = '<option value="">-</option>' + parkingStands.map(ps => `<option value="${ps}">${ps}</option>`).join('');
+        let flTypes = ['REGULER', 'EXTRA', 'PERINTIS', 'CHARTER', 'VIP', 'MILITER', 'DIVERT', 'RTS', 'RTA', 'RTB'];
+        let flTypeOpts = flTypes.map(t => `<option ${t === 'EXTRA' ? 'selected' : ''}>${t}</option>`).join('');
+
+        const tr = document.createElement("tr"); tr.className = "flight-row";
+        tr.innerHTML = `<td class="col-cs"><input type="text" class="form-control text-primary text-uppercase" value="${cs}" onchange="markAsIncomplete()"></td><td class="col-no"><input type="text" class="form-control" value="${fn}" onchange="markAsIncomplete()"></td><td class="col-rute"><input type="text" class="form-control text-uppercase" value="${rute}" onchange="markAsIncomplete()"></td><td class="col-jadwal"><input type="time" class="form-control text-primary" value="${jadwal}" onchange="markAsIncomplete()"></td><td class="col-reg"><div class="d-flex align-items-center position-relative h-100"><input type="text" class="form-control text-uppercase input-reg w-100" oninput="checkRowStatus(this); markAsIncomplete()"><span class="suffix-reg position-absolute end-0 me-1 fw-bold text-danger d-none" style="font-size: 0.6rem; pointer-events: none;"></span></div></td><td class="col-ron"><div class="checkbox-center"><input class="form-check-input ron-checkbox" type="checkbox" onchange="updateRonDisplay(this); markAsIncomplete()"></div></td><td class="col-tipe"><input list="list-tipe-pesawat" class="form-control text-primary text-uppercase input-tipe" onchange="autoFillKapasitas(this); markAsIncomplete()"></td><td class="col-seat"><input type="number" class="form-control input-seat border-0" readonly style="background:#f8f9fa;"></td><td class="col-dom"><select class="form-select input-domintl" onchange="markAsIncomplete()"><option selected>DOM</option><option>INTL</option></select></td><td class="col-leg"><select class="form-select input-leg text-primary" onchange="updateLegColor(this); markAsIncomplete()"><option value="D" selected>D</option><option value="A">A</option></select></td><td class="col-stand"><select class="form-select input-stand" onchange="checkParkingStand(this); checkRowStatus(this); markAsIncomplete()">${psOps}</select></td><td class="col-avio"><div class="checkbox-center"><input class="form-check-input avio-checkbox" type="checkbox" onchange="markAsIncomplete()"></div></td><td class="col-bt"><input type="time" class="form-control input-blocktime" oninput="checkRowStatus(this); markAsIncomplete()"></td><td class="col-pax"><input type="number" class="form-control input-pax" oninput="calculateLF(this); checkRowStatus(this); markAsIncomplete()"></td><td class="col-lf"><input type="text" class="form-control input-lf border-0" readonly style="background:#f8f9fa;"></td><td class="col-fltype"><select class="form-select input-fltype" onchange="checkRowStatus(this); markAsIncomplete()">${flTypeOpts}</select></td><td class="col-status"><span class="badge bg-danger rounded-pill status-badge" style="font-size: 0.65rem;">NO OPS</span><input type="hidden" class="status-val" value="NO OPS"></td><td class="col-aksi"><div class="d-flex justify-content-center gap-1 align-items-center h-100"><button class="btn btn-sm btn-primary fw-bold px-2 py-1" onclick="simpanBaris(this)" title="Save Baris"><i class="bi bi-save"></i></button><button class="btn-delete-row" onclick="hapusBaris(this)" title="Hapus Baris"><i class="bi bi-x-circle-fill"></i></button></div></td>`;
+        tbody.appendChild(tr); markAsIncomplete();
+        bootstrap.Modal.getInstance(document.getElementById('modalTambahManual')).hide(); document.getElementById('formTambahManual').reset();
+    }
+
+    async function saveCurrentState(status = 'incomplete') {
+        if (!sbClient) return;
+        const dateStr = document.getElementById('currentSelectedDate').value;
+        const dos = document.getElementById('dosSelector').value;
+        if (!dos || !dateStr) return; 
+
+        try {
+            const arrPelPagi = Array.from(document.querySelectorAll('.pelaksana-pagi')).map(i => i.value).filter(v => v.trim() !== "");
+            const arrPelMalam = Array.from(document.querySelectorAll('.pelaksana-malam')).map(i => i.value).filter(v => v.trim() !== "");
+
+            await sbClient.from('daily_records').upsert({ 
+                date: dateStr, dos: dos, status: status, 
+                pto_pagi: document.getElementById('ptoPagi').value, pto_malam: document.getElementById('ptoMalam').value,
+                pelaksana_pagi: arrPelPagi, pelaksana_malam: arrPelMalam
+            });
+
+            await sbClient.from('daily_flights').delete().eq('date', dateStr);
+
+            let flightsState = [];
+            document.querySelectorAll("#apronTable tbody tr.flight-row").forEach(tr => {
+                flightsState.push({
+                    date: dateStr,
+                    callsign: tr.cells[0].querySelector("input").value.toUpperCase(),
+                    flight_number: tr.cells[1].querySelector("input").value,
+                    rute: tr.cells[2].querySelector("input").value.toUpperCase(),
+                    jadwal: tr.cells[3].querySelector("input").value,
+                    reg: tr.querySelector(".input-reg").value.toUpperCase(),
+                    tipe_ac: tr.querySelector(".input-tipe").value.toUpperCase(),
+                    seat: parseInt(tr.querySelector(".input-seat").value) || null,
+                    dom_intl: tr.querySelector(".input-domintl").value,
+                    leg: tr.querySelector(".input-leg").value,
+                    ron: tr.querySelector(".ron-checkbox").checked, 
+                    stand: tr.querySelector(".input-stand").value,
+                    avio: tr.querySelector(".avio-checkbox").checked,
+                    block_time: tr.querySelector(".input-blocktime").value || null,
+                    pax: parseInt(tr.querySelector(".input-pax").value) || null,
+                    lf: tr.querySelector(".input-lf").value,
+                    fl_type: tr.querySelector(".input-fltype").value,
+                    status: tr.querySelector(".status-val").value
+                });
+            });
+
+            if(flightsState.length > 0) { await sbClient.from('daily_flights').insert(flightsState); }
+        } catch(err) { console.error("Error Saving:", err); }
+    }
+
+    let saveTimeout;
+    function markAsIncomplete() { clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveCurrentState('incomplete'); }, 1500); }
+    function completeData() { if(!document.getElementById('dosSelector').value) return alert("Pilih DOS!"); if(!confirm("Selesaikan hari ini?")) return; saveCurrentState('complete').then(() => { alert("Complete!"); showCalendar(); }); }
+    
+    async function resetDataHariIni() {
+        const dateStr = document.getElementById('currentSelectedDate').value;
+        if (!dateStr || !confirm("Yakin hapus semua data hari ini?")) return;
+        try {
+            await sbClient.from('daily_records').delete().eq('date', dateStr); 
+            alert("Data dihapus."); showCalendar(); 
+        } catch(err) { alert("Gagal Reset: " + err.message); }
+    }
+
+    window.addEventListener('error', (e) => {
+        console.error('Global JS Error:', e.message, 'at', e.filename, 'line', e.lineno);
+    });
+
+    window.addEventListener('unhandledrejection', (e) => {
+        console.error('Unhandled Promise Rejection:', e.reason);
+    });
+
+    window.onload = () => { renderCalendar(); updatePetugasDatalist(); };
+</script>
+</body>
+</html>

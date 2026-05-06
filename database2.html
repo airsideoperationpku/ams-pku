@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Master - AMS PKU</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- LIBRARY SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; overflow-x: hidden; }
+        .wrapper { display: flex; width: 100%; height: 100vh; overflow: hidden; }
+        .sidebar { min-width: 250px; max-width: 250px; background-color: #ffffff; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; transition: all 0.3s ease; z-index: 1050; }
+        .sidebar.collapsed { margin-left: -250px; }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1040; transition: opacity 0.3s ease; }
+        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 15px; }
+        .sidebar-header h5 { margin: 0; font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
+        .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
+        .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
+        .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 20px; }
+        .nav-tabs .nav-link { font-weight: 600; color: #666; border: none; padding: 12px 25px; border-bottom: 3px solid transparent; }
+        .nav-tabs .nav-link.active { color: #0d6efd; background: transparent; border-bottom: 3px solid #0d6efd; }
+        .table th { background-color: #f8f9fa; color: #666; font-size: 0.75rem; font-weight: 700; border-bottom: 2px solid #eaeaea; text-transform: uppercase; padding: 12px 15px;}
+        .table td { vertical-align: middle; font-size: 0.85rem; color: #444; border-bottom: 1px solid #f4f4f4; padding: 12px 15px; }
+        .dos-checkboxes { display: flex; flex-wrap: wrap; gap: 10px; }
+        .dos-cb-item { border: 1px solid #dee2e6; border-radius: 6px; padding: 5px 10px; background: #f8f9fa; cursor: pointer; transition: 0.2s; user-select: none; }
+        .dos-cb-item:hover { background: #e8f0fe; border-color: #b3d4fc; }
+        .dos-cb-item input:checked + span { font-weight: bold; color: #0d6efd; }
+        @media (max-width: 768px) { .sidebar { position: fixed; left: -250px; height: 100vh; } .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); } .sidebar-overlay.show { display: block; } }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header"><h5>AMC PKU</h5><small>Sultan Syarif Kasim II</small></div>
+        <div class="nav flex-column">
+            <a href="dashboard2.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
+            <a href="ams2.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-grid-1x2"></i> Apron Management</a>
+            <a href="#" class="nav-link active" onclick="closeSidebarMobile()"><i class="bi bi-database"></i> Data Master</a>
+            <a href="download2.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-cloud-arrow-down-fill"></i> Download Center</a>
+            <a href="#" class="nav-link text-danger" onclick="logout(); closeSidebarMobile()"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-light border shadow-sm px-2 py-1 me-2" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
+                <h5 class="fw-bold text-dark m-0 d-none d-sm-block">Database Master</h5>
+                <h6 class="fw-bold text-dark m-0 d-block d-sm-none">Data Master</h6>
+            </div>
+            <div><span class="badge bg-primary fs-6 fw-normal shadow-sm"><i class="bi bi-server me-1"></i> Supabase</span></div>
+        </div>
+
+        <ul class="nav nav-tabs mb-4" id="masterTabs" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabJadwal"><i class="bi bi-calendar-range me-2"></i>Master Jadwal</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPesawat" onclick="renderPesawat()"><i class="bi bi-airplane-fill me-2"></i>Master Pesawat</button></li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- TAB MASTER JADWAL -->
+            <div class="tab-pane fade show active" id="tabJadwal">
+                <div class="card p-4 shadow-sm border-top border-primary border-3">
+                    <div class="d-flex justify-content-between align-items-end mb-3">
+                        <h5 class="fw-bold text-secondary m-0">Daftar Jadwal Master</h5>
+                        <button class="btn btn-primary fw-bold shadow-sm" onclick="openAddModal()"><i class="bi bi-plus-lg me-1"></i> Tambah Jadwal</button>
+                    </div>
+                    <div class="row g-2 mb-3 align-items-center">
+                        <div class="col-12 col-md-7 col-lg-5">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="jadwalSearchInput" class="form-control" placeholder="Cari Callsign / Flight No / Rute / DOM-INTL / Leg / DOS...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-auto">
+                            <button class="btn btn-outline-secondary" type="button" onclick="resetJadwalSearch()"><i class="bi bi-x-circle me-1"></i> Reset</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover text-center align-middle">
+                            <thead>
+                                <tr><th>Callsign</th><th>Flight No</th><th>Rute</th><th>Jadwal</th><th>DOM/INTL</th><th>Leg</th><th>DOS</th><th>Periode Aktif</th><th>Status</th><th>Aksi</th></tr>
+                            </thead>
+                            <tbody id="tbodyJadwal"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TAB MASTER PESAWAT -->
+            <div class="tab-pane fade" id="tabPesawat">
+                <div class="card p-4 shadow-sm border-top border-success border-3">
+                    <div class="d-flex justify-content-between align-items-end mb-3">
+                        <h5 class="fw-bold text-secondary m-0">Daftar Kapasitas Pesawat</h5>
+                        <button class="btn btn-success fw-bold shadow-sm" onclick="openAddModalPesawat()"><i class="bi bi-plus-lg me-1"></i> Tambah Pesawat</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover text-center align-middle">
+                            <thead>
+                                <tr><th>Callsign</th><th>Tipe Pesawat</th><th>Kapasitas Seat</th><th>Aksi</th></tr>
+                            </thead>
+                            <tbody id="tbodyPesawat"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL JADWAL -->
+<div class="modal fade" id="modalJadwal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white border-0"><h5 class="modal-title fw-bold" id="modalTitle">Tambah Jadwal</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body p-4">
+        <form id="formJadwal">
+            <input type="hidden" id="editIndex">
+            <div class="row g-3">
+                <div class="col-md-2"><label class="form-label fw-bold small">Callsign</label><input type="text" id="j_cs" class="form-control text-uppercase fw-bold" required></div>
+                <div class="col-md-2"><label class="form-label fw-bold small">Flight No</label><input type="text" id="j_no" class="form-control fw-bold" required></div>
+                <div class="col-md-2"><label class="form-label fw-bold small">Rute</label><input type="text" id="j_rute" class="form-control text-uppercase" required></div>
+                <div class="col-md-2"><label class="form-label fw-bold small">Jadwal</label><input type="time" id="j_waktu" class="form-control fw-bold text-primary" required></div>
+                <div class="col-md-2"><label class="form-label fw-bold small">DOM/INTL</label><select id="j_dom" class="form-select fw-bold"><option value="DOM">DOM</option><option value="INTL">INTL</option></select></div>
+                <div class="col-md-2"><label class="form-label fw-bold small">Leg</label><select id="j_leg" class="form-select fw-bold"><option value="D">Dep (D)</option><option value="A">Arr (A)</option></select></div>
+                <div class="col-12 mt-4" id="dosContainer">
+                    <label class="form-label fw-bold text-primary">Pilih Hari Operasional (DOS)</label>
+                    <div class="dos-checkboxes">
+                        <label class="dos-cb-item"><input type="checkbox" class="dos-cb" value="DOS1"> <span>DOS 1</span></label><label class="dos-cb-item"><input type="checkbox" class="dos-cb" value="DOS2"> <span>DOS 2</span></label>
+                        <label class="dos-cb-item"><input type="checkbox" class="dos-cb" value="DOS3"> <span>DOS 3</span></label><label class="dos-cb-item"><input type="checkbox" class="dos-cb" value="DOS4"> <span>DOS 4</span></label>
+                        <label class="dos-cb-item"><input type="checkbox" class="dos-cb" value="DOS5"> <span>DOS 5</span></label><label class="dos-cb-item"><input type="checkbox" class="dos-cb" value="DOS6"> <span>DOS 6</span></label>
+                        <label class="dos-cb-item"><input type="checkbox" class="dos-cb" value="DOS7"> <span>DOS 7</span></label>
+                    </div>
+                </div>
+                <div class="col-md-6 mt-4"><label class="form-label fw-bold text-danger small">Berlaku Mulai</label><input type="date" id="j_start" class="form-control" required></div>
+                <div class="col-md-6 mt-4"><label class="form-label fw-bold text-danger small">Berlaku Sampai</label><input type="date" id="j_end" class="form-control"></div>
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer border-0"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="button" class="btn btn-primary px-4 shadow-sm" onclick="simpanJadwal()">Simpan Data</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PESAWAT -->
+<div class="modal fade" id="modalPesawat" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-success text-white border-0"><h5 class="modal-title fw-bold">Tambah Pesawat</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body p-4">
+        <form id="formPesawat">
+            <div class="row g-3">
+                <div class="col-12"><label class="form-label fw-bold small">Callsign</label><input type="text" id="p_cs" class="form-control text-uppercase" required></div>
+                <div class="col-12"><label class="form-label fw-bold small">Tipe Pesawat</label><input type="text" id="p_tipe" class="form-control text-uppercase" required></div>
+                <div class="col-12"><label class="form-label fw-bold small">Seat</label><input type="number" id="p_seat" class="form-control" required></div>
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer border-0 bg-light"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="button" class="btn btn-success px-4 fw-bold" onclick="simpanPesawat()">Simpan</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
+    const sbClient = (() => {
+        try {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                return window.supabase.createClient(supabaseUrl, supabaseKey);
+            }
+            console.error("Supabase library gagal dimuat dari CDN.");
+            return null;
+        } catch (e) {
+            console.error("Inisialisasi Supabase gagal:", e);
+            return null;
+        }
+    })();
+
+    let globalSchedules = [];
+    let jadwalSearchKeyword = "";
+
+    function toggleSidebar() { const s = document.getElementById('sidebar'); const o = document.getElementById('sidebarOverlay'); if (window.innerWidth <= 768) { s.classList.toggle('show'); o.classList.toggle('show'); } else { s.classList.toggle('collapsed'); } }
+    function closeSidebarMobile() { if (window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('show'); document.getElementById('sidebarOverlay').classList.remove('show'); } }
+    function logout() {
+        try {
+            localStorage.removeItem('ams_session');
+            sessionStorage.removeItem('ams_session');
+            sessionStorage.clear();
+        } catch (e) {
+            console.warn('Cleanup session gagal:', e);
+        }
+        window.location.href = 'index2.html';
+    }
+    function formatDate(dateStr) { if (!dateStr) return '-'; const d = new Date(dateStr); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; }
+
+    // Helper untuk hindari error runtime jika row id numeric/string berbeda
+    function findScheduleById(id) {
+        if (!Array.isArray(globalSchedules)) return null;
+        for (let i = 0; i < globalSchedules.length; i++) {
+            const s = globalSchedules[i];
+            if (s && String(s.id) === String(id)) return s;
+        }
+        return null;
+    }
+
+    function resetJadwalSearch() {
+        jadwalSearchKeyword = "";
+        const searchInput = document.getElementById('jadwalSearchInput');
+        if (searchInput) searchInput.value = "";
+        renderJadwal();
+    }
+
+    // --- LOGIKA JADWAL (WITH ERROR HANDLING) ---
+    async function renderJadwal() {
+        if(!sbClient) return alert("Koneksi Supabase Gagal.");
+        try {
+            const { data: schedules, error } = await sbClient.from('master_schedule').select('*').order('jadwal', { ascending: true });
+            if (error) throw error;
+            
+            globalSchedules = schedules || [];
+            const dNow = new Date(); dNow.setHours(0,0,0,0);
+            const tbody = document.getElementById('tbodyJadwal');
+
+            if(globalSchedules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="py-4 text-muted">Belum ada data jadwal.</td></tr>'; return;
+            }
+
+            const keyword = (jadwalSearchKeyword || "").trim().toLowerCase();
+            const filteredSchedules = !keyword
+                ? globalSchedules
+                : globalSchedules.filter((f) => {
+                    const haystack = [
+                        f.callsign,
+                        f.flight_number,
+                        f.rute,
+                        f.dom_intl,
+                        f.leg,
+                        f.dos
+                    ]
+                    .filter(Boolean)
+                    .join(" ")
+                    .toLowerCase();
+                    return haystack.includes(keyword);
+                });
+
+            if(filteredSchedules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="py-4 text-muted">Data jadwal tidak ditemukan untuk kata kunci tersebut.</td></tr>'; return;
+            }
+
+            let htmlRows = "";
+            for (const f of filteredSchedules) {
+                let statusBadge = '-';
+                if (f.valid_to) {
+                    const dEnd = new Date(f.valid_to); dEnd.setHours(0,0,0,0);
+                    if (dEnd < dNow) {
+                        await sbClient.from('master_schedule').delete().eq('id', f.id); 
+                        continue; 
+                    }
+                    const diff = Math.ceil((dEnd - dNow) / (1000 * 60 * 60 * 24));
+                    statusBadge = diff <= 30 ? `<span class="badge bg-warning text-dark">Expire ${diff}d</span>` : '<span class="badge bg-success shadow-sm">Aktif</span>';
+                } else {
+                    statusBadge = '<span class="badge bg-success shadow-sm">Permanen</span>';
+                }
+                htmlRows += `<tr><td class="fw-bold text-primary">${f.callsign}</td><td>${f.flight_number}</td><td>${f.rute}</td><td class="fw-bold">${f.jadwal}</td><td>${f.dom_intl}</td><td>${f.leg}</td><td>${f.dos}</td><td class="small fw-bold">${formatDate(f.valid_from)} - ${formatDate(f.valid_to)}</td><td>${statusBadge}</td><td><button class="btn btn-sm btn-outline-primary me-1" onclick="editJadwal('${f.id}')"><i class="bi bi-pencil-square"></i></button><button class="btn btn-sm btn-outline-danger" onclick="hapusJadwal('${f.id}')"><i class="bi bi-trash"></i></button></td></tr>`;
+            }
+            tbody.innerHTML = htmlRows;
+        } catch(err) {
+            console.error("Gagal Render Jadwal:", err);
+            document.getElementById('tbodyJadwal').innerHTML = `<tr><td colspan="10" class="text-danger">Gagal memuat data: ${err.message}</td></tr>`;
+        }
+    }
+
+    function openAddModal() { 
+        try {
+            if (!sbClient) {
+                alert("Koneksi Supabase belum siap. Coba refresh halaman.");
+                return;
+            }
+            const form = document.getElementById('formJadwal');
+            const editIndex = document.getElementById('editIndex');
+            const modalTitle = document.getElementById('modalTitle');
+            const dosContainer = document.getElementById('dosContainer');
+            const modalEl = document.getElementById('modalJadwal');
+
+            if (!form || !editIndex || !modalTitle || !dosContainer || !modalEl || !window.bootstrap) {
+                alert("Komponen modal jadwal tidak siap.");
+                return;
+            }
+
+            form.reset(); 
+            editIndex.value = ""; 
+            modalTitle.innerText = "Tambah Jadwal"; 
+            dosContainer.style.display = "block";
+            document.querySelectorAll('.dos-cb').forEach(cb => cb.checked = false);
+
+            let instance = bootstrap.Modal.getInstance(modalEl);
+            if (!instance) instance = new bootstrap.Modal(modalEl);
+            instance.show();
+        } catch (err) {
+            console.error("openAddModal error:", err);
+            alert("Gagal membuka modal Tambah Jadwal: " + err.message);
+        }
+    }
+
+    function editJadwal(id) {
+        const data = findScheduleById(id);
+        if(!data) return;
+        document.getElementById('editIndex').value = id;
+        document.getElementById('modalTitle').innerText = "Edit Jadwal";
+        document.getElementById('j_cs').value = data.callsign; document.getElementById('j_no').value = data.flight_number;
+        document.getElementById('j_rute').value = data.rute; document.getElementById('j_waktu').value = data.jadwal;
+        document.getElementById('j_dom').value = data.dom_intl; document.getElementById('j_leg').value = data.leg;
+        document.getElementById('j_start').value = data.valid_from; document.getElementById('j_end').value = data.valid_to || "";
+        document.getElementById('dosContainer').style.display = "none";
+        new bootstrap.Modal(document.getElementById('modalJadwal')).show();
+    }
+
+    async function simpanJadwal() {
+        try {
+            const editId = document.getElementById('editIndex').value;
+            const vStart = document.getElementById('j_start').value;
+            const vEnd = document.getElementById('j_end').value;
+
+            if(!vStart) return alert("Tanggal 'Berlaku Mulai' Wajib Diisi!");
+
+            // FIX POSTGRESQL NULL DATE ISSUE
+            const baseData = { 
+                callsign: document.getElementById('j_cs').value.toUpperCase(), flight_number: document.getElementById('j_no').value, 
+                rute: document.getElementById('j_rute').value.toUpperCase(), jadwal: document.getElementById('j_waktu').value, 
+                dom_intl: document.getElementById('j_dom').value, leg: document.getElementById('j_leg').value, 
+                valid_from: vStart, valid_to: vEnd ? vEnd : null 
+            };
+
+            if (editId !== "") { 
+                const {error} = await sbClient.from('master_schedule').update(baseData).eq('id', editId); 
+                if(error) throw error;
+            } else { 
+                const selectedDos = document.querySelectorAll('.dos-cb:checked'); 
+                if (selectedDos.length === 0) return alert("Pilih minimal satu DOS!"); 
+                let insertArray = [];
+                selectedDos.forEach(cb => { insertArray.push({ ...baseData, dos: cb.value }); }); 
+                const {error} = await sbClient.from('master_schedule').insert(insertArray);
+                if(error) throw error;
+            }
+            renderJadwal(); bootstrap.Modal.getInstance(document.getElementById('modalJadwal')).hide();
+        } catch(err) {
+            alert("Gagal Simpan: " + err.message); console.error(err);
+        }
+    }
+
+    async function hapusJadwal(id) { 
+        if (confirm("Hapus jadwal ini?")) {
+            try {
+                const { error } = await sbClient.from('master_schedule').delete().eq('id', id);
+                if (error) throw error;
+                renderJadwal();
+            } catch (err) {
+                alert("Gagal hapus jadwal: " + err.message);
+                console.error(err);
+            }
+        } 
+    }
+
+    // --- LOGIKA PESAWAT (WITH ERROR HANDLING) ---
+    async function renderPesawat() {
+        if(!sbClient) return;
+        try {
+            const { data: aircraft, error } = await sbClient.from('master_aircraft').select('*');
+            if (error) throw error;
+            const tbody = document.getElementById('tbodyPesawat');
+            if(!aircraft || aircraft.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-muted">Belum ada data pesawat.</td></tr>'; return;
+            }
+            let htmlRows = "";
+            aircraft.forEach((p) => { htmlRows += `<tr><td class="fw-bold text-primary">${p.callsign}</td><td class="fw-bold">${p.type}</td><td>${p.seat} Seat</td><td><button class="btn btn-sm btn-outline-danger" onclick="hapusPesawat('${p.id}')"><i class="bi bi-trash"></i></button></td></tr>`; });
+            tbody.innerHTML = htmlRows;
+        } catch(err) {
+            console.error("Gagal Render Pesawat:", err);
+            document.getElementById('tbodyPesawat').innerHTML = `<tr><td colspan="4" class="text-danger">Gagal memuat data: ${err.message}</td></tr>`;
+        }
+    }
+
+    function openAddModalPesawat() {
+        try {
+            if (!sbClient) {
+                alert("Koneksi Supabase belum siap. Coba refresh halaman.");
+                return;
+            }
+            const form = document.getElementById('formPesawat');
+            const modalEl = document.getElementById('modalPesawat');
+
+            if (!form || !modalEl || !window.bootstrap) {
+                alert("Komponen modal pesawat tidak siap.");
+                return;
+            }
+
+            form.reset();
+            let instance = bootstrap.Modal.getInstance(modalEl);
+            if (!instance) instance = new bootstrap.Modal(modalEl);
+            instance.show();
+        } catch (err) {
+            console.error("openAddModalPesawat error:", err);
+            alert("Gagal membuka modal Tambah Pesawat: " + err.message);
+        }
+    }
+
+    async function simpanPesawat() {
+        try {
+            const cs = document.getElementById('p_cs').value.trim().toUpperCase(); const tipe = document.getElementById('p_tipe').value.trim().toUpperCase(); const seat = document.getElementById('p_seat').value;
+            if(!cs || !tipe || !seat) return alert("Lengkapi semua data!");
+            const {error} = await sbClient.from('master_aircraft').insert([{ callsign: cs, type: tipe, seat: seat }]);
+            if(error) throw error;
+            renderPesawat(); bootstrap.Modal.getInstance(document.getElementById('modalPesawat')).hide();
+        } catch(err) {
+            alert("Gagal Simpan Pesawat: " + err.message); console.error(err);
+        }
+    }
+
+    async function hapusPesawat(id) { 
+        if (confirm("Hapus pesawat ini?")) {
+            try {
+                const { error } = await sbClient.from('master_aircraft').delete().eq('id', id);
+                if (error) throw error;
+                renderPesawat();
+            } catch (err) {
+                alert("Gagal hapus pesawat: " + err.message);
+                console.error(err);
+            }
+        } 
+    }
+
+    window.addEventListener('error', (e) => {
+        console.error('Global JS Error:', e.message, 'at', e.filename, 'line', e.lineno);
+    });
+
+    window.addEventListener('unhandledrejection', (e) => {
+        console.error('Unhandled Promise Rejection:', e.reason);
+    });
+
+    window.onload = () => {
+        const searchInput = document.getElementById('jadwalSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                jadwalSearchKeyword = e.target.value || "";
+                renderJadwal();
+            });
+        }
+        renderJadwal();
+    };
+</script>
+</body>
+</html>
