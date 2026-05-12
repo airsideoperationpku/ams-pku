@@ -525,6 +525,22 @@ ${delayList.length > 0 ? delayList.join("\n") : "- Nihil"}
         document.getElementById('filterStart').value = today; document.getElementById('filterEnd').value = today; document.getElementById('waDate').value = today;
         generatePreview();
     };
+
+    // --- FUNGSI LOGOUT ---
+    async function logout() {
+        if (!sbClient) return;
+        try {
+            // Perintahkan Supabase untuk menghapus sesi login
+            const { error } = await sbClient.auth.signOut();
+            if (error) throw error;
+            
+            // Jika berhasil, alihkan kembali ke halaman login
+            window.location.replace('index.html');
+        } catch (err) {
+            console.error("Logout Error:", err);
+            alert("Gagal logout: " + err.message);
+        }
+    }
 </script>
 </body>
 </html>
