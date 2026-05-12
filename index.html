@@ -114,7 +114,7 @@
                 password: password,
             });
             if (error) throw error;
-            window.location.href = 'Dashboard2.html';
+            window.location.href = 'Dashboard.html';
         } catch (error) {
             alertMessage.innerHTML = `
                 <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
@@ -131,7 +131,7 @@
     async function checkSession() {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) {
-            window.location.href = 'Dashboard2.html';
+            window.location.href = 'Dashboard.html';
         }
     }
     checkSession();
