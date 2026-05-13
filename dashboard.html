@@ -6,617 +6,271 @@
     <title>Dashboard - AMS PKU</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; overflow-x: hidden; }
-        
-        /* Layout & Sidebar */
         .wrapper { display: flex; width: 100%; height: 100vh; overflow: hidden; }
         .sidebar { min-width: 250px; max-width: 250px; background-color: #ffffff; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; transition: all 0.3s ease; z-index: 1050; }
         .sidebar.collapsed { margin-left: -250px; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1040; transition: opacity 0.3s ease; }
         .sidebar-header { padding: 25px 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 15px; }
         .sidebar-header h5 { margin: 0; font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
-        .sidebar-header small { color: #888; font-size: 0.75rem; letter-spacing: 0.5px; }
-        .nav-link { color: #666; font-weight: 500; padding: 10px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
+        .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
         .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
-        
-        /* Content & Cards */
         .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 20px; }
-        
-        /* Stats Card Styling */
-        .stat-card { display: flex; align-items: center; padding: 15px 20px; border-radius: 12px; background: #fff; border: 1px solid #eaeaea; transition: transform 0.2s ease; height: 100%; }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); }
-        .stat-icon { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-right: 15px; flex-shrink: 0; }
-        .stat-details h6 { margin: 0; font-size: 0.75rem; color: #888; font-weight: 700; text-transform: uppercase; }
-        .stat-details h3 { margin: 5px 0 0; font-size: 1.5rem; font-weight: 800; color: #333; }
-        
-        /* Small Stat Card (Avio/PAX breakdown) */
-        .stat-card-sm { padding: 12px 15px; flex-direction: column; text-align: center; justify-content: center; }
-        .stat-card-sm .stat-icon { margin: 0 0 10px 0; width: 35px; height: 35px; font-size: 1rem; }
-        .stat-card-sm h3 { font-size: 1.2rem; }
-
-        /* Colors */
-        .bg-primary-soft { background: #e8f0fe; color: #0d6efd; }
-        .bg-success-soft { background: #d1e7dd; color: #198754; }
-        .bg-warning-soft { background: #fff3cd; color: #ffc107; }
-        .bg-danger-soft { background: #f8d7da; color: #dc3545; }
-        .bg-info-soft { background: #cff4fc; color: #0dcaf0; }
-        .bg-secondary-soft { background: #e2e3e5; color: #6c757d; }
-        .bg-purple-soft { background: #e0d4f7; color: #6f42c1; }
-
-        /* Tables & Tabs */
-        .table-responsive { border-radius: 12px; border: 1px solid #eaeaea; background: #fff; }
-        .table th { background-color: #f8f9fa; color: #666; font-size: 0.7rem; font-weight: 700; border-bottom: 2px solid #eaeaea; text-transform: uppercase; padding: 10px;}
-        .table td { vertical-align: middle; font-size: 0.8rem; color: #444; border-bottom: 1px solid #f4f4f4; padding: 10px; text-align: center; }
-        .nav-tabs .nav-link { font-weight: 600; color: #666; border: none; padding: 10px 20px; border-bottom: 3px solid transparent; }
-        .nav-tabs .nav-link.active { color: #0d6efd; background: transparent; border-bottom: 3px solid #0d6efd; }
-
-        /* Scrolling tables inside cards */
-        .scrollable-table { max-height: 300px; overflow-y: auto; }
-
-        @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -250px; height: 100vh; }
-            .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); }
-            .sidebar-overlay.show { display: block; }
-            .content { padding: 15px; }
-            .stat-details h3 { font-size: 1.3rem; }
-        }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 20px; overflow: hidden; }
+        .card-header { background-color: #fff; border-bottom: 1px solid #f0f0f0; font-weight: 700; padding: 15px 20px; }
+        .stat-value { font-size: 2rem; font-weight: 800; line-height: 1.2; }
+        .stat-label { font-size: 0.8rem; color: #666; font-weight: 600; text-transform: uppercase; }
+        .list-group-item { font-size: 0.85rem; padding: 10px 15px; border-color: #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+        .table-mini th { font-size: 0.75rem; text-transform: uppercase; color: #666; background: #f8f9fa; padding: 8px; }
+        .table-mini td { font-size: 0.85rem; padding: 8px; font-weight: 600; vertical-align: middle; }
+        .icon-box { width: 45px; height: 45px; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 1.4rem; }
+        @media (max-width: 768px) { .sidebar { position: fixed; left: -250px; height: 100vh; } .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); } .sidebar-overlay.show { display: block; } .content { padding: 15px; } }
     </style>
 </head>
 <body>
 
 <div class="wrapper">
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
     <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h5>AMC PKU</h5>
-            <small>Sultan Syarif Kasim II</small>
-        </div>
+        <div class="sidebar-header"><h5>AMS PKU</h5><small>Sultan Syarif Kasim II</small></div>
         <div class="nav flex-column">
-            <a href="#" class="nav-link active" onclick="closeSidebarMobile()"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
+            <a href="#" class="nav-link active"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
             <a href="ams.html" class="nav-link"><i class="bi bi-grid-1x2"></i> Apron Management</a>
             <a href="database.html" class="nav-link"><i class="bi bi-database"></i> Data Master</a>
             <a href="download.html" class="nav-link"><i class="bi bi-cloud-arrow-down-fill"></i> Download Center</a>
-            <a href="#" class="nav-link text-danger" onclick="logout(); closeSidebarMobile()"><i class="bi bi-box-arrow-right"></i> Logout</a>
         </div>
+        <div class="mt-auto mb-4 px-3"><button class="btn btn-outline-danger w-100 fw-bold" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></div>
     </nav>
 
     <div class="content">
-        <!-- Header Utama -->
-        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-2 border-bottom gap-3">
             <div class="d-flex align-items-center gap-2">
                 <button class="btn btn-light border shadow-sm px-2 py-1 me-2" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
-                <h5 class="fw-bold text-dark m-0 d-none d-sm-block">Dashboard Analitik OPS</h5>
-                <h6 class="fw-bold text-dark m-0 d-block d-sm-none">Dashboard OPS</h6>
+                <h5 class="fw-bold text-dark m-0">Dashboard Statistik</h5>
             </div>
-            <div><span class="badge bg-success fs-6 fw-normal shadow-sm" id="badgeStatus"><i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data</span></div>
+            <div class="d-flex gap-2 flex-wrap">
+                <input type="date" id="filterStart" class="form-control form-control-sm border-primary" style="width: 140px;">
+                <input type="date" id="filterEnd" class="form-control form-control-sm border-primary" style="width: 140px;">
+                <button class="btn btn-primary btn-sm fw-bold" onclick="applyFilter()"><i class="bi bi-search"></i></button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="resetFilter()"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
         </div>
 
-        <!-- Filter Tanggal -->
-        <div class="card p-3 mb-4 shadow-sm border-top border-success border-3">
-            <div class="row g-2 align-items-center">
-                <div class="col-12 col-md-auto"><label class="form-label text-secondary mb-0 fw-bold"><i class="bi bi-calendar-range me-1"></i> Rentang Waktu:</label></div>
-                <div class="col-6 col-md-3"><input type="date" id="filterStart" class="form-control form-control-sm text-secondary fw-bold"></div>
-                <div class="col-6 col-md-3"><input type="date" id="filterEnd" class="form-control form-control-sm text-secondary fw-bold"></div>
-                <div class="col-12 col-md-auto d-flex gap-2 mt-2 mt-md-0">
-                    <button class="btn btn-sm btn-success fw-bold px-3 shadow-sm" onclick="applyFilter()"><i class="bi bi-funnel-fill me-1"></i> Filter</button>
-                    <button class="btn btn-sm btn-outline-secondary fw-bold px-3 shadow-sm" onclick="resetFilter()"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset</button>
+        <div class="mb-4"><span id="badgeStatus" class="badge bg-success fs-6 fw-normal shadow-sm"><i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data</span></div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-xl-6">
+                <div class="card h-100 border-top border-primary border-4">
+                    <div class="card-header text-primary"><i class="bi bi-airplane-fill me-2"></i>1. RINGKASAN MOVEMENT</div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3 text-center">
+                            <div class="col-4"><div class="stat-value text-primary" id="m_tot">0</div><div class="stat-label">Total Mvt</div></div>
+                            <div class="col-4 border-start"><div class="stat-value text-success" id="m_arr">0</div><div class="stat-label">Total Arr</div></div>
+                            <div class="col-4 border-start"><div class="stat-value text-info" id="m_dep">0</div><div class="stat-label">Total Dep</div></div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6"><div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0">Domestik (<span id="m_dom">0</span>)</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="m_arr_dom">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="m_dep_dom">0</span></li>
+                                </ul>
+                            </div>
+                            <div class="col-6"><div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0">Internasional (<span id="m_intl">0</span>)</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="m_arr_intl">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="m_dep_intl">0</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- ================= SLOT UTILIZATION ================= -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="stat-card shadow-sm border-start border-primary border-5 py-3">
-                    <div class="stat-icon bg-primary-soft" style="width: 60px; height: 60px; font-size: 1.8rem;"><i class="bi bi-pie-chart-fill"></i></div>
-                    <div class="stat-details w-100">
-                        <h6 class="text-primary mb-1">Slot Utilization (Total OPS vs Master DOS)</h6>
-                        <div class="d-flex align-items-end gap-3 flex-wrap">
-                            <h3 id="slotUtilPercent" style="font-size: 2.2rem; line-height: 1;">0%</h3>
-                            <span class="badge bg-light text-dark border fs-6 mb-1 shadow-sm" id="slotUtilText"><i class="bi bi-info-circle me-1"></i> 0 / 0 Flights</span>
+            <div class="col-12 col-xl-6">
+                <div class="card h-100 border-top border-success border-4">
+                    <div class="card-header text-success"><i class="bi bi-people-fill me-2"></i>2. RINGKASAN PENUMPANG (PAX)</div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3 text-center">
+                            <div class="col-4"><div class="stat-value text-success" id="p_tot">0</div><div class="stat-label">Total Pax</div></div>
+                            <div class="col-4 border-start"><div class="stat-value text-success" id="p_arr">0</div><div class="stat-label">Pax Arr</div></div>
+                            <div class="col-4 border-start"><div class="stat-value text-success" id="p_dep">0</div><div class="stat-label">Pax Dep</div></div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6"><div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0">Domestik (<span id="p_dom">0</span>)</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="p_arr_dom">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="p_dep_dom">0</span></li>
+                                </ul>
+                            </div>
+                            <div class="col-6"><div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0">Internasional (<span id="p_intl">0</span>)</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="p_arr_intl">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="p_dep_intl">0</span></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ================= 1. RINGKASAN MOVEMENT & DOM/INTL ================= -->
-        <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-airplane-engines me-2"></i> Ringkasan Movement</h6>
-        <div class="row g-3 mb-2">
-            <div class="col-12 col-md-4"><div class="stat-card shadow-sm"><div class="stat-icon bg-primary-soft"><i class="bi bi-airplane-fill"></i></div><div class="stat-details"><h6>Total Movement</h6><h3 id="totMovement">0</h3></div></div></div>
-            <div class="col-6 col-md-4"><div class="stat-card shadow-sm"><div class="stat-icon bg-success-soft"><i class="bi bi-box-arrow-in-right"></i></div><div class="stat-details"><h6>Total Arrival</h6><h3 id="totArrival">0</h3></div></div></div>
-            <div class="col-6 col-md-4"><div class="stat-card shadow-sm"><div class="stat-icon bg-warning-soft"><i class="bi bi-box-arrow-up-right"></i></div><div class="stat-details"><h6>Total Departure</h6><h3 id="totDeparture">0</h3></div></div></div>
-            <div class="col-6 col-md-6"><div class="stat-card shadow-sm"><div class="stat-icon bg-info-soft"><i class="bi bi-map-fill"></i></div><div class="stat-details"><h6>Total Domestik</h6><h3 id="totDom">0</h3></div></div></div>
-            <div class="col-6 col-md-6"><div class="stat-card shadow-sm"><div class="stat-icon bg-danger-soft"><i class="bi bi-globe-americas"></i></div><div class="stat-details"><h6>Total Internasional</h6><h3 id="totIntl">0</h3></div></div></div>
-        </div>
-        <!-- Detail Breakdown Movement -->
-        <div class="row g-2 mb-4">
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">Arr Domestik</h6><h3 class="text-info m-0" id="movArrDom">0</h3></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">Dep Domestik</h6><h3 class="text-info m-0" id="movDepDom">0</h3></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">Arr Internasional</h6><h3 class="text-danger m-0" id="movArrIntl">0</h3></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">Dep Internasional</h6><h3 class="text-danger m-0" id="movDepIntl">0</h3></div></div>
-        </div>
-
-        <!-- ================= 2. RINGKASAN PAX ================= -->
-        <h6 class="fw-bold text-secondary mb-3 mt-4"><i class="bi bi-people-fill me-2"></i> Ringkasan Penumpang (PAX)</h6>
-        <div class="row g-3 mb-2">
-            <div class="col-12 col-md-4"><div class="stat-card shadow-sm"><div class="stat-icon bg-purple-soft"><i class="bi bi-people"></i></div><div class="stat-details"><h6>Total Keseluruhan PAX</h6><h3 id="totPax">0</h3></div></div></div>
-            <div class="col-6 col-md-4"><div class="stat-card shadow-sm"><div class="stat-icon bg-success-soft"><i class="bi bi-box-arrow-in-right"></i></div><div class="stat-details"><h6>Total PAX Arrival</h6><h3 id="paxArr">0</h3></div></div></div>
-            <div class="col-6 col-md-4"><div class="stat-card shadow-sm"><div class="stat-icon bg-warning-soft"><i class="bi bi-box-arrow-up-right"></i></div><div class="stat-details"><h6>Total PAX Departure</h6><h3 id="paxDep">0</h3></div></div></div>
-            <div class="col-6 col-md-6"><div class="stat-card shadow-sm"><div class="stat-icon bg-info-soft"><i class="bi bi-map-fill"></i></div><div class="stat-details"><h6>Total PAX Domestik</h6><h3 id="paxDom">0</h3></div></div></div>
-            <div class="col-6 col-md-6"><div class="stat-card shadow-sm"><div class="stat-icon bg-danger-soft"><i class="bi bi-globe-americas"></i></div><div class="stat-details"><h6>Total PAX Internasional</h6><h3 id="paxIntl">0</h3></div></div></div>
-        </div>
-        <!-- Detail Breakdown PAX -->
-        <div class="row g-2 mb-4">
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">PAX Arr Domestik</h6><h3 class="text-info m-0" id="paxArrDom">0</h3></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">PAX Dep Domestik</h6><h3 class="text-info m-0" id="paxDepDom">0</h3></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">PAX Arr Internasional</h6><h3 class="text-danger m-0" id="paxArrIntl">0</h3></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">PAX Dep Internasional</h6><h3 class="text-danger m-0" id="paxDepIntl">0</h3></div></div>
-        </div>
-
-        <!-- ================= 3. ON-TIME PERFORMANCE (OTP) ================= -->
-        <h6 class="fw-bold text-secondary mb-3 mt-4"><i class="bi bi-stopwatch-fill me-2"></i> On-Time Performance (Departure)</h6>
-        
-        <!-- Kartu Summary OTP -->
-        <div class="row g-2 mb-3">
-            <div class="col-6 col-md">
-                <div class="stat-card stat-card-sm bg-success text-white shadow-sm border-0">
-                    <h6 class="text-white opacity-75 m-0 mb-1" style="font-size:0.65rem;">Tepat Waktu / Awal</h6>
-                    <h3 class="text-white m-0" id="otpOnTime">0</h3>
-                </div>
-            </div>
-            <div class="col-6 col-md">
-                <div class="stat-card stat-card-sm bg-warning shadow-sm border-0">
-                    <h6 class="text-dark opacity-75 m-0 mb-1" style="font-size:0.65rem;">Delay 1 - 15 Menit</h6>
-                    <h3 class="text-dark m-0" id="otpD15">0</h3>
-                </div>
-            </div>
-            <div class="col-6 col-md">
-                <div class="stat-card stat-card-sm shadow-sm border-0" style="background:#fd7e14;">
-                    <h6 class="text-white opacity-75 m-0 mb-1" style="font-size:0.65rem;">Delay 16 - 30 Menit</h6>
-                    <h3 class="text-white m-0" id="otpD30">0</h3>
-                </div>
-            </div>
-            <div class="col-6 col-md">
-                <div class="stat-card stat-card-sm bg-danger text-white shadow-sm border-0">
-                    <h6 class="text-white opacity-75 m-0 mb-1" style="font-size:0.65rem;">Delay 31 - 60 Menit</h6>
-                    <h3 class="text-white m-0" id="otpD60">0</h3>
-                </div>
-            </div>
-            <div class="col-12 col-md">
-                <div class="stat-card stat-card-sm bg-dark text-white shadow-sm border-0">
-                    <h6 class="text-white opacity-75 m-0 mb-1" style="font-size:0.65rem;">Delay > 60 Menit</h6>
-                    <h3 class="text-white m-0" id="otpDMore">0</h3>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tabel OTP -->
-        <div class="card shadow-sm mb-4">
-            <ul class="nav nav-tabs px-3 pt-2" id="otpTabs" role="tablist">
-                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#otpAirline">Berdasarkan Airline</button></li>
-                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#otpFlight">Berdasarkan Flight No.</button></li>
-            </ul>
-            <div class="tab-content scrollable-table">
-                <!-- Tab Airline -->
-                <div class="tab-pane fade show active p-0" id="otpAirline">
-                    <table class="table table-hover mb-0">
-                        <thead class="bg-light sticky-top">
-                            <tr>
-                                <th class="text-start ps-3">Airline (CS)</th><th>On Time</th><th>1 - 15m</th><th>16 - 30m</th><th>31 - 60m</th><th>> 60m</th><th>Total Dep</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbodyOtpAirline"></tbody>
-                    </table>
-                </div>
-                <!-- Tab Flight Number -->
-                <div class="tab-pane fade p-0" id="otpFlight">
-                    <table class="table table-hover mb-0">
-                        <thead class="bg-light sticky-top">
-                            <tr>
-                                <th class="text-start ps-3">Flight No.</th><th>On Time</th><th>1 - 15m</th><th>16 - 30m</th><th>31 - 60m</th><th>> 60m</th><th>Total Dep</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbodyOtpFlight"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= 4. PEMAKAIAN AVIOBRIDGE ================= -->
-        <h6 class="fw-bold text-secondary mb-3 mt-5"><i class="bi bi-usb-plug-fill me-2"></i> Analitik Pemakaian Aviobridge</h6>
-        <div class="row g-2 mb-3">
-            <div class="col-12 col-md-4"><div class="stat-card shadow-sm"><div class="stat-icon bg-secondary-soft"><i class="bi bi-buildings-fill"></i></div><div class="stat-details"><h6>Total Avio (All)</h6><h3 id="totAvio">0</h3></div></div></div>
-            <div class="col-6 col-md-4"><div class="stat-card shadow-sm"><div class="stat-icon bg-success-soft"><i class="bi bi-box-arrow-in-down-right"></i></div><div class="stat-details"><h6>Avio Arr (Total)</h6><h3 id="totAvioArr">0</h3></div></div></div>
-            <div class="col-6 col-md-4"><div class="stat-card shadow-sm"><div class="stat-icon bg-warning-soft"><i class="bi bi-box-arrow-up-right"></i></div><div class="stat-details"><h6>Avio Dep (Total)</h6><h3 id="totAvioDep">0</h3></div></div></div>
-        </div>
-        
-        <div class="row g-2 mb-4">
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">Arr Domestik</h6><h3 class="text-success m-0" id="avioArrDom">0</h3></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">Arr Internasional</h6><h3 class="text-success m-0" id="avioArrIntl">0</h3></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">Dep Domestik</h6><h3 class="text-warning text-dark m-0" id="avioDepDom">0</h3></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card stat-card-sm shadow-sm"><h6 class="text-muted m-0 mb-1" style="font-size:0.65rem;">Dep Internasional</h6><h3 class="text-warning text-dark m-0" id="avioDepIntl">0</h3></div></div>
-        </div>
-
-        <!-- ================= 5. LEADERBOARDS (PERINGKAT) ================= -->
-        <h6 class="fw-bold text-secondary mb-3 mt-5"><i class="bi bi-bar-chart-fill me-2"></i> Leaderboard (Top Frekuensi OPS)</h6>
-        <div class="row g-3 mb-5">
-            <!-- Peringkat Rute -->
-            <div class="col-12 col-md-6">
-                <div class="card shadow-sm h-100 p-0">
-                    <div class="card-header bg-white fw-bold text-primary py-3"><i class="bi bi-geo-alt-fill me-2"></i> Rute Tujuan / Asal</div>
-                    <div class="table-responsive border-0 rounded-0 scrollable-table">
-                        <table class="table table-hover mb-0"><tbody id="tbodyRute"></tbody></table>
+        <div class="card border-top border-warning border-4 mb-3">
+            <div class="card-header text-dark"><i class="bi bi-clock-history me-2"></i>3. ON-TIME PERFORMANCE (DEPARTURE)</div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-12 col-lg-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="icon-box bg-success text-white me-3"><i class="bi bi-check-circle"></i></div>
+                            <div><h3 class="m-0 fw-bold" id="otp_ontime">0</h3><small class="text-muted fw-bold">Tepat Waktu (Delay ≤ 15m)</small></div>
+                        </div>
+                        <ul class="list-group">
+                            <li class="list-group-item"><span>Delay > 15-30m</span> <span class="badge bg-warning text-dark" id="otp_d15">0</span></li>
+                            <li class="list-group-item"><span>Delay > 30-60m</span> <span class="badge bg-danger" id="otp_d30">0</span></li>
+                            <li class="list-group-item"><span>Delay > 60m</span> <span class="badge bg-dark" id="otp_d60">0</span></li>
+                        </ul>
                     </div>
-                </div>
-            </div>
-            <!-- Peringkat Pemakai Avio (Airline) -->
-            <div class="col-12 col-md-6">
-                <div class="card shadow-sm h-100 p-0">
-                    <div class="card-header bg-white fw-bold text-primary py-3"><i class="bi bi-usb-plug-fill me-2"></i> Pemakaian Avio (By Airline)</div>
-                    <div class="table-responsive border-0 rounded-0 scrollable-table">
-                        <table class="table table-hover mb-0"><tbody id="tbodyAvioRank"></tbody></table>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <h6 class="fw-bold text-center bg-light p-2 rounded">Top Delay by Airline (>15m)</h6>
+                        <table class="table table-sm table-mini table-hover">
+                            <thead><tr><th>Airline</th><th class="text-end">Freq</th></tr></thead>
+                            <tbody id="tbl_delay_airline"></tbody>
+                        </table>
                     </div>
-                </div>
-            </div>
-            <!-- Peringkat Parking Stand -->
-            <div class="col-12 col-md-6">
-                <div class="card shadow-sm h-100 p-0">
-                    <div class="card-header bg-white fw-bold text-primary py-3"><i class="bi bi-p-square-fill me-2"></i> Penggunaan Parking Stand</div>
-                    <div class="table-responsive border-0 rounded-0 scrollable-table">
-                        <table class="table table-hover mb-0"><tbody id="tbodyStand"></tbody></table>
-                    </div>
-                </div>
-            </div>
-            <!-- Peringkat Tipe Pesawat -->
-            <div class="col-12 col-md-6">
-                <div class="card shadow-sm h-100 p-0">
-                    <div class="card-header bg-white fw-bold text-primary py-3"><i class="bi bi-airplane-fill me-2"></i> Penggunaan Tipe Pesawat</div>
-                    <div class="table-responsive border-0 rounded-0 scrollable-table">
-                        <table class="table table-hover mb-0"><tbody id="tbodyAcType"></tbody></table>
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <h6 class="fw-bold text-center bg-light p-2 rounded">Top Delay by Flight No (>15m)</h6>
+                        <table class="table table-sm table-mini table-hover">
+                            <thead><tr><th>Flight No</th><th class="text-end">Freq</th></tr></thead>
+                            <tbody id="tbl_delay_flno"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
 
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="card h-100 border-top border-info border-4">
+                    <div class="card-header text-info"><i class="bi bi-building me-2"></i>4. ANALISA PEMAKAIAN AVIOBRIDGE</div>
+                    <div class="card-body">
+                        <div class="row g-3 text-center mb-4 border-bottom pb-3">
+                            <div class="col-4"><div class="stat-value text-info" id="a_tot">0</div><div class="stat-label">Total Pakai</div></div>
+                            <div class="col-4 border-start"><div class="stat-value text-success" id="a_arr">0</div><div class="stat-label">Arr Avio</div></div>
+                            <div class="col-4 border-start"><div class="stat-value text-primary" id="a_dep">0</div><div class="stat-label">Dep Avio</div></div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6"><div class="p-2 bg-light rounded text-center"><h6 class="fw-bold text-secondary mb-2 small">Domestik</h6>
+                                <div class="d-flex justify-content-around"><small>Arr: <b class="text-success" id="a_arr_dom">0</b></small><small>Dep: <b class="text-info" id="a_dep_dom">0</b></small></div>
+                            </div></div>
+                            <div class="col-6"><div class="p-2 bg-light rounded text-center"><h6 class="fw-bold text-secondary mb-2 small">Internasional</h6>
+                                <div class="d-flex justify-content-around"><small>Arr: <b class="text-success" id="a_arr_intl">0</b></small><small>Dep: <b class="text-info" id="a_dep_intl">0</b></small></div>
+                            </div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-top border-dark border-4 mb-5">
+            <div class="card-header text-dark"><i class="bi bi-bar-chart-line-fill me-2"></i>5. TOP FREKUENSI TERTINGGI (TOP 5)</div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-12 col-md-6 col-lg-3"><h6 class="fw-bold text-center bg-light p-2 rounded small">Rute</h6><table class="table table-sm table-mini"><tbody id="tbl_rute"></tbody></table></div>
+                    <div class="col-12 col-md-6 col-lg-3"><h6 class="fw-bold text-center bg-light p-2 rounded small">Parking Stand</h6><table class="table table-sm table-mini"><tbody id="tbl_stand"></tbody></table></div>
+                    <div class="col-12 col-md-6 col-lg-3"><h6 class="fw-bold text-center bg-light p-2 rounded small">Avio by Airline</h6><table class="table table-sm table-mini"><tbody id="tbl_avio"></tbody></table></div>
+                    <div class="col-12 col-md-6 col-lg-3"><h6 class="fw-bold text-center bg-light p-2 rounded small">Tipe Pesawat</h6><table class="table table-sm table-mini"><tbody id="tbl_actype"></tbody></table></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // --- KONFIGURASI SUPABASE (WAJIB DIGANTI DENGAN KUNCI ASLI ANDA) ---
     const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
-    
     let sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
-    
-    function toggleSidebar() {
-        const s = document.getElementById('sidebar');
-        const o = document.getElementById('sidebarOverlay');
-        if (window.innerWidth <= 768) { s.classList.toggle('show'); o.classList.toggle('show'); } 
-        else { s.classList.toggle('collapsed'); }
-    }
-    function closeSidebarMobile() {
-        if (window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('show'); document.getElementById('sidebarOverlay').classList.remove('show'); }
-    }
-    function logout() {
-        try {
-            localStorage.removeItem('ams_session');
-            sessionStorage.removeItem('ams_session');
-            sessionStorage.clear();
-        } catch (e) {
-            console.warn('Cleanup session gagal:', e);
-        }
-        window.location.href = 'index.html';
-    }
 
-    // Fungsi Kalkulasi Menit untuk OTP
+    function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) s.classList.toggle('show'); else s.classList.toggle('collapsed'); }
+    function closeSidebarMobile() { if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('show'); }
     function getDelayMinutes(jadwal, blockTime) {
         if (!jadwal || !blockTime) return 0;
         let [jh, jm] = jadwal.split(':').map(Number);
         let [bh, bm] = blockTime.split(':').map(Number);
-        
-        let jTotal = jh * 60 + jm;
-        let bTotal = bh * 60 + bm;
-        let diff = bTotal - jTotal;
-
-        if (diff < -720) diff += 1440; 
-        if (diff > 720) diff -= 1440;  
-        
-        return diff;
+        let diff = (bh * 60 + bm) - (jh * 60 + jm);
+        return diff < -600 ? diff + 1440 : diff;
     }
-
-    // Helper formatter angka (ribuan)
     const fmt = num => num.toLocaleString('id-ID');
+    const setT = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
-    function loadDashboardStats(startDate = null, endDate = null) {
-        const records = JSON.parse(localStorage.getItem('ams_daily_records')) || {};
-        
-        // --- 1. Persiapan Kalkulasi Master DOS (Untuk Slot Utilization) ---
-        const masterDb = JSON.parse(localStorage.getItem('master_schedule')) || [];
-        const dosCounts = {};
-        masterDb.forEach(f => {
-            const d = f.dos;
-            if (d) dosCounts[d] = (dosCounts[d] || 0) + 1;
-        });
-
-        // --- Variabel Penyimpanan ---
-        let stats = { 
-            // Movement
-            movement: 0, arrival: 0, departure: 0, dom: 0, intl: 0, 
-            movArrDom: 0, movDepDom: 0, movArrIntl: 0, movDepIntl: 0,
-            // Slot
-            slotOps: 0, slotMaster: 0,
-            // PAX
-            paxTotal: 0, paxArr: 0, paxDep: 0, paxDom: 0, paxIntl: 0,
-            paxArrDom: 0, paxDepDom: 0, paxArrIntl: 0, paxDepIntl: 0,
-            // Avio
-            avioTotal: 0, avioArr: 0, avioDep: 0, 
-            avioArrDom: 0, avioArrIntl: 0, avioDepDom: 0, avioDepIntl: 0 
-        };
-        
-        let routeCount = {}, avioRankCount = {}, standCount = {}, acTypeCount = {};
-        let otpData = { onTime: 0, d15: 0, d30: 0, d60: 0, dMore: 0 };
-        let otpByAirline = {}, otpByFlight = {};
-
-        // --- Looping Data Daily Records ---
-        for (const dateStr in records) {
-            if (startDate && dateStr < startDate) continue;
-            if (endDate && dateStr > endDate) continue;
-
-            const record = records[dateStr];
-            const dos = record.dos;
-            
-            // Tambahkan nilai kapasitas master berdasarkan DOS hari tersebut
-            if (dos && dosCounts[dos]) {
-                stats.slotMaster += dosCounts[dos];
-            }
-
-            const flights = record.flights || [];
-            
-            flights.forEach(f => {
-                if (f.status === 'OPS') {
-                    stats.slotOps++;
-
-                    // Logika Kondisi Basic
-                    let isArr = f.leg === 'A';
-                    let isDep = f.leg === 'D';
-                    let isDom = f.dom_intl === 'DOM';
-                    let isIntl = f.dom_intl === 'INTL';
-
-                    // --- 1. MOVEMENT STATS ---
-                    stats.movement++;
-                    if (isArr) stats.arrival++;
-                    if (isDep) stats.departure++;
-                    if (isDom) stats.dom++;
-                    if (isIntl) stats.intl++;
-
-                    // Movement Breakdown
-                    if (isArr && isDom) stats.movArrDom++;
-                    if (isDep && isDom) stats.movDepDom++;
-                    if (isArr && isIntl) stats.movArrIntl++;
-                    if (isDep && isIntl) stats.movDepIntl++;
-
-                    // --- 2. PAX STATS ---
-                    let paxVal = parseInt(f.pax) || 0;
-                    if (paxVal > 0) {
-                        stats.paxTotal += paxVal;
-                        if (isArr) stats.paxArr += paxVal;
-                        if (isDep) stats.paxDep += paxVal;
-                        if (isDom) stats.paxDom += paxVal;
-                        if (isIntl) stats.paxIntl += paxVal;
-
-                        if (isArr && isDom) stats.paxArrDom += paxVal;
-                        if (isDep && isDom) stats.paxDepDom += paxVal;
-                        if (isArr && isIntl) stats.paxArrIntl += paxVal;
-                        if (isDep && isIntl) stats.paxDepIntl += paxVal;
-                    }
-
-                    // --- 3. LEADERBOARDS & RANKING STATS ---
-                    const stand = f.stand ? f.stand.trim().toUpperCase() : 'N/A';
-                    if (stand) standCount[stand] = (standCount[stand] || 0) + 1;
-                    
-                    const acType = f.tipe_ac ? f.tipe_ac.trim().toUpperCase() : 'N/A';
-                    if (acType) acTypeCount[acType] = (acTypeCount[acType] || 0) + 1;
-
-                    const rute = f.rute ? f.rute.trim().toUpperCase() : 'UNKNOWN';
-                    if (rute) routeCount[rute] = (routeCount[rute] || 0) + 1;
-
-                    // --- 4. AVIOBRIDGE STATS ---
-                    if (f.avio === true) {
-                        stats.avioTotal++;
-                        const cs = f.callsign ? f.callsign.trim().toUpperCase() : 'N/A';
-                        if (cs) avioRankCount[cs] = (avioRankCount[cs] || 0) + 1;
-
-                        if (isArr) {
-                            stats.avioArr++;
-                            if (isDom) stats.avioArrDom++;
-                            if (isIntl) stats.avioArrIntl++;
-                        } else if (isDep) {
-                            stats.avioDep++;
-                            if (isDom) stats.avioDepDom++;
-                            if (isIntl) stats.avioDepIntl++;
-                        }
-                    }
-
-                    // --- 5. OTP (KHUSUS DEPARTURE) ---
-                    if (isDep) {
-                        let delay = getDelayMinutes(f.jadwal, f.block_time);
-                        let category = '';
-
-                        if (delay <= 0) { category = 'onTime'; otpData.onTime++; }
-                        else if (delay <= 15) { category = 'd15'; otpData.d15++; }
-                        else if (delay <= 30) { category = 'd30'; otpData.d30++; }
-                        else if (delay <= 60) { category = 'd60'; otpData.d60++; }
-                        else { category = 'dMore'; otpData.dMore++; }
-
-                        const cs = f.callsign ? f.callsign.trim().toUpperCase() : 'UNKNOWN';
-                        if (!otpByAirline[cs]) otpByAirline[cs] = { onTime:0, d15:0, d30:0, d60:0, dMore:0, total:0 };
-                        otpByAirline[cs][category]++; otpByAirline[cs].total++;
-
-                        const fn = f.flight_number ? f.flight_number.trim() : '';
-                        const flightKey = cs + (fn ? ' ' + fn : '');
-                        if (!otpByFlight[flightKey]) otpByFlight[flightKey] = { onTime:0, d15:0, d30:0, d60:0, dMore:0, total:0 };
-                        otpByFlight[flightKey][category]++; otpByFlight[flightKey].total++;
-                    }
-                }
-            });
-        }
-
-        // --- RENDER SLOT UTILIZATION ---
-        let utilPercent = 0;
-        if (stats.slotMaster > 0) {
-            utilPercent = (stats.slotOps / stats.slotMaster) * 100;
-        }
-        document.getElementById('slotUtilPercent').innerText = utilPercent.toFixed(1) + '%';
-        document.getElementById('slotUtilText').innerHTML = `<i class="bi bi-info-circle me-1"></i> ${fmt(stats.slotOps)} Aktual OPS / ${fmt(stats.slotMaster)} Target DOS`;
-
-        // --- RENDER MOVEMENT STATS ---
-        document.getElementById('totMovement').innerText = fmt(stats.movement); 
-        document.getElementById('totArrival').innerText = fmt(stats.arrival); 
-        document.getElementById('totDeparture').innerText = fmt(stats.departure);
-        document.getElementById('totDom').innerText = fmt(stats.dom); 
-        document.getElementById('totIntl').innerText = fmt(stats.intl);
-        
-        document.getElementById('movArrDom').innerText = fmt(stats.movArrDom);
-        document.getElementById('movDepDom').innerText = fmt(stats.movDepDom);
-        document.getElementById('movArrIntl').innerText = fmt(stats.movArrIntl);
-        document.getElementById('movDepIntl').innerText = fmt(stats.movDepIntl);
-
-        // --- RENDER PAX STATS ---
-        document.getElementById('totPax').innerText = fmt(stats.paxTotal);
-        document.getElementById('paxArr').innerText = fmt(stats.paxArr);
-        document.getElementById('paxDep').innerText = fmt(stats.paxDep);
-        document.getElementById('paxDom').innerText = fmt(stats.paxDom);
-        document.getElementById('paxIntl').innerText = fmt(stats.paxIntl);
-        
-        document.getElementById('paxArrDom').innerText = fmt(stats.paxArrDom);
-        document.getElementById('paxDepDom').innerText = fmt(stats.paxDepDom);
-        document.getElementById('paxArrIntl').innerText = fmt(stats.paxArrIntl);
-        document.getElementById('paxDepIntl').innerText = fmt(stats.paxDepIntl);
-
-        // --- RENDER AVIO STATS ---
-        document.getElementById('totAvio').innerText = fmt(stats.avioTotal); 
-        document.getElementById('totAvioArr').innerText = fmt(stats.avioArr); 
-        document.getElementById('totAvioDep').innerText = fmt(stats.avioDep);
-        document.getElementById('avioArrDom').innerText = fmt(stats.avioArrDom); 
-        document.getElementById('avioArrIntl').innerText = fmt(stats.avioArrIntl);
-        document.getElementById('avioDepDom').innerText = fmt(stats.avioDepDom); 
-        document.getElementById('avioDepIntl').innerText = fmt(stats.avioDepIntl);
-
-        // --- RENDER OTP STATS ---
-        document.getElementById('otpOnTime').innerText = fmt(otpData.onTime);
-        document.getElementById('otpD15').innerText = fmt(otpData.d15);
-        document.getElementById('otpD30').innerText = fmt(otpData.d30);
-        document.getElementById('otpD60').innerText = fmt(otpData.d60);
-        document.getElementById('otpDMore').innerText = fmt(otpData.dMore);
-
-        // --- RENDER TABLES ---
-        renderLeaderboard(routeCount, 'tbodyRute', 'bi-geo-alt-fill text-danger');
-        renderLeaderboard(avioRankCount, 'tbodyAvioRank', 'bi-usb-plug-fill text-secondary');
-        renderLeaderboard(standCount, 'tbodyStand', 'bi-p-square-fill text-success');
-        renderLeaderboard(acTypeCount, 'tbodyAcType', 'bi-airplane-fill text-primary');
-
-        renderOtpTable(otpByAirline, 'tbodyOtpAirline');
-        renderOtpTable(otpByFlight, 'tbodyOtpFlight');
-    }
-
-    // Fungsi Render Tabel Peringkat (Generic)
-    function renderLeaderboard(dataObj, tbodyId, iconClass) {
-        const sorted = Object.entries(dataObj).sort((a, b) => b[1] - a[1]);
-        const tbody = document.getElementById(tbodyId);
-        
-        if (sorted.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3" class="text-muted py-4 text-center">Data tidak tersedia.</td></tr>`; return;
-        }
-
-        tbody.innerHTML = sorted.map((item, idx) => {
-            let rankBadge = '';
-            if (idx === 0) rankBadge = '<span class="badge bg-warning text-dark rounded-pill px-2">#1</span>';
-            else if (idx === 1) rankBadge = '<span class="badge bg-secondary rounded-pill px-2">#2</span>';
-            else if (idx === 2) rankBadge = '<span class="badge rounded-pill px-2" style="background:#cd7f32;">#3</span>';
-            else rankBadge = `<span class="text-muted fw-bold">#${idx+1}</span>`;
-
-            return `
-            <tr>
-                <td style="width:15%;">${rankBadge}</td>
-                <td class="text-start fw-bold" style="width:55%;"><i class="bi ${iconClass} me-2"></i>${item[0]}</td>
-                <td style="width:30%;"><span class="badge bg-light text-dark border">${fmt(item[1])} Kali</span></td>
-            </tr>`;
-        }).join('');
-    }
-
-    // Fungsi Render Tabel OTP
-    function renderOtpTable(dataObj, tbodyId) {
-        const sorted = Object.entries(dataObj).sort((a, b) => b[1].total - a[1].total);
-        const tbody = document.getElementById(tbodyId);
-        
-        if (sorted.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-muted py-4 text-center">Belum ada data departure OPS.</td></tr>`; return;
-        }
-
-        tbody.innerHTML = sorted.map(item => {
-            const label = item[0];
-            const d = item[1];
-            return `
-            <tr>
-                <td class="text-start ps-3 fw-bold text-primary">${label}</td>
-                <td><span class="fw-bold text-success">${d.onTime > 0 ? fmt(d.onTime) : '-'}</span></td>
-                <td><span class="text-warning text-dark fw-bold">${d.d15 > 0 ? fmt(d.d15) : '-'}</span></td>
-                <td><span class="text-warning text-dark fw-bold">${d.d30 > 0 ? fmt(d.d30) : '-'}</span></td>
-                <td><span class="text-danger fw-bold">${d.d60 > 0 ? fmt(d.d60) : '-'}</span></td>
-                <td><span class="text-danger fw-bold fs-6">${d.dMore > 0 ? fmt(d.dMore) : '-'}</span></td>
-                <td><span class="badge bg-secondary">${fmt(d.total)}</span></td>
-            </tr>`;
-        }).join('');
-    }
-
-    // Fungsi Filter UI
-    function applyFilter() {
-        const start = document.getElementById('filterStart').value;
-        const end = document.getElementById('filterEnd').value;
-        const badge = document.getElementById('badgeStatus');
-
-        if(start || end) {
-            badge.innerHTML = `<i class="bi bi-funnel-fill me-1"></i> Filter Waktu Aktif`;
-            badge.className = "badge bg-warning text-dark fs-6 fw-normal shadow-sm";
-        } else {
-            badge.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data`;
-            badge.className = "badge bg-success fs-6 fw-normal shadow-sm";
-        }
-        loadDashboardStats(start, end);
-    }
-
-    function resetFilter() {
-        document.getElementById('filterStart').value = '';
-        document.getElementById('filterEnd').value = '';
-        const badge = document.getElementById('badgeStatus');
-        badge.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data`;
-        badge.className = "badge bg-success fs-6 fw-normal shadow-sm";
-        loadDashboardStats();
-    }
-
-    window.onload = () => loadDashboardStats();
-
-    // --- FUNGSI LOGOUT ---
-    async function logout() {
+    async function loadDashboardStats(startDate = null, endDate = null) {
         if (!sbClient) return;
         try {
-            // Perintahkan Supabase untuk menghapus sesi login
-            const { error } = await sbClient.auth.signOut();
+            let query = sbClient.from('daily_flights').select('*');
+            if (startDate) query = query.gte('date', startDate);
+            if (endDate) query = query.lte('date', endDate);
+            const { data: flights, error } = await query;
             if (error) throw error;
-            
-            // Jika berhasil, alihkan kembali ke halaman login
-            window.location.replace('index.html');
-        } catch (err) {
-            console.error("Logout Error:", err);
-            alert("Gagal logout: " + err.message);
-        }
+
+            let s = {
+                mvt: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
+                pax: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
+                otp: { ontime:0, d15:0, d30:0, d60:0, delayAirline:{}, delayFlNo:{} },
+                avio: { tot:0, arr:0, dep:0, arrD:0, depD:0, arrI:0, depI:0 },
+                freq: { rute:{}, stand:{}, airline:{}, ac:{} }
+            };
+
+            if (flights) {
+                flights.forEach(f => {
+                    if (f.status !== 'OPS') return;
+                    let isArr = f.leg === 'A', isDep = f.leg === 'D', isDom = f.dom_intl === 'DOM', isIntl = f.dom_intl === 'INTL', pax = parseInt(f.pax) || 0, cs = f.callsign || 'N/A';
+
+                    s.mvt.tot++; if(isArr) s.mvt.arr++; if(isDep) s.mvt.dep++; if(isDom) s.mvt.dom++; if(isIntl) s.mvt.intl++;
+                    if(isArr && isDom) s.mvt.arrD++; if(isDep && isDom) s.mvt.depD++; if(isArr && isIntl) s.mvt.arrI++; if(isDep && isIntl) s.mvt.depI++;
+
+                    s.pax.tot += pax; if(isArr) s.pax.arr += pax; if(isDep) s.pax.dep += pax; if(isDom) s.pax.dom += pax; if(isIntl) s.pax.intl += pax;
+                    if(isArr && isDom) s.pax.arrD += pax; if(isDep && isDom) s.pax.depD += pax; if(isArr && isIntl) s.pax.arrI += pax; if(isDep && isIntl) s.pax.depI += pax;
+
+                    if(isDep) {
+                        let diff = getDelayMinutes(f.jadwal, f.block_time);
+                        if(diff <= 15) s.otp.ontime++;
+                        else {
+                            if(diff <= 30) s.otp.d15++; else if(diff <= 60) s.otp.d30++; else s.otp.d60++;
+                            s.otp.delayAirline[cs] = (s.otp.delayAirline[cs] || 0) + 1;
+                            let fn = f.flight_number || 'N/A';
+                            s.otp.delayFlNo[fn] = (s.otp.delayFlNo[fn] || 0) + 1;
+                        }
+                    }
+                    if(f.avio) {
+                        s.avio.tot++; if(isArr) s.avio.arr++; if(isDep) s.avio.dep++;
+                        if(isArr && isDom) s.avio.arrD++; if(isDep && isDom) s.avio.depD++; if(isArr && isIntl) s.avio.arrI++; if(isDep && isIntl) s.avio.depI++;
+                        s.freq.airline[cs] = (s.freq.airline[cs] || 0) + 1;
+                    }
+                    s.freq.rute[f.rute || 'N/A'] = (s.freq.rute[f.rute || 'N/A'] || 0) + 1;
+                    if(f.stand) s.freq.stand[f.stand] = (s.freq.stand[f.stand] || 0) + 1;
+                    if(f.tipe_ac) s.freq.ac[f.tipe_ac] = (s.freq.ac[f.tipe_ac] || 0) + 1;
+                });
+            }
+
+            setT('m_tot', fmt(s.mvt.tot)); setT('m_arr', fmt(s.mvt.arr)); setT('m_dep', fmt(s.mvt.dep)); setT('m_dom', fmt(s.mvt.dom)); setT('m_intl', fmt(s.mvt.intl));
+            setT('m_arr_dom', fmt(s.mvt.arrD)); setT('m_dep_dom', fmt(s.mvt.depD)); setT('m_arr_intl', fmt(s.mvt.arrI)); setT('m_dep_intl', fmt(s.mvt.depI));
+            setT('p_tot', fmt(s.pax.tot)); setT('p_arr', fmt(s.pax.arr)); setT('p_dep', fmt(s.pax.dep)); setT('p_dom', fmt(s.pax.dom)); setT('p_intl', fmt(s.pax.intl));
+            setT('p_arr_dom', fmt(s.pax.arrD)); setT('p_dep_dom', fmt(s.pax.depD)); setT('p_arr_intl', fmt(s.pax.arrI)); setT('p_dep_intl', fmt(s.pax.depI));
+            setT('otp_ontime', fmt(s.otp.ontime)); setT('otp_d15', fmt(s.otp.d15)); setT('otp_d30', fmt(s.otp.d30)); setT('otp_d60', fmt(s.otp.d60));
+            setT('a_tot', fmt(s.avio.tot)); setT('a_arr', fmt(s.avio.arr)); setT('a_dep', fmt(s.avio.dep)); setT('a_arr_dom', fmt(s.avio.arrD)); setT('a_dep_dom', fmt(s.avio.depD)); setT('a_arr_intl', fmt(s.avio.arrI)); setT('a_dep_intl', fmt(s.avio.depI));
+
+            const ren = (id, obj) => {
+                let sorted = Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0, 5);
+                document.getElementById(id).innerHTML = sorted.length > 0 ? sorted.map(i => `<tr><td>${i[0]}</td><td class="text-end fw-bold text-primary">${fmt(i[1])}</td></tr>`).join('') : '<tr><td colspan="2" class="text-center text-muted">Data kosong</td></tr>';
+            };
+            ren('tbl_delay_airline', s.otp.delayAirline); ren('tbl_delay_flno', s.otp.delayFlNo);
+            ren('tbl_rute', s.freq.rute); ren('tbl_stand', s.freq.stand); ren('tbl_avio', s.freq.airline); ren('tbl_actype', s.freq.ac);
+        } catch (err) { console.error(err); }
     }
+
+    function applyFilter() { const s = document.getElementById('filterStart').value, e = document.getElementById('filterEnd').value, b = document.getElementById('badgeStatus'); b.innerHTML = (s || e) ? `<i class="bi bi-funnel-fill me-1"></i> Mode Filter Aktif` : `<i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data`; b.className = (s || e) ? "badge bg-warning text-dark fs-6 shadow-sm" : "badge bg-success fs-6 shadow-sm"; loadDashboardStats(s, e); }
+    function resetFilter() { document.getElementById('filterStart').value = ''; document.getElementById('filterEnd').value = ''; applyFilter(); }
+    async function logout() { if (!sbClient) return; await sbClient.auth.signOut(); window.location.replace('index.html'); }
+    window.onload = () => loadDashboardStats();
 </script>
 </body>
 </html>
