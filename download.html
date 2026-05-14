@@ -6,6 +6,7 @@
     <title>Download Center - AMS PKU</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; overflow-x: hidden; }
         .wrapper { display: flex; width: 100%; height: 100vh; overflow: hidden; }
@@ -14,23 +15,22 @@
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1040; transition: opacity 0.3s ease; }
         .sidebar-header { padding: 25px 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 15px; }
         .sidebar-header h5 { margin: 0; font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
-        .sidebar-header small { color: #888; font-size: 0.75rem; letter-spacing: 0.5px; }
         .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
         .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
         .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 20px; }
-        .nav-tabs .nav-link { font-weight: 600; color: #666; border: none; padding: 12px 25px; border-bottom: 3px solid transparent; }
-        .nav-tabs .nav-link.active { color: #0d6efd; background: transparent; border-bottom: 3px solid #0d6efd; }
-        .table-responsive { border-radius: 12px; border: 1px solid #eaeaea; background: #fff; max-height: 500px; overflow-y: auto; }
-        .table th { background-color: #f8f9fa; color: #666; font-size: 0.75rem; font-weight: 700; border-bottom: 2px solid #eaeaea; text-transform: uppercase; padding: 12px 15px; white-space: nowrap; position: sticky; top: 0; z-index: 1;}
-        .table td { vertical-align: middle; font-size: 0.85rem; color: #444; border-bottom: 1px solid #f4f4f4; padding: 10px 15px; white-space: nowrap; }
-        .export-options { display: flex; flex-wrap: wrap; gap: 12px; }
-        .option-card { border: 1px solid #dee2e6; border-radius: 8px; padding: 10px 15px; background: #fff; cursor: pointer; transition: 0.2s; user-select: none; display: flex; align-items: center; gap: 10px; flex: 1; min-width: 140px; }
-        .option-card:hover { background: #f8f9fa; border-color: #b3d4fc; }
-        .option-card input:checked + label { font-weight: bold; color: #0d6efd; }
-        .option-card input { cursor: pointer; transform: scale(1.2); }
-        .option-card label { cursor: pointer; margin: 0; font-size: 0.9rem; }
-        #waTextarea { font-family: monospace; font-size: 0.9rem; line-height: 1.5; resize: vertical; min-height: 500px; background-color: #fcfcfc; }
+        
+        /* Tab Styling */
+        .nav-tabs .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 12px 25px; border-bottom: 3px solid transparent; transition: 0.3s; }
+        .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
+        .card-custom { border: none; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); background: #fff; padding: 25px; }
+        
+        .preview-container { border-radius: 10px; overflow: hidden; border: 1px solid #dee2e6; margin-top: 15px; max-height: 400px; }
+        .table-preview { font-size: 0.75rem; white-space: nowrap; }
+        .table-preview thead { position: sticky; top: 0; background: #f8f9fa; z-index: 2; }
+        
+        .check-group { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #eee; }
+        .form-check-label { font-size: 0.85rem; font-weight: 500; }
+
         @media (max-width: 768px) { .sidebar { position: fixed; left: -250px; height: 100vh; } .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); } .sidebar-overlay.show { display: block; } .content { padding: 15px; } }
     </style>
 </head>
@@ -40,87 +40,110 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header"><h5>AMC PKU</h5><small>Sultan Syarif Kasim II</small></div>
+        <div class="sidebar-header"><h5>AMS PKU</h5><small>Sultan Syarif Kasim II</small></div>
         <div class="nav flex-column">
-            <a href="dashboard.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
-            <a href="ams.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-grid-1x2"></i> Apron Management</a>
-            <a href="database.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-database"></i> Data Master</a>
-            <a href="#" class="nav-link active" onclick="closeSidebarMobile()"><i class="bi bi-cloud-arrow-down-fill"></i> Download Center</a>
+            <a href="dashboard.html" class="nav-link"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
+            <a href="ams.html" class="nav-link"><i class="bi bi-grid-1x2"></i> Apron Management</a>
+            <a href="database.html" class="nav-link"><i class="bi bi-database"></i> Data Master</a>
+            <a href="#" class="nav-link active"><i class="bi bi-cloud-arrow-down-fill"></i> Download Center</a>
         </div>
-        <div class="mt-auto mb-4 px-3"><button class="btn btn-outline-danger w-100 fw-bold" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></div>
+        <div class="mt-auto mb-4 px-3">
+            <button class="btn btn-outline-danger w-100 fw-bold" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
+        </div>
     </nav>
 
     <div class="content">
-        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-            <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-light border shadow-sm px-2 py-1 me-2" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
-                <h5 class="fw-bold text-dark m-0 d-none d-sm-block">Download Center & Report</h5>
-                <h6 class="fw-bold text-dark m-0 d-block d-sm-none">Download Data</h6>
-            </div>
-            <div><span class="badge bg-primary fs-6 fw-normal shadow-sm"><i class="bi bi-file-earmark-excel-fill me-1"></i> Data Export</span></div>
+        <div class="d-flex align-items-center mb-4">
+            <button class="btn btn-light border shadow-sm px-2 py-1 me-3 d-md-none" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
+            <h4 class="fw-bold text-dark m-0">Download Center</h4>
         </div>
 
         <ul class="nav nav-tabs mb-4" id="downloadTabs" role="tablist">
-            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabExport"><i class="bi bi-filetype-csv me-2"></i>Export CSV / Excel</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabWa"><i class="bi bi-whatsapp me-2"></i>WA Report</button></li>
+            <li class="nav-item">
+                <button class="nav-link active" id="export-tab" data-bs-toggle="tab" data-bs-target="#export-pane" type="button"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Export Data</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="wa-tab" data-bs-toggle="tab" data-bs-target="#wa-pane" type="button"><i class="bi bi-whatsapp me-2"></i>Generate WA Report</button>
+            </li>
         </ul>
 
         <div class="tab-content">
-            <!-- TAB 1: EXPORT CSV -->
-            <div class="tab-pane fade show active" id="tabExport">
-                <div class="card p-4 shadow-sm border-top border-primary border-3">
-                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-funnel-fill me-2"></i>Filter Rentang Tanggal</h6>
+            <div class="tab-pane fade show active" id="export-pane" role="tabpanel">
+                <div class="card-custom">
                     <div class="row g-3 mb-4">
-                        <div class="col-12 col-md-4"><label class="form-label text-muted small fw-bold mb-1">Tanggal Mulai</label><input type="date" id="filterStart" class="form-control form-control-sm text-secondary fw-bold"></div>
-                        <div class="col-12 col-md-4"><label class="form-label text-muted small fw-bold mb-1">Tanggal Akhir</label><input type="date" id="filterEnd" class="form-control form-control-sm text-secondary fw-bold"></div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Tanggal Mulai</label>
+                            <input type="date" id="filterStart" class="form-control" onchange="loadPreview()">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Tanggal Selesai</label>
+                            <input type="date" id="filterEnd" class="form-control" onchange="loadPreview()">
+                        </div>
                     </div>
 
-                    <h6 class="fw-bold text-secondary mb-3 border-top pt-3"><i class="bi bi-list-check me-2"></i>Pilih Data Tambahan (Opsional)</h6>
-                    <div class="export-options mb-4">
-                        <div class="option-card"><input type="checkbox" id="chkPax" class="form-check-input" checked onchange="generatePreview()"><label for="chkPax">Data PAX & L/F</label></div>
-                        <div class="option-card"><input type="checkbox" id="chkAvio" class="form-check-input" checked onchange="generatePreview()"><label for="chkAvio">Pemakaian Avio</label></div>
-                        <div class="option-card"><input type="checkbox" id="chkType" class="form-check-input" checked onchange="generatePreview()"><label for="chkType">Flight Type</label></div>
-                        <div class="option-card"><input type="checkbox" id="chkOtp" class="form-check-input" checked onchange="generatePreview()"><label for="chkOtp">Data OTP / Delay</label></div>
-                        <div class="option-card"><input type="checkbox" id="chkRon" class="form-check-input" checked onchange="generatePreview()"><label for="chkRon">Status RON</label></div>
+                    <div class="check-group">
+                        <label class="d-block mb-2 fw-bold small text-dark text-uppercase"><i class="bi bi-funnel-fill me-1"></i>Filter Status Penerbangan:</label>
+                        <div class="d-flex gap-4 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="f_ops" checked onchange="loadPreview()">
+                                <label class="form-check-label text-success fw-bold">Status OPS (Beroperasi)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="f_noops" checked onchange="loadPreview()">
+                                <label class="form-check-label text-danger fw-bold">Status NO OPS (Batal)</label>
+                            </div>
+                        </div>
+
+                        <hr class="border-secondary opacity-25 my-3">
+
+                        <label class="d-block mb-2 fw-bold small text-dark text-uppercase"><i class="bi bi-layout-three-columns me-1"></i>Pilih Kolom Data Tambahan:</label>
+                        <div class="row g-2">
+                            <div class="col-6 col-md-3">
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="c_bagasi" checked onchange="loadPreview()"><label class="form-check-label">Bagasi & Kargo</label></div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="c_pax" checked onchange="loadPreview()"><label class="form-check-label">Pax & L/F</label></div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="c_avio" checked onchange="loadPreview()"><label class="form-check-label">Pemakaian Avio</label></div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="c_type" onchange="loadPreview()"><label class="form-check-label">Flight Type</label></div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="c_otp" onchange="loadPreview()"><label class="form-check-label">OTP / Delay</label></div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="c_ron" onchange="loadPreview()"><label class="form-check-label">Status RON</label></div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary fw-bold shadow-sm" onclick="generatePreview()"><i class="bi bi-eye-fill me-1"></i> Tampilkan Preview</button>
-                        <button class="btn btn-success fw-bold shadow-sm" onclick="downloadCSV()"><i class="bi bi-file-earmark-excel-fill me-1"></i> Download CSV / Excel</button>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold m-0"><i class="bi bi-eye me-2"></i>Preview Data Export</h6>
+                        <div class="btn-group">
+                            <button class="btn btn-success btn-sm fw-bold" onclick="exportExcel()"><i class="bi bi-file-earmark-excel me-1"></i> Excel</button>
+                            <button class="btn btn-outline-success btn-sm fw-bold" onclick="exportCSV()"><i class="bi bi-filetype-csv me-1"></i> CSV</button>
+                        </div>
                     </div>
-                </div>
 
-                <div class="card p-4 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-end mb-3">
-                        <h6 class="fw-bold text-secondary m-0"><i class="bi bi-table me-2"></i>Preview Data Export</h6>
-                        <span class="badge bg-light text-dark border shadow-sm" id="rowCountInfo">0 Baris Data</span>
-                    </div>
-                    
-                    <div class="table-responsive" id="previewContainer">
-                        <table class="table table-hover text-center align-middle mb-0" id="previewTable">
-                            <thead id="previewThead"><tr><th class="py-4 text-muted">Klik "Tampilkan Preview" untuk memuat data.</th></tr></thead>
-                            <tbody id="previewTbody"></tbody>
+                    <div class="preview-container">
+                        <table class="table table-sm table-preview table-hover text-center mb-0">
+                            <thead id="p_head"></thead>
+                            <tbody id="p_body"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 2: WA REPORT -->
-            <div class="tab-pane fade" id="tabWa">
-                <div class="card p-4 shadow-sm border-top border-success border-3">
-                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-calendar2-check me-2"></i>Pilih Tanggal Laporan</h6>
-                    <div class="row g-3 align-items-end mb-4">
-                        <div class="col-12 col-md-4"><label class="form-label text-muted small fw-bold mb-1">Tanggal Operasional</label><input type="date" id="waDate" class="form-control text-secondary fw-bold"></div>
-                        <div class="col-12 col-md-auto"><button class="btn btn-success fw-bold shadow-sm w-100" onclick="generateWaReport()"><i class="bi bi-arrow-repeat me-1"></i> Generate Report</button></div>
+            <div class="tab-pane fade" id="wa-pane" role="tabpanel">
+                <div class="card-custom">
+                    <div class="d-flex gap-2 mb-3">
+                        <input type="date" id="waDate" class="form-control" style="max-width: 200px;">
+                        <button class="btn btn-primary fw-bold px-4" onclick="generateWA()"><i class="bi bi-lightning-charge-fill me-1"></i> Generate</button>
                     </div>
-
-                    <div class="border-top pt-4">
-                        <div class="d-flex justify-content-between align-items-end mb-2">
-                            <label class="fw-bold text-dark m-0"><i class="bi bi-chat-text-fill me-2"></i>Hasil Laporan Harian (Bisa Diedit Manual)</label>
-                            <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm" onclick="copyWaReport()"><i class="bi bi-clipboard-check me-1"></i> Copy Laporan</button>
-                        </div>
-                        <textarea id="waTextarea" class="form-control border-secondary shadow-sm" placeholder="Hasil generate laporan akan muncul di sini..."></textarea>
-                    </div>
+                    <textarea id="waTextarea" class="form-control bg-light" rows="18" style="font-size: 0.85rem; font-family: monospace; resize: none;" readonly placeholder="Klik Generate untuk memuat laporan..."></textarea>
+                    <button class="btn btn-dark w-100 fw-bold mt-3" onclick="copyWA()"><i class="bi bi-clipboard-check me-2"></i>Salin Teks Laporan</button>
                 </div>
             </div>
         </div>
@@ -128,419 +151,263 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
-    const sbClient = (window.supabase && typeof window.supabase.createClient === 'function')
-        ? window.supabase.createClient(supabaseUrl, supabaseKey)
-        : null;
+    let sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
-    function toggleSidebar() {
-        const s = document.getElementById('sidebar');
-        const o = document.getElementById('sidebarOverlay');
-        if (window.innerWidth <= 768) {
-            s.classList.toggle('show');
-            o.classList.toggle('show');
-        } else {
-            s.classList.toggle('collapsed');
-        }
+    function toggleSidebar() { const s = document.getElementById('sidebar'); s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); }
+
+    // Helpers
+    function getDelay(j, b) { if(!j || !b) return 0; let [jh,jm]=j.split(':').map(Number), [bh,bm]=b.split(':').map(Number); let d=(bh*60+bm)-(jh*60+jm); return d < -600 ? d+1440 : d; }
+    function fmtTgl(d) { return new Date(d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
+    function fmtHari(d) { return new Date(d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' }); }
+
+    // ==========================================
+    // LOGIKA EXPORT & PREVIEW
+    // ==========================================
+    
+    // Fungsi Ambil Data dari Database
+    async function fetchFlights(s, e) {
+        if(!sbClient) return [];
+        let q = sbClient.from('daily_flights').select('*');
+        if(s) q = q.gte('date', s); if(e) q = q.lte('date', e);
+        const {data, error} = await q.order('date', {ascending:true}).order('jadwal', {ascending:true});
+        return data || [];
     }
 
-    function closeSidebarMobile() {
-        if (window.innerWidth <= 768) {
-            document.getElementById('sidebar').classList.remove('show');
-            document.getElementById('sidebarOverlay').classList.remove('show');
-        }
-    }
-
-    function logout() {
-        try {
-            localStorage.removeItem('ams_session');
-            sessionStorage.removeItem('ams_session');
-            sessionStorage.clear();
-        } catch (e) {
-            console.warn('Cleanup session gagal:', e);
-        }
-        window.location.href = 'index.html';
-    }
-
-    let globalExportData = []; let globalHeaders = []; 
-
-    function formatTanggalIndo(dateStr) {
-        if (!dateStr) return "-";
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return dateStr;
-        return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-    }
-
-    function formatHariTanggalIndo(dateStr) {
-        if (!dateStr) return "-";
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return dateStr;
-        return d.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
-    }
-
-    function getDelayMinutes(scheduled, actual) {
-        if (!scheduled || !actual) return "-";
-        const [sh, sm] = String(scheduled).split(':').map(Number);
-        const [ah, am] = String(actual).split(':').map(Number);
-        if ([sh, sm, ah, am].some(n => Number.isNaN(n))) return "-";
-        return (ah * 60 + am) - (sh * 60 + sm);
-    }
-
-    function escapeCsv(val) {
-        const s = String(val ?? '');
-        if (s.includes('"') || s.includes(',') || s.includes('\n')) {
-            return `"${s.replace(/"/g, '""')}"`;
-        }
-        return s;
-    }
-
-    function downloadCSV() {
-        if (!globalHeaders.length || !globalExportData.length) {
-            alert("Data preview masih kosong. Klik 'Tampilkan Preview' terlebih dahulu.");
-            return;
-        }
-
-        const lines = [
-            globalHeaders.map(escapeCsv).join(','),
-            ...globalExportData.map(row => row.map(escapeCsv).join(','))
-        ];
-        const csvContent = "\uFEFF" + lines.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-
-        const startDate = document.getElementById('filterStart').value || 'all';
-        const endDate = document.getElementById('filterEnd').value || 'all';
-        const fileName = `ams_export_${startDate}_to_${endDate}.csv`;
-
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
-    async function generatePreview() {
-        const startDate = document.getElementById('filterStart').value;
-        const endDate = document.getElementById('filterEnd').value;
-
-        const usePax = document.getElementById('chkPax').checked;
-        const useAvio = document.getElementById('chkAvio').checked;
-        const useType = document.getElementById('chkType').checked;
-        const useOtp = document.getElementById('chkOtp').checked;
-        const useRon = document.getElementById('chkRon').checked;
-
-        if (!sbClient) return alert("Koneksi Supabase gagal.");
-        let query = sbClient.from('daily_records').select('*, daily_flights(*)').order('date', { ascending: true });
-        if(startDate) query = query.gte('date', startDate);
-        if(endDate) query = query.lte('date', endDate);
+    // Fungsi Filter Data berdasarkan Status Checkbox (OPS/NO OPS)
+    function filterDataByStatus(data) {
+        const showOps = document.getElementById('f_ops').checked;
+        const showNoOps = document.getElementById('f_noops').checked;
         
-        const { data: records, error } = await query;
-        if(error) { console.error(error); return; }
+        return data.filter(f => {
+            if (f.status === 'OPS') return showOps;
+            if (f.status === 'NO OPS') return showNoOps;
+            return true; // Jika ada status kosong/selain OPS & NO OPS tetap dimunculkan
+        });
+    }
 
-        let trHtml = "";
-        let totalRows = 0;
-        globalExportData = [];
-
-        globalHeaders = ["Tanggal", "DOS", "Callsign", "Flight No", "Leg", "Rute", "STD", "ATD/ATA", "Status"];
-        if (useType) globalHeaders.push("Flight Type", "Dom/Intl");
-        if (usePax) globalHeaders.push("PAX", "Seat", "L/F (%)");
-        if (useAvio) globalHeaders.push("Avio");
-        if (useOtp) globalHeaders.push("Delay (min)");
-        if (useRon) globalHeaders.push("RON");
-
-        document.getElementById('previewThead').innerHTML = `<tr>${globalHeaders.map(h => `<th>${h}</th>`).join('')}</tr>`;
-
-        if(records) {
-            records.forEach(record => {
-                const dateStr = record.date;
-                let flights = record.daily_flights || [];
-                flights.sort((a, b) => (a.jadwal || "23:59").localeCompare(b.jadwal || "23:59"));
-
-                flights.forEach(f => {
-                    totalRows++;
-
-                    const pax = parseInt(f.pax) || 0;
-                    const seat = parseInt(f.seat) || 0;
-                    const lf = seat > 0 ? ((pax / seat) * 100).toFixed(1) : "0.0";
-                    const delayVal = getDelayMinutes(f.jadwal, f.block_time);
-
-                    const row = [
-                        formatTanggalIndo(dateStr),
-                        record.dos || "-",
-                        f.callsign || "-",
-                        f.flight_number || "-",
-                        f.leg || "-",
-                        f.rute || "-",
-                        f.jadwal || "-",
-                        f.block_time || "-",
-                        f.status || "-"
-                    ];
-
-                    if (useType) row.push((f.fl_type || "-"), (f.dom_intl || "-"));
-                    if (usePax) row.push(pax, seat, lf);
-                    if (useAvio) row.push(f.avio || "-");
-                    if (useOtp) row.push(delayVal === "-" ? "-" : delayVal);
-                    if (useRon) row.push(f.ron || "-");
-
-                    globalExportData.push(row);
-                    trHtml += `<tr>${row.map(v => `<td>${v}</td>`).join('')}</tr>`;
-                });
-            });
-        }
+    async function loadPreview() {
+        const rawFlights = await fetchFlights(document.getElementById('filterStart').value, document.getElementById('filterEnd').value);
         
-        document.getElementById('previewTbody').innerHTML = totalRows === 0
-            ? `<tr><td colspan="${globalHeaders.length}" class="text-center py-5 text-muted">Tidak ada data.</td></tr>`
-            : trHtml;
-        document.getElementById('rowCountInfo').innerHTML = `<i class="bi bi-info-circle me-1"></i> ${totalRows} Baris`;
+        // Saring baris data berdasarkan centang status
+        const flights = filterDataByStatus(rawFlights);
+        
+        const h = document.getElementById('p_head'), b = document.getElementById('p_body');
+        
+        if(flights.length === 0) { h.innerHTML = ""; b.innerHTML = '<tr><td colspan="20" class="py-5 text-muted">Data tidak ditemukan atau semua filter dinonaktifkan.</td></tr>'; return; }
+
+        const opt = {
+            bag: document.getElementById('c_bagasi').checked,
+            pax: document.getElementById('c_pax').checked,
+            avio: document.getElementById('c_avio').checked,
+            type: document.getElementById('c_type').checked,
+            otp: document.getElementById('c_otp').checked,
+            ron: document.getElementById('c_ron').checked
+        };
+
+        // Render Header
+        let headHtml = `<tr><th>Tanggal</th><th>CS</th><th>No. Fl</th><th>Rute</th><th>Jadwal</th><th>Reg</th>`;
+        if(opt.type) headHtml += `<th>Type</th><th>Flt Type</th>`; else headHtml += `<th>Type</th>`;
+        
+        if(opt.pax) headHtml += `<th>Pax</th><th>Seat</th><th>L/F</th>`;
+        if(opt.bag) headHtml += `<th>Bagasi</th><th>Kargo</th>`;
+        if(opt.avio) headHtml += `<th>Avio</th>`;
+        if(opt.otp) headHtml += `<th>Block</th><th>Delay</th>`;
+        if(opt.ron) headHtml += `<th>RON</th>`;
+        headHtml += `<th>Status</th></tr>`;
+        h.innerHTML = headHtml;
+
+        // Render Body
+        b.innerHTML = flights.map(f => {
+            let row = `<tr><td>${f.date}</td><td>${f.callsign||''}</td><td>${f.flight_number||''}</td><td>${f.rute||''}</td><td>${f.jadwal||''}</td><td>${f.reg||''}</td><td>${f.tipe_ac||''}</td>`;
+            if(opt.type) row += `<td>${f.fl_type||''}</td>`;
+            if(opt.pax) {
+                let lf = f.seat > 0 ? ((f.pax/f.seat)*100).toFixed(1) + '%' : '-';
+                row += `<td>${f.pax||0}</td><td>${f.seat||0}</td><td>${lf}</td>`;
+            }
+            if(opt.bag) row += `<td class="text-success fw-bold">${f.bagasi||0}</td><td class="text-secondary fw-bold">${f.kargo||0}</td>`;
+            if(opt.avio) row += `<td>${f.avio ? 'YES' : 'NO'}</td>`;
+            if(opt.otp) row += `<td>${f.block_time||'-'}</td><td>${getDelay(f.jadwal, f.block_time)}m</td>`;
+            if(opt.ron) row += `<td>${f.ron ? 'YES' : 'NO'}</td>`;
+            row += `<td><span class="badge ${f.status === 'OPS' ? 'bg-success' : 'bg-danger'}">${f.status}</span></td></tr>`;
+            return row;
+        }).join('');
+    }
+
+    async function exportExcel() {
+        const rawFlights = await fetchFlights(document.getElementById('filterStart').value, document.getElementById('filterEnd').value);
+        const flights = filterDataByStatus(rawFlights); // Terapkan saringan OPS/NO OPS
+        
+        if(flights.length === 0) return alert("Data kosong. Periksa kembali filter tanggal dan status Anda.");
+        
+        let html = `<table border="1">${document.getElementById('p_head').innerHTML}<tbody>${document.getElementById('p_body').innerHTML}</tbody></table>`;
+        const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([html], { type: 'application/vnd.ms-excel' })); link.download = `Export_AMS_PKU.xls`; link.click();
+    }
+
+    async function exportCSV() {
+        const rawFlights = await fetchFlights(document.getElementById('filterStart').value, document.getElementById('filterEnd').value);
+        const flights = filterDataByStatus(rawFlights); // Terapkan saringan OPS/NO OPS
+        
+        if(flights.length === 0) return alert("Data kosong. Periksa kembali filter tanggal dan status Anda.");
+        
+        const opt = {
+            bag: document.getElementById('c_bagasi').checked, pax: document.getElementById('c_pax').checked,
+            avio: document.getElementById('c_avio').checked, type: document.getElementById('c_type').checked,
+            otp: document.getElementById('c_otp').checked, ron: document.getElementById('c_ron').checked
+        };
+
+        let headers = ["Tanggal", "Callsign", "FlightNo", "Rute", "Jadwal", "Reg", "TypeAC"];
+        if(opt.type) headers.push("FlightType");
+        if(opt.pax) headers.push("Pax", "Seat", "LF");
+        if(opt.bag) headers.push("Bagasi(Kg)", "Kargo(Kg)");
+        if(opt.avio) headers.push("Avio");
+        if(opt.otp) headers.push("BlockTime", "Delay");
+        if(opt.ron) headers.push("RON");
+        headers.push("Status");
+
+        let csv = headers.join(",") + "\n";
+        flights.forEach(f => {
+            let row = [f.date, f.callsign, f.flight_number, f.rute, f.jadwal, f.reg, f.tipe_ac];
+            if(opt.type) row.push(f.fl_type);
+            if(opt.pax) row.push(f.pax, f.seat, f.seat > 0 ? (f.pax/f.seat*100).toFixed(1) : 0);
+            if(opt.bag) row.push(f.bagasi, f.kargo);
+            if(opt.avio) row.push(f.avio ? 1 : 0);
+            if(opt.otp) row.push(f.block_time, getDelay(f.jadwal, f.block_time));
+            if(opt.ron) row.push(f.ron ? 1 : 0);
+            row.push(f.status);
+            csv += row.join(",") + "\n";
+        });
+        const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); link.download = `Export_AMS_PKU.csv`; link.click();
     }
 
     // ==========================================
-    // LOGIKA TAB 2: WA REPORT KOMPREHENSIF
+    // LOGIKA WA REPORT
     // ==========================================
-    async function generateWaReport() {
-        const dateStr = document.getElementById('waDate').value;
-        const textarea = document.getElementById('waTextarea');
-        if (!dateStr) return alert("Pilih tanggal laporan terlebih dahulu.");
-        if (!sbClient) return alert("Koneksi Supabase gagal.");
+    async function generateWA() {
+        const d = document.getElementById('waDate').value; if(!d) return alert("Pilih tanggal!");
+        const txt = document.getElementById('waTextarea'); txt.value = "Memuat data...";
 
         try {
-            const { data: dailyRecord, error: dailyErr } = await sbClient
-                .from('daily_records')
-                .select('*')
-                .eq('date', dateStr)
-                .maybeSingle();
-            if (dailyErr) throw dailyErr;
-
-            if (!dailyRecord) {
-                textarea.value = `Tidak ada data operasional yang tersimpan untuk tanggal ${formatTanggalIndo(dateStr)}.`;
-                return;
-            }
-
-            const { data: flightsData, error: flightsErr } = await sbClient
-                .from('daily_flights')
-                .select('*')
-                .eq('date', dateStr)
-                .order('jadwal', { ascending: true });
-            if (flightsErr) throw flightsErr;
-
-            const { data: masterDbData, error: masterErr } = await sbClient
-                .from('master_schedule')
-                .select('*');
-            if (masterErr) throw masterErr;
-
-            const dailyData = {
-                ...dailyRecord,
-                flights: flightsData || []
-            };
-            const masterDb = masterDbData || [];
-
-            if (!dailyData.flights || dailyData.flights.length === 0) {
-                textarea.value = `Data harian tanggal ${formatTanggalIndo(dateStr)} sudah ada, tetapi belum ada data penerbangan (daily_flights).`;
-                return;
-            }
-
-            // --- TANGGAL KEMARIN ---
-            let dObj = new Date(dateStr); dObj.setDate(dObj.getDate() - 1);
-            let prevDateStr = dObj.toISOString().split('T')[0];
-
-        // --- 1. SLOT PLANNING VS REALISASI ---
-        let planArrDom = 0, planDepDom = 0, planArrIntl = 0, planDepIntl = 0;
-        let realArrDom = 0, realDepDom = 0, realArrIntl = 0, realDepIntl = 0;
-        
-        let currDateClean = new Date(dateStr); currDateClean.setHours(0,0,0,0);
-        masterDb.forEach(m => {
-            if (m.dos === dailyData.dos) {
-                let vStart = new Date(m.valid_from); vStart.setHours(0,0,0,0);
-                let vEnd = new Date(m.valid_to); vEnd.setHours(0,0,0,0);
-                if (currDateClean >= vStart && currDateClean <= vEnd) {
-                    if (m.dom_intl === 'DOM') { if(m.leg === 'A') planArrDom++; else if(m.leg === 'D') planDepDom++; }
-                    else if (m.dom_intl === 'INTL') { if(m.leg === 'A') planArrIntl++; else if(m.leg === 'D') planDepIntl++; }
-                }
-            }
-        });
-
-        // --- MATRIX DATA BREAKDOWN ---
-        let statsByType = {};
-        let onTime = 0, delay = 0, totalDepOps = 0;
-        let delayList = []; let cancelList = [];
-        let totalPaxToday = 0, totalPaxPrev = 0;
-
-        // Total Pax Kemarin
-        const { data: prevFlights, error: prevFlightsErr } = await sbClient
-            .from('daily_flights')
-            .select('pax,status')
-            .eq('date', prevDateStr);
-        if (!prevFlightsErr && prevFlights) {
-            prevFlights.forEach(f => { if (f.status === 'OPS') totalPaxPrev += (parseInt(f.pax) || 0); });
-        }
-
-        function initType(t) {
-            if(!statsByType[t]) {
-                statsByType[t] = {
-                    arrDom: { mov:0, pax:0, seat:0 },
-                    depDom: { mov:0, pax:0, seat:0 },
-                    arrIntl: { mov:0, pax:0, seat:0 },
-                    depIntl: { mov:0, pax:0, seat:0 }
-                };
-            }
-        }
-
-        dailyData.flights.forEach(f => {
-            let flType = (f.fl_type || 'UNKNOWN').toUpperCase();
-            let p = parseInt(f.pax) || 0;
-            let s = parseInt(f.seat) || 0;
-            let isDom = (f.dom_intl || '').toUpperCase() === 'DOM';
-            let isArr = (f.leg || '').toUpperCase() === 'A';
-            let catKey = (isArr ? 'arr' : 'dep') + (isDom ? 'Dom' : 'Intl');
-
-            if (f.status === 'OPS') {
-                totalPaxToday += p;
-                initType(flType);
-                
-                // Realisasi (Hanya Reguler)
-                if (flType === 'REGULER') {
-                    if (isDom) { if(isArr) realArrDom++; else realDepDom++; }
-                    else { if(isArr) realArrIntl++; else realDepIntl++; }
-                }
-
-                // Breakdown Tipe
-                statsByType[flType][catKey].mov++;
-                statsByType[flType][catKey].pax += p;
-                statsByType[flType][catKey].seat += s;
-
-                // OTP
-                if (!isArr) { // Departure
-                    totalDepOps++;
-                    if (f.jadwal && f.block_time) {
-                        let dMins = getDelayMinutes(f.jadwal, f.block_time);
-                        if (dMins !== "-" && typeof dMins === 'number') {
-                            if (dMins <= 15) onTime++;
-                            else { delay++; if (dMins > 30) delayList.push(`- ${f.callsign}${f.flight_number} (${f.rute}) : Delay ${dMins} Menit.`); }
-                        } else { onTime++; }
-                    } else { onTime++; }
-                }
-            } else if (f.status === 'NO OPS') {
-                cancelList.push(`${f.callsign}${f.flight_number} (${f.rute})`);
-            }
-        });
-
-        // Format Breakdown String
-        let movStr = "", paxStr = "";
-        const expectedTypes = ["REGULER", "EXTRA", "PERINTIS", "CHARTER", "VIP", "MILITER", "DIVERT", "RTS", "RTA", "RTB"];
-        let allTypes = [...new Set([...expectedTypes, ...Object.keys(statsByType)])];
-        
-        allTypes.forEach(t => {
-            if (!statsByType[t]) return;
-            let st = statsByType[t];
-            let totalMov = st.arrDom.mov + st.depDom.mov + st.arrIntl.mov + st.depIntl.mov;
+            const { data: flights } = await sbClient.from('daily_flights').select('*').eq('date', d).order('jadwal', { ascending: true });
+            const { data: rec } = await sbClient.from('daily_records').select('*').eq('date', d).maybeSingle();
             
-            if (totalMov > 0) {
-                // Movement Format
-                movStr += `*[${t}]*\n`;
-                if(st.arrDom.mov > 0 || st.depDom.mov > 0) movStr += `- Domestik: Arr ${st.arrDom.mov} | Dep ${st.depDom.mov}\n`;
-                if(st.arrIntl.mov > 0 || st.depIntl.mov > 0) movStr += `- Internasional: Arr ${st.arrIntl.mov} | Dep ${st.depIntl.mov}\n`;
+            let prevDate = new Date(d); prevDate.setDate(prevDate.getDate() - 1);
+            let prevDateStr = prevDate.toISOString().split('T')[0];
+            const { data: pFlights } = await sbClient.from('daily_flights').select('pax, status').eq('date', prevDateStr);
 
-                // Pax & Seat Format
-                paxStr += `*[${t}]*\n`;
-                const mapCat = [
-                    {k: 'arrDom', n: 'Arr Dom  '}, {k: 'depDom', n: 'Dep Dom  '},
-                    {k: 'arrIntl', n: 'Arr Intl '}, {k: 'depIntl', n: 'Dep Intl '}
-                ];
-                mapCat.forEach(c => {
-                    let obj = st[c.k];
-                    if (obj.mov > 0 || obj.seat > 0 || obj.pax > 0) {
-                        let lf = obj.seat > 0 ? ((obj.pax/obj.seat)*100).toFixed(1) : 0;
-                        paxStr += `- ${c.n} : Pax ${obj.pax.toLocaleString('id-ID')} / Seat ${obj.seat.toLocaleString('id-ID')} (L/F: ${lf}%)\n`;
+            let daily = rec || {}, paxPrev = 0;
+            if(pFlights) pFlights.forEach(f => { if(f.status === 'OPS') paxPrev += (parseInt(f.pax) || 0); });
+
+            let plAD=0, plDD=0, reAD=0, reDD=0, plAI=0, plDI=0, reAI=0, reDI=0;
+            let movMap = {}, paxMap = {}, paxToday = 0, bagToday = 0, kargoToday = 0;
+            let onTime = 0, delay = 0, depTot = 0, cancel = [], delayList = [];
+
+            (flights || []).forEach(f => {
+                // Planning
+                if (f.fl_type === 'REGULER') {
+                    if (f.leg === 'A' && f.dom_intl === 'DOM') plAD++;
+                    if (f.leg === 'D' && f.dom_intl === 'DOM') plDD++;
+                    if (f.leg === 'A' && f.dom_intl === 'INTL') plAI++;
+                    if (f.leg === 'D' && f.dom_intl === 'INTL') plDI++;
+                }
+
+                if (f.status === 'OPS') {
+                    if (f.fl_type === 'REGULER') {
+                        if (f.leg === 'A' && f.dom_intl === 'DOM') reAD++;
+                        if (f.leg === 'D' && f.dom_intl === 'DOM') reDD++;
+                        if (f.leg === 'A' && f.dom_intl === 'INTL') reAI++;
+                        if (f.leg === 'D' && f.dom_intl === 'INTL') reDI++;
                     }
-                });
-            }
-        });
 
-        // Hitung Persentase OTP
-        let otpPct = totalDepOps > 0 ? ((onTime / totalDepOps) * 100).toFixed(1) : 0;
+                    let t = f.fl_type || 'UNKNOWN';
+                    if (!movMap[t]) movMap[t] = { a: 0, d: 0 };
+                    if (f.leg === 'A') movMap[t].a++; else movMap[t].d++;
 
-        const reportTitle = String(dailyData.status || '').toLowerCase() === 'complete'
-            ? '*FINAL DATA OPS*'
-            : '*LAPORAN WA PRE-OPS*';
+                    if (!paxMap[t]) paxMap[t] = { p: 0, s: 0 };
+                    paxMap[t].p += (parseInt(f.pax) || 0);
+                    paxMap[t].s += (parseInt(f.seat) || 0);
 
-        let reportText = `${reportTitle}
-Tanggal: ${formatTanggalIndo(dateStr)}
-DOS: ${dailyData.dos || "-"}
+                    paxToday += (parseInt(f.pax) || 0);
+                    bagToday += (parseInt(f.bagasi) || 0);
+                    kargoToday += (parseInt(f.kargo) || 0);
+
+                    if (f.leg === 'D') {
+                        depTot++;
+                        let diff = getDelay(f.jadwal, f.block_time);
+                        if (diff <= 15) onTime++; else {
+                            delay++;
+                            if (diff > 30) delayList.push(`- ${f.callsign||''}${f.flight_number||''} (${f.rute||''}): Delay ${diff}m (STD: ${f.jadwal}, ATD: ${f.block_time})`);
+                        }
+                    }
+                } else if (f.status === 'NO OPS') {
+                    cancel.push(`${f.callsign||''}${f.flight_number||''} (${f.rute||''})`);
+                }
+            });
+
+            let movStr = "", paxStr = "";
+            Object.keys(movMap).sort().forEach(k => { movStr += `- ${k}: Arr ${movMap[k].a} | Dep ${movMap[k].d}\n`; });
+            Object.keys(paxMap).sort().forEach(k => {
+                let p = paxMap[k]; let lf = p.s > 0 ? ((p.p/p.s)*100).toFixed(1) : 0;
+                paxStr += `- ${k}: Pax ${p.p.toLocaleString('id-ID')} | Seat ${p.s.toLocaleString('id-ID')} | L/F ${lf}%\n`;
+            });
+
+            let otp = depTot > 0 ? ((onTime / depTot) * 100).toFixed(1) : 100;
+
+            txt.value = `*LAPORAN OPERASIONAL AMS - BANDARA SSK II*
+Tanggal: ${fmtTgl(d)}
+DOS: ${daily.dos || "-"}
 
 *1. SLOT PLANNING VS REALISASI (REGULER)*
 [DOMESTIK]
-- Planning  : Arr ${planArrDom} | Dep ${planDepDom}
-- Realisasi : Arr ${realArrDom} | Dep ${realDepDom}
+- Planning  : Arr ${plAD} | Dep ${plDD}
+- Realisasi : Arr ${reAD} | Dep ${reDD}
 [INTERNASIONAL]
-- Planning  : Arr ${planArrIntl} | Dep ${planDepIntl}
-- Realisasi : Arr ${realArrIntl} | Dep ${realDepIntl}
+- Planning  : Arr ${plAI} | Dep ${plDI}
+- Realisasi : Arr ${reAI} | Dep ${reDI}
 
 *2. ACTUAL MOVEMENT (BY FLIGHT TYPE)*
 ${movStr || "- Nihil\n"}
 *3. ACTUAL PAX, SEAT & L/F (BY FLIGHT TYPE)*
 ${paxStr || "- Nihil\n"}
-*4. REKAPITULASI PAX & OTP*
-- TOTAL PAX HARI INI: ${totalPaxToday.toLocaleString('id-ID')}
-- TOTAL PAX KEMARIN (${formatHariTanggalIndo(prevDateStr)}): ${totalPaxPrev.toLocaleString('id-ID')}
+*4. REKAPITULASI PAX, BAGASI & OTP*
+- TOTAL PAX HARI INI: ${paxToday.toLocaleString('id-ID')}
+- TOTAL BAGASI HARI INI: ${bagToday.toLocaleString('id-ID')} Kg
+- TOTAL KARGO HARI INI: ${kargoToday.toLocaleString('id-ID')} Kg
+- TOTAL PAX KEMARIN (${fmtHari(prevDateStr)}): ${paxPrev.toLocaleString('id-ID')}
 - Tepat Waktu (<15m): ${onTime} Flight
 - Delay (>15m): ${delay} Flight
-- Persentase OTP: ${otpPct}%
+- Persentase OTP: ${otp}%
 
 *5. CANCEL FLIGHT (NO OPS)*
-- Total: ${cancelList.length} Flight
-- Detail: ${cancelList.length > 0 ? cancelList.join(", ") : "Nihil"}
+- Total: ${cancel.length} Flight
+- Detail: ${cancel.length > 0 ? cancel.join(", ") : "Nihil"}
 
 *6. KETERANGAN / DELAY > 30 MENIT*
 ${delayList.length > 0 ? delayList.join("\n") : "- Nihil"}
 
 *PETUGAS SHIFT PAGI*
-- PTO: ${dailyData.pto_pagi || "-"}
-- Pelaksana: ${(dailyData.pelaksana_pagi || []).join(", ") || "-"}
+- PTO: ${daily.pto_pagi || "-"}
+- Pelaksana: ${(daily.pelaksana_pagi || []).join(", ") || "-"}
 
 *PETUGAS SHIFT MALAM*
-- PTO: ${dailyData.pto_malam || "-"}
-- Pelaksana: ${(dailyData.pelaksana_malam || []).join(", ") || "-"}`;
+- PTO: ${daily.pto_malam || "-"}
+- Pelaksana: ${(daily.pelaksana_malam || []).join(", ") || "-"}`;
 
-            textarea.value = reportText;
-        } catch (err) {
-            console.error("Gagal generate WA report:", err);
-            textarea.value = `Gagal generate laporan: ${err.message || err}`;
-        }
+        } catch (e) { txt.value = "Error: " + e.message; }
     }
 
-    function copyWaReport() {
-        const textarea = document.getElementById('waTextarea');
-        if (!textarea.value) return alert("Tidak ada teks untuk di-copy.");
-        textarea.select();
-        navigator.clipboard.writeText(textarea.value).then(() => alert("Laporan berhasil disalin ke Clipboard! Silakan Paste di WhatsApp.")).catch(err => alert("Gagal menyalin: " + err));
-    }
+    function copyWA() { const t = document.getElementById('waTextarea'); if(!t.value) return; t.select(); navigator.clipboard.writeText(t.value).then(() => alert("Tersalin!")).catch(e => alert("Gagal menyalin.")); }
+    async function logout() { if(!sbClient) return; await sbClient.auth.signOut(); window.location.replace('index.html'); }
 
     window.onload = () => {
-        let today = new Date().toISOString().split('T')[0];
-        document.getElementById('filterStart').value = today; document.getElementById('filterEnd').value = today; document.getElementById('waDate').value = today;
-        generatePreview();
+        let t = new Date().toISOString().split('T')[0];
+        document.getElementById('filterStart').value = t; 
+        document.getElementById('filterEnd').value = t; 
+        document.getElementById('waDate').value = t;
+        loadPreview();
     };
-
-    // --- FUNGSI LOGOUT ---
-    async function logout() {
-        if (!sbClient) return;
-        try {
-            // Perintahkan Supabase untuk menghapus sesi login
-            const { error } = await sbClient.auth.signOut();
-            if (error) throw error;
-            
-            // Jika berhasil, alihkan kembali ke halaman login
-            window.location.replace('index.html');
-        } catch (err) {
-            console.error("Logout Error:", err);
-            alert("Gagal logout: " + err.message);
-        }
-    }
 </script>
 </body>
 </html>
