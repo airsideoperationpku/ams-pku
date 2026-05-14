@@ -48,8 +48,8 @@
         .col-jadwal { min-width: 80px; max-width: 90px; } .col-reg { min-width: 95px; max-width: 105px; } .col-tipe { min-width: 75px; max-width: 85px; }
         .col-seat { min-width: 55px; max-width: 65px; } .col-dom { min-width: 65px; max-width: 75px; } .col-leg { min-width: 55px; max-width: 60px; }
         .col-ron { min-width: 45px; max-width: 50px; } .col-stand { min-width: 65px; max-width: 75px; } .col-avio { min-width: 45px; max-width: 50px; } 
-        .col-bt { min-width: 80px; max-width: 90px; } .col-pax { min-width: 65px; max-width: 75px; } .col-lf { min-width: 65px; max-width: 75px; } 
-        .col-fltype { min-width: 95px; max-width: 105px; } .col-status { min-width: 80px; max-width: 90px; } .col-aksi { min-width: 80px; max-width: 90px; }
+        .col-bt { min-width: 80px; max-width: 90px; } .col-pax { min-width: 65px; max-width: 75px; } .col-lf { min-width: 65px; max-width: 75px; } .col-bagasi { min-width: 70px; max-width: 80px; }
+        .col-kargo { min-width: 70px; max-width: 80px; } .col-fltype { min-width: 95px; max-width: 105px; } .col-status { min-width: 80px; max-width: 90px; } .col-aksi { min-width: 80px; max-width: 90px; }
         
         .checkbox-center { display: flex; justify-content: center; align-items: center; height: 100%; }
         .btn-delete-row { background: transparent; border: none; color: #dc3545; font-size: 1.1rem; opacity: 0.5; transition: 0.2s; padding: 0 4px; }
@@ -174,10 +174,10 @@
                     <thead>
                         <tr>
                             <th class="col-cs">CS</th><th class="col-no">Fl. No</th><th class="col-rute">Rute</th><th class="col-jadwal">Jadwal</th>
-                            <th class="col-reg">Reg.</th><th class="col-ron">RON</th><th class="col-tipe">Tipe A/C</th><th class="col-seat">Seat</th><th class="col-dom">Tipe</th>
-                            <th class="col-leg">Leg</th><th class="col-stand">Stand</th><th class="col-avio">Avio</th><th class="col-bt">Block Time</th>
-                            <th class="col-pax">Pax</th><th class="col-lf">L/F</th><th class="col-fltype">Flight Type</th><th class="col-status">Status</th>
-                            <th class="col-aksi">Aksi</th>
+                            <th class="col-reg">Reg.</th><th class="col-ron">RON</th><th class="col-tipe">Tipe A/C</th><th class="col-seat">Seat</th>
+                            <th class="col-dom">Tipe</th><th class="col-leg">Leg</th><th class="col-stand">Stand</th><th class="col-avio">Avio</th>
+                            <th class="col-bt">Block Time</th><th class="col-pax">Pax</th><th class="col-lf">L/F</th><th class="col-bagasi">Bagasi</th>
+                            <th class="col-kargo">Kargo</th> <th class="col-fltype">Flight Type</th><th class="col-status">Status</th><th class="col-aksi">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -194,7 +194,7 @@
     </div>
 </div>
 
-<!-- TOMBOL TAMBAH MANUAL -->
+<!-- MODAL TAMBAH MANUAL -->
 <div class="modal fade" id="modalTambahManual" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg">
@@ -217,7 +217,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // --- SUPABASE ---
+    // --- KONFIGURASI SUPABASE (WAJIB DIGANTI DENGAN KUNCI ASLI ANDA) ---
     const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
     
@@ -404,6 +404,8 @@
                 <td class="col-bt"><input type="time" class="form-control input-blocktime" value="${f.block_time || ''}" oninput="checkRowStatus(this); markAsIncomplete()"></td>
                 <td class="col-pax"><input type="number" class="form-control input-pax" value="${f.pax || ''}" placeholder="0" oninput="calculateLF(this); checkRowStatus(this); markAsIncomplete()"></td>
                 <td class="col-lf"><input type="text" class="form-control input-lf border-0" value="${f.lf || ''}" placeholder="%" readonly style="background:#f8f9fa;"></td>
+                <td class="col-bagasi"><input type="number" class="form-control input-bagasi" value="${f.bagasi || ''}" placeholder="0" oninput="markAsIncomplete()"></td>
+                <td class="col-kargo"><input type="number" class="form-control input-kargo" value="${f.kargo || ''}" placeholder="0" oninput="markAsIncomplete()"></td>
                 <td class="col-fltype"><select class="form-select input-fltype" onchange="checkRowStatus(this); markAsIncomplete()">${flTypeOpts}</select></td>
                 <td class="col-status"><span class="badge ${badgeClass} rounded-pill status-badge" style="font-size: 0.65rem;">${f.status || 'NO OPS'}</span><input type="hidden" class="status-val" value="${f.status || 'NO OPS'}"></td>
                 <td class="col-aksi"><div class="d-flex justify-content-center gap-1 align-items-center h-100"><button class="btn btn-sm btn-primary fw-bold px-2 py-1" onclick="simpanBaris(this)" title="Save Baris"><i class="bi bi-save"></i></button><button class="btn-delete-row" onclick="hapusBaris(this)" title="Hapus Baris"><i class="bi bi-x-circle-fill"></i></button></div></td>
@@ -503,6 +505,8 @@
                     block_time: tr.querySelector(".input-blocktime").value || null,
                     pax: parseInt(tr.querySelector(".input-pax").value) || null,
                     lf: tr.querySelector(".input-lf").value,
+                    bagasi: parseInt(tr.querySelector(".input-bagasi").value) || 0,
+                    kargo: parseInt(tr.querySelector(".input-kargo").value) || 0,
                     fl_type: tr.querySelector(".input-fltype").value,
                     status: tr.querySelector(".status-val").value
                 });
@@ -531,7 +535,7 @@
     async function logout() {
         if (!sbClient) return;
         try {
-            // Perintah Supabase untuk menghapus sesi login
+            // Perintahkan Supabase untuk menghapus sesi login
             const { error } = await sbClient.auth.signOut();
             if (error) throw error;
             
