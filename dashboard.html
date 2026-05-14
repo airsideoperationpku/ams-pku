@@ -18,6 +18,7 @@
         .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
         .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
         .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; }
+        
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 20px; overflow: hidden; }
         .card-header { background-color: #fff; border-bottom: 1px solid #f0f0f0; font-weight: 700; padding: 15px 20px; }
         .stat-value { font-size: 2rem; font-weight: 800; line-height: 1.2; }
@@ -26,6 +27,7 @@
         .table-mini th { font-size: 0.75rem; text-transform: uppercase; color: #666; background: #f8f9fa; padding: 8px; }
         .table-mini td { font-size: 0.85rem; padding: 8px; font-weight: 600; vertical-align: middle; }
         .icon-box { width: 45px; height: 45px; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 1.4rem; }
+
         @media (max-width: 768px) { .sidebar { position: fixed; left: -250px; height: 100vh; } .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); } .sidebar-overlay.show { display: block; } .content { padding: 15px; } }
     </style>
 </head>
@@ -33,21 +35,24 @@
 
 <div class="wrapper">
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
     <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header"><h5>AMC PKU</h5><small>Sultan Syarif Kasim II</small></div>
+        <div class="sidebar-header"><h5>AMS PKU</h5><small>Sultan Syarif Kasim II</small></div>
         <div class="nav flex-column">
             <a href="#" class="nav-link active"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
             <a href="ams.html" class="nav-link"><i class="bi bi-grid-1x2"></i> Apron Management</a>
             <a href="database.html" class="nav-link"><i class="bi bi-database"></i> Data Master</a>
             <a href="download.html" class="nav-link"><i class="bi bi-cloud-arrow-down-fill"></i> Download Center</a>
         </div>
-        <div class="mt-auto mb-4 px-3"><button class="btn btn-outline-danger w-100 fw-bold" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></div>
+        <div class="mt-auto mb-4 px-3">
+            <button class="btn btn-outline-danger w-100 fw-bold" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
+        </div>
     </nav>
 
     <div class="content">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-2 border-bottom gap-3">
             <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-light border shadow-sm px-2 py-1 me-2" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
+                <button class="btn btn-light border shadow-sm px-2 py-1 me-2 d-md-none" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
                 <h5 class="fw-bold text-dark m-0">Dashboard Statistik</h5>
             </div>
             <div class="d-flex gap-2 flex-wrap">
@@ -58,7 +63,9 @@
             </div>
         </div>
 
-        <div class="mb-4"><span id="badgeStatus" class="badge bg-success fs-6 fw-normal shadow-sm"><i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data</span></div>
+        <div class="mb-4 text-center text-md-start">
+            <span id="badgeStatus" class="badge bg-success fs-6 fw-normal shadow-sm"><i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data</span>
+        </div>
 
         <div class="row g-3 mb-3">
             <div class="col-12 col-xl-6">
@@ -71,13 +78,15 @@
                             <div class="col-4 border-start"><div class="stat-value text-info" id="m_dep">0</div><div class="stat-label">Total Dep</div></div>
                         </div>
                         <div class="row g-2">
-                            <div class="col-6"><div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0">Domestik (<span id="m_dom">0</span>)</h6></div>
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0 small">Domestik (<span id="m_dom">0</span>)</h6></div>
                                 <ul class="list-group list-group-flush border">
                                     <li class="list-group-item">Arrival <span class="badge bg-success" id="m_arr_dom">0</span></li>
                                     <li class="list-group-item">Departure <span class="badge bg-info" id="m_dep_dom">0</span></li>
                                 </ul>
                             </div>
-                            <div class="col-6"><div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0">Internasional (<span id="m_intl">0</span>)</h6></div>
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0 small">Internasional (<span id="m_intl">0</span>)</h6></div>
                                 <ul class="list-group list-group-flush border">
                                     <li class="list-group-item">Arrival <span class="badge bg-success" id="m_arr_intl">0</span></li>
                                     <li class="list-group-item">Departure <span class="badge bg-info" id="m_dep_intl">0</span></li>
@@ -87,6 +96,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="col-12 col-xl-6">
                 <div class="card h-100 border-top border-success border-4">
                     <div class="card-header text-success"><i class="bi bi-people-fill me-2"></i>2. RINGKASAN PENUMPANG (PAX)</div>
@@ -97,13 +107,15 @@
                             <div class="col-4 border-start"><div class="stat-value text-success" id="p_dep">0</div><div class="stat-label">Pax Dep</div></div>
                         </div>
                         <div class="row g-2">
-                            <div class="col-6"><div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0">Domestik (<span id="p_dom">0</span>)</h6></div>
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0 small">Domestik (<span id="p_dom">0</span>)</h6></div>
                                 <ul class="list-group list-group-flush border">
                                     <li class="list-group-item">Arrival <span class="badge bg-success" id="p_arr_dom">0</span></li>
                                     <li class="list-group-item">Departure <span class="badge bg-info" id="p_dep_dom">0</span></li>
                                 </ul>
                             </div>
-                            <div class="col-6"><div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0">Internasional (<span id="p_intl">0</span>)</h6></div>
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0 small">Internasional (<span id="p_intl">0</span>)</h6></div>
                                 <ul class="list-group list-group-flush border">
                                     <li class="list-group-item">Arrival <span class="badge bg-success" id="p_arr_intl">0</span></li>
                                     <li class="list-group-item">Departure <span class="badge bg-info" id="p_dep_intl">0</span></li>
@@ -115,56 +127,131 @@
             </div>
         </div>
 
-        <div class="card border-top border-warning border-4 mb-3">
-            <div class="card-header text-dark"><i class="bi bi-clock-history me-2"></i>3. ON-TIME PERFORMANCE (DEPARTURE)</div>
-            <div class="card-body">
-                <div class="row g-4">
-                    <div class="col-12 col-lg-4">
-                        <div class="d-flex align-items-center mb-4">
-                            <div class="icon-box bg-success text-white me-3"><i class="bi bi-check-circle"></i></div>
-                            <div><h3 class="m-0 fw-bold" id="otp_ontime">0</h3><small class="text-muted fw-bold">Tepat Waktu (Delay ≤ 15m)</small></div>
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-xl-6">
+                <div class="card h-100 border-top border-dark border-4 shadow-sm">
+                    <div class="card-header text-dark"><i class="bi bi-briefcase-fill me-2"></i>3. RINGKASAN BAGASI (KG)</div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3 text-center">
+                            <div class="col-4"><div class="stat-value text-dark" id="b_tot">0</div><div class="stat-label">Total Bagasi</div></div>
+                            <div class="col-4 border-start"><div class="stat-value text-success" id="b_arr">0</div><div class="stat-label">Arr Bagasi</div></div>
+                            <div class="col-4 border-start"><div class="stat-value text-info" id="b_dep">0</div><div class="stat-label">Dep Bagasi</div></div>
                         </div>
-                        <ul class="list-group">
-                            <li class="list-group-item"><span>Delay > 15-30m</span> <span class="badge bg-warning text-dark" id="otp_d15">0</span></li>
-                            <li class="list-group-item"><span>Delay > 30-60m</span> <span class="badge bg-danger" id="otp_d30">0</span></li>
-                            <li class="list-group-item"><span>Delay > 60m</span> <span class="badge bg-dark" id="otp_d60">0</span></li>
-                        </ul>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0 small">Domestik (<span id="b_dom">0</span>)</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="b_arr_dom">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="b_dep_dom">0</span></li>
+                                </ul>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0 small">Internasional (<span id="b_intl">0</span>)</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="b_arr_intl">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="b_dep_intl">0</span></li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-12 col-md-6 col-lg-4">
-                        <h6 class="fw-bold text-center bg-light p-2 rounded">Top Delay by Airline (>15m)</h6>
-                        <table class="table table-sm table-mini table-hover">
-                            <thead><tr><th>Airline</th><th class="text-end">Freq</th></tr></thead>
-                            <tbody id="tbl_delay_airline"></tbody>
-                        </table>
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-4">
-                        <h6 class="fw-bold text-center bg-light p-2 rounded">Top Delay by Flight No (>15m)</h6>
-                        <table class="table table-sm table-mini table-hover">
-                            <thead><tr><th>Flight No</th><th class="text-end">Freq</th></tr></thead>
-                            <tbody id="tbl_delay_flno"></tbody>
-                        </table>
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-6">
+                <div class="card h-100 border-top border-secondary border-4 shadow-sm">
+                    <div class="card-header text-secondary"><i class="bi bi-box-seam-fill me-2"></i>4. RINGKASAN KARGO (KG)</div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3 text-center">
+                            <div class="col-4"><div class="stat-value text-secondary" id="k_tot">0</div><div class="stat-label">Total Kargo</div></div>
+                            <div class="col-4 border-start"><div class="stat-value text-success" id="k_arr">0</div><div class="stat-label">Arr Kargo</div></div>
+                            <div class="col-4 border-start"><div class="stat-value text-info" id="k_dep">0</div><div class="stat-label">Dep Kargo</div></div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0 small">Domestik (<span id="k_dom">0</span>)</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="k_arr_dom">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="k_dep_dom">0</span></li>
+                                </ul>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0 small">Internasional (<span id="k_intl">0</span>)</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="k_arr_intl">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="k_dep_intl">0</span></li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="row g-3 mb-3">
-            <div class="col-12">
+            <div class="col-12 col-md-6">
+                <div class="card h-100 border-top border-warning border-4">
+                    <div class="card-header text-dark"><i class="bi bi-clock-history me-2"></i>5. ON-TIME PERFORMANCE (DEPARTURE)</div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="icon-box bg-success text-white me-3"><i class="bi bi-check-circle"></i></div>
+                            <div>
+                                <h3 class="m-0 fw-bold" id="otp_ontime">0</h3>
+                                <small class="text-muted fw-bold text-uppercase">Tepat Waktu / Awal (Delay ≤ 15m)</small>
+                            </div>
+                        </div>
+                        
+                        <h6 class="fw-bold text-danger mb-3">Kategori Keterlambatan:</h6>
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-exclamation-circle text-warning me-2"></i>Delay > 15 - 30 Menit</span>
+                                <span class="badge bg-warning text-dark rounded-pill fs-6" id="otp_d15">0</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-exclamation-triangle text-danger me-2"></i>Delay > 30 - 60 Menit</span>
+                                <span class="badge bg-danger rounded-pill fs-6" id="otp_d30">0</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-x-octagon-fill text-dark me-2"></i>Delay > 60 Menit</span>
+                                <span class="badge bg-dark rounded-pill fs-6" id="otp_d60">0</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6">
                 <div class="card h-100 border-top border-info border-4">
-                    <div class="card-header text-info"><i class="bi bi-building me-2"></i>4. ANALISA PEMAKAIAN AVIOBRIDGE</div>
+                    <div class="card-header text-info"><i class="bi bi-building me-2"></i>6. ANALISA PEMAKAIAN AVIOBRIDGE</div>
                     <div class="card-body">
                         <div class="row g-3 text-center mb-4 border-bottom pb-3">
                             <div class="col-4"><div class="stat-value text-info" id="a_tot">0</div><div class="stat-label">Total Pakai</div></div>
                             <div class="col-4 border-start"><div class="stat-value text-success" id="a_arr">0</div><div class="stat-label">Arr Avio</div></div>
                             <div class="col-4 border-start"><div class="stat-value text-primary" id="a_dep">0</div><div class="stat-label">Dep Avio</div></div>
                         </div>
+
                         <div class="row g-3">
-                            <div class="col-6"><div class="p-2 bg-light rounded text-center"><h6 class="fw-bold text-secondary mb-2 small">Domestik</h6>
-                                <div class="d-flex justify-content-around"><small>Arr: <b class="text-success" id="a_arr_dom">0</b></small><small>Dep: <b class="text-info" id="a_dep_dom">0</b></small></div>
-                            </div></div>
-                            <div class="col-6"><div class="p-2 bg-light rounded text-center"><h6 class="fw-bold text-secondary mb-2 small">Internasional</h6>
-                                <div class="d-flex justify-content-around"><small>Arr: <b class="text-success" id="a_arr_intl">0</b></small><small>Dep: <b class="text-info" id="a_dep_intl">0</b></small></div>
-                            </div></div>
+                            <div class="col-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body p-2 text-center">
+                                        <h6 class="fw-bold text-secondary mb-2 border-bottom pb-1">Domestik</h6>
+                                        <div class="d-flex justify-content-around">
+                                            <div><small class="d-block text-muted">Arr</small><strong class="fs-5 text-success" id="a_arr_dom">0</strong></div>
+                                            <div><small class="d-block text-muted">Dep</small><strong class="fs-5 text-info" id="a_dep_dom">0</strong></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body p-2 text-center">
+                                        <h6 class="fw-bold text-secondary mb-2 border-bottom pb-1">Internasional</h6>
+                                        <div class="d-flex justify-content-around">
+                                            <div><small class="d-block text-muted">Arr</small><strong class="fs-5 text-success" id="a_arr_intl">0</strong></div>
+                                            <div><small class="d-block text-muted">Dep</small><strong class="fs-5 text-info" id="a_dep_intl">0</strong></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -172,7 +259,7 @@
         </div>
 
         <div class="card border-top border-dark border-4 mb-5">
-            <div class="card-header text-dark"><i class="bi bi-bar-chart-line-fill me-2"></i>5. TOP FREKUENSI TERTINGGI (TOP 5)</div>
+            <div class="card-header text-dark"><i class="bi bi-bar-chart-line-fill me-2"></i>7. TOP FREKUENSI TERTINGGI (TOP 5)</div>
             <div class="card-body">
                 <div class="row g-4">
                     <div class="col-12 col-md-6 col-lg-3"><h6 class="fw-bold text-center bg-light p-2 rounded small">Rute</h6><table class="table table-sm table-mini"><tbody id="tbl_rute"></tbody></table></div>
@@ -182,16 +269,18 @@
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 
 <script>
+    // --- KONFIGURASI SUPABASE ---
     const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
     let sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
-    function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) s.classList.toggle('show'); else s.classList.toggle('collapsed'); }
-    function closeSidebarMobile() { if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('show'); }
+    function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) { s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); } else { s.classList.toggle('collapsed'); } }
+
     function getDelayMinutes(jadwal, blockTime) {
         if (!jadwal || !blockTime) return 0;
         let [jh, jm] = jadwal.split(':').map(Number);
@@ -199,22 +288,27 @@
         let diff = (bh * 60 + bm) - (jh * 60 + jm);
         return diff < -600 ? diff + 1440 : diff;
     }
-    const fmt = num => num.toLocaleString('id-ID');
+
+    const fmt = num => num ? num.toLocaleString('id-ID') : '0';
     const setT = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
     async function loadDashboardStats(startDate = null, endDate = null) {
         if (!sbClient) return;
+        
         try {
             let query = sbClient.from('daily_flights').select('*');
             if (startDate) query = query.gte('date', startDate);
             if (endDate) query = query.lte('date', endDate);
+            
             const { data: flights, error } = await query;
             if (error) throw error;
 
             let s = {
                 mvt: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
                 pax: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
-                otp: { ontime:0, d15:0, d30:0, d60:0, delayAirline:{}, delayFlNo:{} },
+                bag: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
+                kargo: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
+                otp: { depTot:0, ontime:0, d15:0, d30:0, d60:0 },
                 avio: { tot:0, arr:0, dep:0, arrD:0, depD:0, arrI:0, depI:0 },
                 freq: { rute:{}, stand:{}, airline:{}, ac:{} }
             };
@@ -222,53 +316,113 @@
             if (flights) {
                 flights.forEach(f => {
                     if (f.status !== 'OPS') return;
-                    let isArr = f.leg === 'A', isDep = f.leg === 'D', isDom = f.dom_intl === 'DOM', isIntl = f.dom_intl === 'INTL', pax = parseInt(f.pax) || 0, cs = f.callsign || 'N/A';
 
-                    s.mvt.tot++; if(isArr) s.mvt.arr++; if(isDep) s.mvt.dep++; if(isDom) s.mvt.dom++; if(isIntl) s.mvt.intl++;
-                    if(isArr && isDom) s.mvt.arrD++; if(isDep && isDom) s.mvt.depD++; if(isArr && isIntl) s.mvt.arrI++; if(isDep && isIntl) s.mvt.depI++;
+                    let isArr = f.leg === 'A', isDep = f.leg === 'D';
+                    let isDom = f.dom_intl === 'DOM', isIntl = f.dom_intl === 'INTL';
+                    let paxVal = parseInt(f.pax) || 0;
+                    let bagVal = parseInt(f.bagasi) || 0;
+                    let kargoVal = parseInt(f.kargo) || 0;
+                    let cs = f.callsign ? f.callsign.toUpperCase() : 'UNKNOWN';
 
-                    s.pax.tot += pax; if(isArr) s.pax.arr += pax; if(isDep) s.pax.dep += pax; if(isDom) s.pax.dom += pax; if(isIntl) s.pax.intl += pax;
-                    if(isArr && isDom) s.pax.arrD += pax; if(isDep && isDom) s.pax.depD += pax; if(isArr && isIntl) s.pax.arrI += pax; if(isDep && isIntl) s.pax.depI += pax;
+                    // 1. MOVEMENT
+                    s.mvt.tot++; if(isArr) s.mvt.arr++; if(isDep) s.mvt.dep++;
+                    if(isDom) s.mvt.dom++; if(isIntl) s.mvt.intl++;
+                    if(isArr && isDom) s.mvt.arrD++; if(isDep && isDom) s.mvt.depD++;
+                    if(isArr && isIntl) s.mvt.arrI++; if(isDep && isIntl) s.mvt.depI++;
 
+                    // 2. PAX
+                    s.pax.tot += paxVal; if(isArr) s.pax.arr += paxVal; if(isDep) s.pax.dep += paxVal;
+                    if(isDom) s.pax.dom += paxVal; if(isIntl) s.pax.intl += paxVal;
+                    if(isArr && isDom) s.pax.arrD += paxVal; if(isDep && isDom) s.pax.depD += paxVal;
+                    if(isArr && isIntl) s.pax.arrI += paxVal; if(isDep && isIntl) s.pax.depI += paxVal;
+
+                    // 3. BAGASI
+                    s.bag.tot += bagVal; if(isArr) s.bag.arr += bagVal; if(isDep) s.bag.dep += bagVal;
+                    if(isDom) s.bag.dom += bagVal; if(isIntl) s.bag.intl += bagVal;
+                    if(isArr && isDom) s.bag.arrD += bagVal; if(isDep && isDom) s.bag.depD += bagVal;
+                    if(isArr && isIntl) s.bag.arrI += bagVal; if(isDep && isIntl) s.bag.depI += bagVal;
+
+                    // 4. KARGO
+                    s.kargo.tot += kargoVal; if(isArr) s.kargo.arr += kargoVal; if(isDep) s.kargo.dep += kargoVal;
+                    if(isDom) s.kargo.dom += kargoVal; if(isIntl) s.kargo.intl += kargoVal;
+                    if(isArr && isDom) s.kargo.arrD += kargoVal; if(isDep && isDom) s.kargo.depD += kargoVal;
+                    if(isArr && isIntl) s.kargo.arrI += kargoVal; if(isDep && isIntl) s.kargo.depI += kargoVal;
+
+                    // 5. OTP (Departure Only)
                     if(isDep) {
+                        s.otp.depTot++;
                         let diff = getDelayMinutes(f.jadwal, f.block_time);
                         if(diff <= 15) s.otp.ontime++;
-                        else {
-                            if(diff <= 30) s.otp.d15++; else if(diff <= 60) s.otp.d30++; else s.otp.d60++;
-                            s.otp.delayAirline[cs] = (s.otp.delayAirline[cs] || 0) + 1;
-                            let fn = f.flight_number || 'N/A';
-                            s.otp.delayFlNo[fn] = (s.otp.delayFlNo[fn] || 0) + 1;
-                        }
+                        else if(diff <= 30) s.otp.d15++;
+                        else if(diff <= 60) s.otp.d30++;
+                        else s.otp.d60++;
                     }
+
+                    // 6. AVIOBRIDGE
                     if(f.avio) {
                         s.avio.tot++; if(isArr) s.avio.arr++; if(isDep) s.avio.dep++;
-                        if(isArr && isDom) s.avio.arrD++; if(isDep && isDom) s.avio.depD++; if(isArr && isIntl) s.avio.arrI++; if(isDep && isIntl) s.avio.depI++;
+                        if(isArr && isDom) s.avio.arrD++; if(isDep && isDom) s.avio.depD++;
+                        if(isArr && isIntl) s.avio.arrI++; if(isDep && isIntl) s.avio.depI++;
                         s.freq.airline[cs] = (s.freq.airline[cs] || 0) + 1;
                     }
-                    s.freq.rute[f.rute || 'N/A'] = (s.freq.rute[f.rute || 'N/A'] || 0) + 1;
-                    if(f.stand) s.freq.stand[f.stand] = (s.freq.stand[f.stand] || 0) + 1;
-                    if(f.tipe_ac) s.freq.ac[f.tipe_ac] = (s.freq.ac[f.tipe_ac] || 0) + 1;
+
+                    // 7. FREQUENCIES
+                    let rute = f.rute ? f.rute.toUpperCase() : 'N/A';
+                    s.freq.rute[rute] = (s.freq.rute[rute] || 0) + 1;
+                    if(f.stand && f.stand !== '-') s.freq.stand[f.stand.toUpperCase()] = (s.freq.stand[f.stand.toUpperCase()] || 0) + 1;
+                    if(f.tipe_ac) s.freq.ac[f.tipe_ac.toUpperCase()] = (s.freq.ac[f.tipe_ac.toUpperCase()] || 0) + 1;
                 });
             }
 
+            // UPDATE HTML
             setT('m_tot', fmt(s.mvt.tot)); setT('m_arr', fmt(s.mvt.arr)); setT('m_dep', fmt(s.mvt.dep)); setT('m_dom', fmt(s.mvt.dom)); setT('m_intl', fmt(s.mvt.intl));
             setT('m_arr_dom', fmt(s.mvt.arrD)); setT('m_dep_dom', fmt(s.mvt.depD)); setT('m_arr_intl', fmt(s.mvt.arrI)); setT('m_dep_intl', fmt(s.mvt.depI));
+
             setT('p_tot', fmt(s.pax.tot)); setT('p_arr', fmt(s.pax.arr)); setT('p_dep', fmt(s.pax.dep)); setT('p_dom', fmt(s.pax.dom)); setT('p_intl', fmt(s.pax.intl));
             setT('p_arr_dom', fmt(s.pax.arrD)); setT('p_dep_dom', fmt(s.pax.depD)); setT('p_arr_intl', fmt(s.pax.arrI)); setT('p_dep_intl', fmt(s.pax.depI));
+
+            setT('b_tot', fmt(s.bag.tot)); setT('b_arr', fmt(s.bag.arr)); setT('b_dep', fmt(s.bag.dep)); setT('b_dom', fmt(s.bag.dom)); setT('b_intl', fmt(s.bag.intl));
+            setT('b_arr_dom', fmt(s.bag.arrD)); setT('b_dep_dom', fmt(s.bag.depD)); setT('b_arr_intl', fmt(s.bag.arrI)); setT('b_dep_intl', fmt(s.bag.depI));
+
+            setT('k_tot', fmt(s.kargo.tot)); setT('k_arr', fmt(s.kargo.arr)); setT('k_dep', fmt(s.kargo.dep)); setT('k_dom', fmt(s.kargo.dom)); setT('k_intl', fmt(s.kargo.intl));
+            setT('k_arr_dom', fmt(s.kargo.arrD)); setT('k_dep_dom', fmt(s.kargo.depD)); setT('k_arr_intl', fmt(s.kargo.arrI)); setT('k_dep_intl', fmt(s.kargo.depI));
+
             setT('otp_ontime', fmt(s.otp.ontime)); setT('otp_d15', fmt(s.otp.d15)); setT('otp_d30', fmt(s.otp.d30)); setT('otp_d60', fmt(s.otp.d60));
+
             setT('a_tot', fmt(s.avio.tot)); setT('a_arr', fmt(s.avio.arr)); setT('a_dep', fmt(s.avio.dep)); setT('a_arr_dom', fmt(s.avio.arrD)); setT('a_dep_dom', fmt(s.avio.depD)); setT('a_arr_intl', fmt(s.avio.arrI)); setT('a_dep_intl', fmt(s.avio.depI));
 
             const ren = (id, obj) => {
                 let sorted = Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0, 5);
                 document.getElementById(id).innerHTML = sorted.length > 0 ? sorted.map(i => `<tr><td>${i[0]}</td><td class="text-end fw-bold text-primary">${fmt(i[1])}</td></tr>`).join('') : '<tr><td colspan="2" class="text-center text-muted">Data kosong</td></tr>';
             };
-            ren('tbl_delay_airline', s.otp.delayAirline); ren('tbl_delay_flno', s.otp.delayFlNo);
             ren('tbl_rute', s.freq.rute); ren('tbl_stand', s.freq.stand); ren('tbl_avio', s.freq.airline); ren('tbl_actype', s.freq.ac);
-        } catch (err) { console.error(err); }
+
+        } catch (err) { console.error("Dashboard Error:", err); }
     }
 
-    function applyFilter() { const s = document.getElementById('filterStart').value, e = document.getElementById('filterEnd').value, b = document.getElementById('badgeStatus'); b.innerHTML = (s || e) ? `<i class="bi bi-funnel-fill me-1"></i> Mode Filter Aktif` : `<i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data`; b.className = (s || e) ? "badge bg-warning text-dark fs-6 shadow-sm" : "badge bg-success fs-6 shadow-sm"; loadDashboardStats(s, e); }
-    function resetFilter() { document.getElementById('filterStart').value = ''; document.getElementById('filterEnd').value = ''; applyFilter(); }
+    function applyFilter() {
+        const start = document.getElementById('filterStart').value;
+        const end = document.getElementById('filterEnd').value;
+        const badge = document.getElementById('badgeStatus');
+
+        if(start || end) {
+            badge.innerHTML = `<i class="bi bi-funnel-fill me-1"></i> Filter Waktu Aktif`;
+            badge.className = "badge bg-warning text-dark fs-6 fw-normal shadow-sm";
+        } else {
+            badge.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data`;
+            badge.className = "badge bg-success fs-6 fw-normal shadow-sm";
+        }
+        loadDashboardStats(start, end);
+    }
+
+    function resetFilter() {
+        document.getElementById('filterStart').value = '';
+        document.getElementById('filterEnd').value = '';
+        document.getElementById('badgeStatus').innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data`;
+        document.getElementById('badgeStatus').className = "badge bg-success fs-6 fw-normal shadow-sm";
+        loadDashboardStats();
+    }
+
     async function logout() { if (!sbClient) return; await sbClient.auth.signOut(); window.location.replace('index.html'); }
     window.onload = () => loadDashboardStats();
 </script>
