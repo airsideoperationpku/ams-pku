@@ -17,7 +17,8 @@
         .sidebar-header h5 { margin: 0; font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
         .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
         .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
-        .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; }
+        /* Transisi smooth saat sidebar dilipat */
+        .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; transition: all 0.3s ease; }
         
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 20px; overflow: hidden; }
         .card-header { background-color: #fff; border-bottom: 1px solid #f0f0f0; font-weight: 700; padding: 15px 20px; }
@@ -52,7 +53,7 @@
     <div class="content">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-2 border-bottom gap-3">
             <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-light border shadow-sm px-2 py-1 me-2 d-md-none" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
+                <button class="btn btn-light border shadow-sm px-2 py-1 me-2" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
                 <h5 class="fw-bold text-dark m-0">Dashboard Statistik</h5>
             </div>
             <div class="d-flex gap-2 flex-wrap">
@@ -274,9 +275,8 @@
 </div>
 
 <script>
-    // --- KONFIGURASI SUPABASE ---
-    const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
+    const supabaseUrl = 'https://YOUR_PROJECT_ID.supabase.co';
+    const supabaseKey = 'YOUR_ANON_KEY';
     let sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
     function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) { s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); } else { s.classList.toggle('collapsed'); } }
