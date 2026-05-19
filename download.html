@@ -311,9 +311,22 @@
                     if (!movMap[t]) movMap[t] = { a: 0, d: 0 };
                     if (f.leg === 'A') movMap[t].a++; else movMap[t].d++;
 
-                    if (!paxMap[t]) paxMap[t] = { p: 0, s: 0 };
-                    paxMap[t].p += (parseInt(f.pax) || 0);
-                    paxMap[t].s += (parseInt(f.seat) || 0);
+                    if (!paxMap[t]) paxMap[t] = {
+                        a: { p: 0, s: 0 },
+                        d: { p: 0, s: 0 },
+                        t: { p: 0, s: 0 }
+                    };
+                    const paxVal = (parseInt(f.pax) || 0);
+                    const seatVal = (parseInt(f.seat) || 0);
+                    if (f.leg === 'A') {
+                        paxMap[t].a.p += paxVal;
+                        paxMap[t].a.s += seatVal;
+                    } else if (f.leg === 'D') {
+                        paxMap[t].d.p += paxVal;
+                        paxMap[t].d.s += seatVal;
+                    }
+                    paxMap[t].t.p += paxVal;
+                    paxMap[t].t.s += seatVal;
 
                     paxToday += (parseInt(f.pax) || 0);
                     bagToday += (parseInt(f.bagasi) || 0);
@@ -335,8 +348,14 @@
             let movStr = "", paxStr = "";
             Object.keys(movMap).sort().forEach(k => { movStr += `- ${k}: Arr ${movMap[k].a} | Dep ${movMap[k].d}\n`; });
             Object.keys(paxMap).sort().forEach(k => {
-                let p = paxMap[k]; let lf = p.s > 0 ? ((p.p/p.s)*100).toFixed(1) : 0;
-                paxStr += `- ${k}: Pax ${p.p.toLocaleString('id-ID')} | Seat ${p.s.toLocaleString('id-ID')} | L/F ${lf}%\n`;
+                let p = paxMap[k];
+                let lfA = p.a.s > 0 ? ((p.a.p / p.a.s) * 100).toFixed(1) : 0;
+                let lfD = p.d.s > 0 ? ((p.d.p / p.d.s) * 100).toFixed(1) : 0;
+                let lfT = p.t.s > 0 ? ((p.t.p / p.t.s) * 100).toFixed(1) : 0;
+                paxStr += `- ${k}\n`;
+                paxStr += `  Arr: Pax ${p.a.p.toLocaleString('id-ID')} | Seat ${p.a.s.toLocaleString('id-ID')} | L/F ${lfA}%\n`;
+                paxStr += `  Dep: Pax ${p.d.p.toLocaleString('id-ID')} | Seat ${p.d.s.toLocaleString('id-ID')} | L/F ${lfD}%\n`;
+                paxStr += `  Total: Pax ${p.t.p.toLocaleString('id-ID')} | Seat ${p.t.s.toLocaleString('id-ID')} | L/F ${lfT}%\n`;
             });
 
             let otp = depTot > 0 ? ((onTime / depTot) * 100).toFixed(1) : 100;
