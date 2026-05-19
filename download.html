@@ -346,7 +346,19 @@
             });
 
             let movStr = "", paxStr = "";
-            Object.keys(movMap).sort().forEach(k => { movStr += `- ${k}: Arr ${movMap[k].a} | Dep ${movMap[k].d}\n`; });
+            let movGrandA = 0, movGrandD = 0;
+            Object.keys(movMap).sort().forEach(k => {
+                const arr = movMap[k].a || 0;
+                const dep = movMap[k].d || 0;
+                const tot = arr + dep;
+                movGrandA += arr;
+                movGrandD += dep;
+                movStr += `- ${k}: Arr ${arr} | Dep ${dep} | Total ${tot}\n`;
+            });
+            const movGrandT = movGrandA + movGrandD;
+            if (movStr) {
+                movStr += `- TOTAL: Arr ${movGrandA} | Dep ${movGrandD} | Total ${movGrandT}\n`;
+            }
             Object.keys(paxMap).sort().forEach(k => {
                 let p = paxMap[k];
                 let lfA = p.a.s > 0 ? ((p.a.p / p.a.s) * 100).toFixed(1) : 0;
@@ -366,11 +378,14 @@ DOS: ${daily.dos || "-"}
 
 *1. SLOT PLANNING VS REALISASI (REGULER)*
 [DOMESTIK]
-- Planning  : Arr ${plAD} | Dep ${plDD}
-- Realisasi : Arr ${reAD} | Dep ${reDD}
+- Planning  : Arr ${plAD} | Dep ${plDD} | Total ${plAD + plDD}
+- Realisasi : Arr ${reAD} | Dep ${reDD} | Total ${reAD + reDD}
 [INTERNASIONAL]
-- Planning  : Arr ${plAI} | Dep ${plDI}
-- Realisasi : Arr ${reAI} | Dep ${reDI}
+- Planning  : Arr ${plAI} | Dep ${plDI} | Total ${plAI + plDI}
+- Realisasi : Arr ${reAI} | Dep ${reDI} | Total ${reAI + reDI}
+[TOTAL]
+- Planning  : Arr ${plAD + plAI} | Dep ${plDD + plDI} | Total ${plAD + plDD + plAI + plDI}
+- Realisasi : Arr ${reAD + reAI} | Dep ${reDD + reDI} | Total ${reAD + reDD + reAI + reDI}
 
 *2. ACTUAL MOVEMENT (BY FLIGHT TYPE)*
 ${movStr || "- Nihil\n"}
