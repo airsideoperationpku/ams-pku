@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ams-pku-v2'; // Ganti versi agar browser mereset cache lama
+const CACHE_NAME = 'amspku-v2'; // Ganti versi agar browser mereset cache lama
 const urlsToCache = [
   './',
   './index.html',
