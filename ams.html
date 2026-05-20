@@ -380,7 +380,7 @@
             let dNoneRon = f.ron ? '' : 'd-none';
             let ronLabel = f.ron ? (f.leg === 'A' ? '(RON)' : '(ExRON)') : '';
             
-            let flTypes = ['REGULER', 'UNSCHEDULE', 'EXTRA', 'PERINTIS', 'POSITIONING', 'CHARTER', 'VIP', 'MILITER', 'FREIGHTER', 'DIVERT', 'RTS', 'RTA', 'RTB', 'CALIBRATION', 'TRAINING', 'HAJI', 'POSTPONED', 'MEDICAL EVACUATION'];
+            let flTypes = ['REGULER', 'UNSCHEDULE', 'EXTRA', 'PERINTIS', 'POSITIONING', 'CHARTER', 'VIP', 'MILITER', 'FREIGHTER', 'DIVERT', 'REPOSITION', 'RTS', 'RTA', 'RTB', 'CALIBRATION', 'TRAINING', 'HAJI', 'POSTPONED', 'MEDICAL EVACUATION'];
             let flTypeOpts = flTypes.map(t => `<option ${f.fl_type === t ? 'selected' : ''}>${t}</option>`).join('');
 
             htmlStr += `
