@@ -38,26 +38,9 @@
             flex-direction: column;
         }
         
-        /* 1. Kondisi Kosong (READY) - Hijau */
-        .stand-card.ready { 
-            border-color: #198754; 
-            background-image: linear-gradient(rgba(235, 247, 241, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg');
-            box-shadow: 0 6px 15px rgba(25, 135, 84, 0.08);
-        }
-
-        /* 2. Kondisi Standby / Plotting - Kuning */
-        .stand-card.standby { 
-            border-color: #ffc107; 
-            background-image: linear-gradient(rgba(255, 249, 225, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg');
-            box-shadow: 0 6px 15px rgba(255, 193, 7, 0.12);
-        }
-        
-        /* 3. Kondisi Terisi (Occupied) - Merah */
-        .stand-card.occupied { 
-            border-color: #dc3545; 
-            background-image: linear-gradient(rgba(253, 237, 237, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg');
-            box-shadow: 0 6px 15px rgba(220, 53, 69, 0.15);
-        }
+        .stand-card.ready { border-color: #198754; background-image: linear-gradient(rgba(235, 247, 241, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); box-shadow: 0 6px 15px rgba(25, 135, 84, 0.08); }
+        .stand-card.standby { border-color: #ffc107; background-image: linear-gradient(rgba(255, 249, 225, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); box-shadow: 0 6px 15px rgba(255, 193, 7, 0.12); }
+        .stand-card.occupied { border-color: #dc3545; background-image: linear-gradient(rgba(253, 237, 237, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); box-shadow: 0 6px 15px rgba(220, 53, 69, 0.15); }
 
         .stand-header { padding: 12px 15px; font-weight: 800; font-size: 1.2rem; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
         .stand-body { padding: 15px; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
@@ -66,7 +49,6 @@
         .status-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 30px; font-weight: 700; text-transform: uppercase; }
         .fs-7 { font-size: 0.8rem; }
         
-        /* Box Pair Flight */
         .pair-box { background: rgba(255, 255, 255, 0.65); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.05); }
 
         /* BANNER NOTIFIKASI NEXT PEMAKAIAN */
@@ -81,7 +63,7 @@
             border-bottom: 1px solid rgba(255, 193, 7, 0.2);
             margin-top: 12px;
         }
-        .next-flight-banner .title { font-weight: 800; color: #856404; margin-bottom: 3px; font-size: 0.7rem; letter-spacing: 0.5px; display: flex; align-items: center; }
+        .next-flight-banner .title { font-weight: 800; color: #856404; margin-bottom: 3px; font-size: 0.7rem; display: flex; align-items: center; }
         .next-flight-banner .details { font-weight: 700; color: #333; }
 
         @media (max-width: 768px) { .sidebar { position: fixed; left: -250px; height: 100vh; } .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); } .sidebar-overlay.show { display: block; } .content { padding: 15px; } }
@@ -122,6 +104,7 @@
             <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-success p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">READY</small></div>
             <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-warning p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">STANDBY / PLOTTING</small></div>
             <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-danger p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">OCCUPIED</small></div>
+            <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-primary p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">RON (MENGINAP)</small></div>
         </div>
 
         <div class="stand-grid" id="gridContainer"></div>
@@ -135,107 +118,183 @@
 
     function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) { s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); } else { s.classList.toggle('collapsed'); } }
     
-    
     setInterval(() => { 
         document.getElementById('liveClock').innerText = new Date().toLocaleTimeString('en-GB', { 
             timeZone: 'Asia/Jakarta', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' 
         }); 
     }, 1000);
 
-    function getLocalDateString() { return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }); }
+    // Fungsi Pengambil Tanggal dengan Offset Hari
+    function getLocalDateString(offsetDays = 0) { 
+        const d = new Date();
+        d.setDate(d.getDate() + offsetDays);
+        return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }); // Format YYYY-MM-DD
+    }
 
-    
+    const todayStr = getLocalDateString(0);
+    const tomorrowStr = getLocalDateString(1);
+    const yesterdayStr = getLocalDateString(-1);
+
+    // Format Jam dan Tanggal untuk Flight (Besok/Kemarin)
+    function formatTimeWithDate(dateStr, timeStr) {
+        if (!timeStr) return '-';
+        if (dateStr === todayStr) return timeStr;
+        if (dateStr === tomorrowStr) return `${timeStr} <span class="badge bg-warning text-dark border border-warning ms-1" style="font-size:0.6rem;">BESOK</span>`;
+        if (dateStr === yesterdayStr) return `${timeStr} <span class="badge bg-secondary text-white border border-secondary ms-1" style="font-size:0.6rem;">KEMARIN</span>`;
+        
+        let dObj = new Date(dateStr);
+        let dFmt = `${String(dObj.getDate()).padStart(2,'0')}/${String(dObj.getMonth()+1).padStart(2,'0')}`;
+        return `${timeStr} <span class="badge bg-secondary text-white ms-1" style="font-size:0.6rem;">${dFmt}</span>`;
+    }
+
+    // --- LOGIKA UTAMA PARKING MONITOR (SMART MATCHER ALGORITHM) ---
     async function updateParkingStands() {
         if(!sbClient) return;
-        const todayStr = getLocalDateString();
+        
+        
+        let datesToFetch = [];
+        for (let i = -2; i <= 2; i++) datesToFetch.push(getLocalDateString(i));
         
         try {
-            const { data: flights, error } = await sbClient.from('daily_flights').select('*').eq('date', todayStr);
+            
+            const { data: flights, error } = await sbClient.from('daily_flights').select('*').in('date', datesToFetch);
             if (error) throw error;
             
             const activeFlights = (flights || []).filter(f => f.status !== 'Cancel');
 
-            // 1. Kumpulan Pesawat Berdasarkan Registrasi
+            
             let aircraftTracker = {};
             activeFlights.forEach(f => {
                 let reg = (f.reg || '').trim().toUpperCase();
                 if (!reg) reg = 'UNKNOWN_' + f.id; 
-                if (!aircraftTracker[reg]) aircraftTracker[reg] = { arrs: [], deps: [] };
-                
-                if (f.leg === 'A') aircraftTracker[reg].arrs.push(f);
-                else if (f.leg === 'D') aircraftTracker[reg].deps.push(f);
+                if (!aircraftTracker[reg]) aircraftTracker[reg] = [];
+                aircraftTracker[reg].push({ type: f.leg, data: f });
             });
 
-            // Menyimpan seluruh paket penerbangan (cycle) yang valid hari ini
             let allFlightCycles = [];
 
+            
             Object.keys(aircraftTracker).forEach(reg => {
-                let { arrs, deps } = aircraftTracker[reg];
-                arrs.sort((a, b) => (a.jadwal || '99:99').localeCompare(b.jadwal || '99:99'));
-                deps.sort((a, b) => (a.jadwal || '99:99').localeCompare(b.jadwal || '99:99'));
+                let legs = aircraftTracker[reg];
+                
+                let arrs = legs.filter(l => l.type === 'A').map(l => l.data);
+                let deps = legs.filter(l => l.type === 'D').map(l => l.data);
 
-                let maxPairs = Math.max(arrs.length, deps.length);
+                // Urutkan berdasarkan tanggal & jam
+                arrs.sort((a,b) => (a.date+(a.jadwal||'99:99')).localeCompare(b.date+(b.jadwal||'99:99')));
+                deps.sort((a,b) => (a.date+(a.jadwal||'99:99')).localeCompare(b.date+(b.jadwal||'99:99')));
 
-                for (let k = 0; k < maxPairs; k++) {
-                    let a = arrs[k] || null;
-                    let d = deps[k] || null;
-
-                    let standNum = null;
-                    if (a && a.stand && a.stand.trim() !== '') standNum = parseInt(a.stand.replace(/\D/g, ''));
-                    else if (d && d.stand && d.stand.trim() !== '') standNum = parseInt(d.stand.replace(/\D/g, ''));
-
-                    if (!standNum || standNum < 1 || standNum > 12) continue;
-
-                    let status = 'READY';
-                    let d_hasBlock = d && d.block_time && d.block_time.trim() !== '';
-
-                    if (d_hasBlock) {
-                        status = 'READY';
-                    } else {
-                        if (a) {
-                            let a_hasBlock = a.block_time && a.block_time.trim() !== '';
-                            status = a_hasBlock ? 'OCCUPIED' : 'STANDBY';
-                        } else if (d) {
-                            status = 'OCCUPIED'; // RON Status
-                        }
-                    }
-
-                    if (status !== 'READY') {
-                        allFlightCycles.push({
-                            arr: a, dep: d, reg: reg, standNum: standNum, status: status,
-                            sortTime: a ? (a.jadwal || '99:99') : (d ? (d.jadwal || '99:99') : '99:99')
-                        });
-                    }
+                // Fungsi menghitung selisih jam jika terjadi Typo
+                function getTimeDiff(t1, t2) {
+                    let [h1, m1] = (t1||'00:00').split(':').map(Number);
+                    let [h2, m2] = (t2||'00:00').split(':').map(Number);
+                    if(isNaN(h1)) h1=0; if(isNaN(m1)) m1=0; if(isNaN(h2)) h2=0; if(isNaN(m2)) m2=0;
+                    return Math.abs((h1*60+m1) - (h2*60+m2));
                 }
+
+                // Pasangkan Kedatangan (A) dengan Keberangkatan (D)
+                arrs.forEach(a => {
+                    let dIndex = -1;
+                    
+                    // Filter keberangkatan di hari yang SAMA
+                    let sameDayDeps = deps.filter(d => d.date === a.date);
+                    
+                    if (sameDayDeps.length > 0) {
+                        let logicalDeps = sameDayDeps.filter(d => (d.jadwal||'99:99') >= (a.jadwal||'00:00'));
+                        if (logicalDeps.length > 0) {
+                            
+                            dIndex = deps.indexOf(logicalDeps[0]); 
+                        } else {
+                            // KONDISI TYPO (Jadwal Arrival > Departure): Paksa ikat data yang selisih jamnya paling kecil
+                            sameDayDeps.sort((d1, d2) => getTimeDiff(a.jadwal, d1.jadwal) - getTimeDiff(a.jadwal, d2.jadwal));
+                            dIndex = deps.indexOf(sameDayDeps[0]);
+                        }
+                    } else {
+                        // Jika tidak ada di hari yang sama, cari keberangkatan di hari BERIKUTNYA (RON)
+                        dIndex = deps.findIndex(d => d.date > a.date);
+                    }
+
+                    if (dIndex !== -1) {
+                        let d = deps[dIndex];
+                        allFlightCycles.push({ arr: a, dep: d, reg: reg });
+                        deps.splice(dIndex, 1);
+                    } else {
+                        // Tidak ada jadwal keberangkatan terdaftar (RON panjang)
+                        allFlightCycles.push({ arr: a, dep: null, reg: reg });
+                    }
+                });
+
+                // Sisa Keberangkatan yang tidak punya Kedatangan (Pesawat RON dari hari sebelumnya)
+                deps.forEach(d => {
+                    allFlightCycles.push({ arr: null, dep: d, reg: reg });
+                });
             });
 
-            // 2.Data Stand 1 - 12 dengan Slot Current & Next
+            
+            let relevantCycles = [];
+            
+            allFlightCycles.forEach(c => {
+                let a = c.arr;
+                let d = c.dep;
+
+                let standNum = null;
+                if (a && a.stand && a.stand.trim() !== '') standNum = parseInt(a.stand.replace(/\D/g, ''));
+                else if (d && d.stand && d.stand.trim() !== '') standNum = parseInt(d.stand.replace(/\D/g, ''));
+
+                if (!standNum || standNum < 1 || standNum > 12) return;
+
+                let cycleStatus = 'READY';
+                let d_hasBlock = d && d.block_time && d.block_time.trim() !== '';
+                let a_hasBlock = a && a.block_time && a.block_time.trim() !== '';
+
+                if (d_hasBlock) {
+                    cycleStatus = 'READY'; // Pesawat sudah terbang pergi
+                } else {
+                    if (a) {
+                        cycleStatus = a_hasBlock ? 'OCCUPIED' : 'STANDBY';
+                    } else if (d) {
+                        cycleStatus = 'OCCUPIED'; // RON yang akan terbang
+                    }
+                }
+
+                
+                if (cycleStatus === 'READY') return; 
+                if (cycleStatus === 'STANDBY' && a && a.date > todayStr) return; 
+
+                
+                let isRON = false;
+                if (a && d && a.date !== d.date) isRON = true;
+                if (!a && d) isRON = true; 
+                if (a && !d && cycleStatus === 'OCCUPIED' && a.date < todayStr) isRON = true; 
+
+                let sortKey = a ? (a.date + (a.jadwal || '99:99')) : (d ? (d.date + (d.jadwal || '99:99')) : '99:9999:99');
+
+                relevantCycles.push({
+                    arr: a, dep: d, reg: c.reg, standNum: standNum, status: cycleStatus,
+                    sortTime: sortKey, isRON: isRON
+                });
+            });
+
+            
             let standsData = {};
             for (let i = 1; i <= 12; i++) { standsData[i] = { status: 'READY', current: null, next: null }; }
 
-            
-            allFlightCycles.sort((a, b) => a.sortTime.localeCompare(b.sortTime));
+            relevantCycles.sort((a, b) => a.sortTime.localeCompare(b.sortTime));
 
-            // 3. antrean ke dalam masing-masing Stand
             for (let i = 1; i <= 12; i++) {
-                
-                let cyclesInStand = allFlightCycles.filter(c => c.standNum === i);
+                let cyclesInStand = relevantCycles.filter(c => c.standNum === i);
                 if (cyclesInStand.length === 0) continue;
 
-                
                 let occupiedCycle = cyclesInStand.find(c => c.status === 'OCCUPIED');
-               
                 let standbyCycles = cyclesInStand.filter(c => c.status === 'STANDBY');
 
                 if (occupiedCycle) {
                     standsData[i].status = 'OCCUPIED';
                     standsData[i].current = occupiedCycle;
-                    // Jika ada pesawat Standby di stand yang sedang Occupied, jadikan itu sebagai NEXT
                     if (standbyCycles.length > 0) standsData[i].next = standbyCycles[0];
                 } else if (standbyCycles.length > 0) {
                     standsData[i].status = 'STANDBY';
                     standsData[i].current = standbyCycles[0];
-                    // Jika ada lebih dari 1 Standby, jadikan standby urutan kedua sebagai NEXT
                     if (standbyCycles.length > 1) standsData[i].next = standbyCycles[1];
                 }
             }
@@ -261,7 +320,7 @@
                         <div class="d-flex justify-content-center align-items-center h-100">
                             <div class="text-center text-success py-3">
                                 <i class="bi bi-check-circle-fill fs-1 d-block mb-1"></i>
-                                <span class="small fw-bold text-uppercase tracking-wide">Ready to Use</span>
+                                <span class="small fw-bold text-uppercase tracking-wide">Ready for Use</span>
                             </div>
                         </div>`;
                 } 
@@ -271,69 +330,74 @@
                     let dep = stand.current.dep;
                     let primary = arr || dep;
                     
+                    let ronBadgeHtml = stand.current.isRON ? `<span class="badge bg-primary ms-2 shadow-sm border border-light px-2" style="font-size:0.75rem;"><i class="bi bi-moon-stars-fill me-1"></i>RON</span>` : '';
+
                     bodyContent += `<div class="flight-info text-dark">`;
 
                     if (stand.status === 'OCCUPIED') {
                         bodyContent += `
-                            <div class="text-center mb-2 pb-1 border-bottom">
+                            <div class="text-center mb-2 pb-1 border-bottom d-flex justify-content-center align-items-center flex-wrap">
                                 <span class="fs-6 fw-bold text-danger"><i class="bi bi-airplane-fill me-1"></i> ON BLOCK: ${primary.reg || '-'}</span>
                                 <span class="badge bg-secondary ms-2">${primary.tipe_ac || '-'}</span>
+                                ${ronBadgeHtml}
                             </div>`;
                         
                         if (arr) {
-                            let timeDisplay = arr.block_time ? arr.block_time : (arr.jadwal || '-');
+                            let timeDisplay = arr.block_time ? formatTimeWithDate(arr.date, arr.block_time) : formatTimeWithDate(arr.date, (arr.jadwal || '-'));
                             bodyContent += `
                                 <div class="pair-box border-danger border-opacity-50 border-start border-4">
                                     <div class="fs-7 text-muted fw-bold mb-1">Kedatangan</div>
-                                    <div class="row g-1 fs-7">
+                                    <div class="row g-1 fs-7 align-items-center">
                                         <div class="col-4 text-muted">Flight:</div><div class="col-8 text-end fw-bold">${arr.callsign || ''}${arr.flight_number || ''}</div>
-                                        <div class="col-4 text-muted">ATA:</div><div class="col-8 text-end text-danger fw-bold"><i class="bi bi-clock-fill"></i> ${timeDisplay}</div>
+                                        <div class="col-4 text-muted">ATA:</div><div class="col-8 text-end text-danger fw-bold d-flex justify-content-end align-items-center"><i class="bi bi-clock-fill me-1"></i> ${timeDisplay}</div>
                                     </div>
                                 </div>`;
                         }
                     } else if (stand.status === 'STANDBY') {
                         if (arr) {
+                            let timeDisplay = formatTimeWithDate(arr.date, (arr.jadwal || '-'));
                             bodyContent += `
                                 <div class="pair-box border-warning border-opacity-50 border-start border-4">
-                                    <div class="fs-6 fw-bold text-dark mb-1"><i class="bi bi-box-arrow-in-down-right text-warning me-1"></i> ARR: ${arr.callsign || ''}${arr.flight_number || ''}</div>
-                                    <div class="row g-1 fs-7">
+                                    <div class="fs-6 fw-bold text-dark mb-1 d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-box-arrow-in-down-right text-warning me-1"></i> ARR: ${arr.callsign || ''}${arr.flight_number || ''}</span>
+                                        ${stand.current.isRON ? '<span class="badge bg-primary" style="font-size:0.6rem;">RON</span>' : ''}
+                                    </div>
+                                    <div class="row g-1 fs-7 align-items-center">
                                         <div class="col-6 text-muted">Reg / Tipe:</div><div class="col-6 text-end fw-bold">${arr.reg || '-'} (${arr.tipe_ac || '-'})</div>
-                                        <div class="col-6 text-muted">Est. STA:</div><div class="col-6 text-end fw-bold text-warning">${arr.jadwal || '-'}</div>
+                                        <div class="col-6 text-muted">Est. STA:</div><div class="col-6 text-end fw-bold text-warning d-flex justify-content-end align-items-center">${timeDisplay}</div>
                                     </div>
                                 </div>`;
                         }
                     }
 
-                    
                     if (dep) {
+                        let timeDisplay = formatTimeWithDate(dep.date, (dep.jadwal || '-'));
                         bodyContent += `
                             <div class="pair-box border-primary border-opacity-50 border-start border-4 mt-2">
                                 <div class="fs-7 text-muted fw-bold mb-1">Keberangkatan</div>
-                                <div class="row g-1 fs-7">
+                                <div class="row g-1 fs-7 align-items-center">
                                     <div class="col-4 text-muted">Flight:</div><div class="col-8 text-end fw-bold">${dep.callsign || ''}${dep.flight_number || ''}</div>
-                                    <div class="col-4 text-muted">STD:</div><div class="col-8 text-end fw-bold text-primary">${dep.jadwal || '-'}</div>
+                                    <div class="col-4 text-muted">STD:</div><div class="col-8 text-end fw-bold text-primary d-flex justify-content-end align-items-center">${timeDisplay}</div>
                                 </div>
                             </div>`;
                     }
-                    bodyContent += `</div>`; // End Flight-info
+                    bodyContent += `</div>`; 
 
                     // ==========================================
-                    
+                    //  BANNER NOTIFIKASI NEXT PEMAKAIAN
                     // ==========================================
                     if (stand.next) {
                         let nArr = stand.next.arr;
                         let nDep = stand.next.dep;
                         let nPrimary = nArr || nDep;
-                        let nCallsign = nPrimary.callsign || '';
-                        let nFlNo = nPrimary.flight_number || '';
-                        let nTime = nArr ? nArr.jadwal : (nDep ? nDep.jadwal : '-');
+                        let nTime = nArr ? formatTimeWithDate(nArr.date, nArr.jadwal) : (nDep ? formatTimeWithDate(nDep.date, nDep.jadwal) : '-');
                         
                         bodyContent += `
                             <div class="next-flight-banner shadow-sm mt-auto">
                                 <div class="title"><i class="bi bi-info-circle-fill me-1"></i> NEXT PEMAKAIAN (STANDBY)</div>
                                 <div class="details d-flex justify-content-between align-items-center">
-                                    <span>${nCallsign}${nFlNo} <small class="text-muted">(${nPrimary.reg || '-'})</small></span>
-                                    <span class="badge bg-warning text-dark border border-warning shadow-sm"><i class="bi bi-clock"></i> ${nTime}</span>
+                                    <span>${nPrimary.callsign || ''}${nPrimary.flight_number || ''} <small class="text-muted">(${nPrimary.reg || '-'})</small></span>
+                                    <span class="badge bg-warning text-dark border border-warning shadow-sm d-flex align-items-center"><i class="bi bi-clock me-1"></i> ${nTime}</span>
                                 </div>
                             </div>
                         `;
