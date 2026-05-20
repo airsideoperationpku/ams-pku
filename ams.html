@@ -445,7 +445,7 @@
         if(tbody.querySelector('td[colspan="18"]')) tbody.innerHTML = ''; 
         
         let psOps = '<option value="">-</option>' + parkingStands.map(ps => `<option value="${ps}">${ps}</option>`).join('');
-        let flTypes = ['REGULER', 'EXTRA', 'PERINTIS', 'CHARTER', 'VIP', 'MILITER', 'DIVERT', 'RTS', 'RTA', 'RTB'];
+        let flTypes = ['REGULER', 'UNSCHEDULE', 'EXTRA', 'PERINTIS', 'POSITIONING', 'CHARTER', 'VIP', 'MILITER', 'FREIGHTER', 'DIVERT', 'REPOSITION', 'RTS', 'RTA', 'RTB', 'CALIBRATION', 'TRAINING', 'HAJI', 'POSTPONED', 'MEDICAL EVACUATION'];
         let flTypeOpts = flTypes.map(t => `<option ${t === 'EXTRA' ? 'selected' : ''}>${t}</option>`).join('');
 
         const tr = document.createElement("tr"); tr.className = "flight-row";
