@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Stand View - AMS PKU</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; overflow-x: hidden; }
+        .wrapper { display: flex; width: 100%; height: 100vh; overflow: hidden; }
+        .sidebar { min-width: 250px; max-width: 250px; background-color: #ffffff; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; transition: all 0.3s ease; z-index: 1050; }
+        .sidebar.collapsed { margin-left: -250px; }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1040; transition: opacity 0.3s ease; }
+        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 15px; }
+        .sidebar-header h5 { margin: 0; font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
+        .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
+        .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
+        
+        .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; transition: all 0.3s ease; }
+        
+        /* Grid Parking Stand */
+        .stand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        
+        /* Card Stand Base Layout */
+        .stand-card { 
+            background-image: linear-gradient(rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); 
+            background-size: cover; 
+            background-position: center;
+            border: 2px solid #dee2e6; 
+            border-radius: 14px; 
+            overflow: hidden; 
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 1. Kondisi Kosong (READY) - Hijau */
+        .stand-card.ready { 
+            border-color: #198754; 
+            background-image: linear-gradient(rgba(235, 247, 241, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg');
+            box-shadow: 0 6px 15px rgba(25, 135, 84, 0.08);
+        }
+
+        /* 2. Kondisi Standby / Plotting - Kuning */
+        .stand-card.standby { 
+            border-color: #ffc107; 
+            background-image: linear-gradient(rgba(255, 249, 225, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg');
+            box-shadow: 0 6px 15px rgba(255, 193, 7, 0.12);
+        }
+        
+        /* 3. Kondisi Terisi (Occupied) - Merah */
+        .stand-card.occupied { 
+            border-color: #dc3545; 
+            background-image: linear-gradient(rgba(253, 237, 237, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg');
+            box-shadow: 0 6px 15px rgba(220, 53, 69, 0.15);
+        }
+
+        .stand-header { padding: 12px 15px; font-weight: 800; font-size: 1.2rem; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .stand-body { padding: 15px; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
+        
+        .flight-info { font-size: 0.85rem; font-weight: 600; }
+        .status-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 30px; font-weight: 700; text-transform: uppercase; }
+        .fs-7 { font-size: 0.8rem; }
+        
+        /* Box Pair Flight */
+        .pair-box { background: rgba(255, 255, 255, 0.65); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.05); }
+
+        /* BANNER NOTIFIKASI NEXT PEMAKAIAN */
+        .next-flight-banner {
+            background: linear-gradient(135deg, #fffcf0 0%, #fff3cd 100%);
+            border-left: 5px solid #ffc107;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(255, 193, 7, 0.2);
+            border-right: 1px solid rgba(255, 193, 7, 0.2);
+            border-bottom: 1px solid rgba(255, 193, 7, 0.2);
+            margin-top: 12px;
+        }
+        .next-flight-banner .title { font-weight: 800; color: #856404; margin-bottom: 3px; font-size: 0.7rem; letter-spacing: 0.5px; display: flex; align-items: center; }
+        .next-flight-banner .details { font-weight: 700; color: #333; }
+
+        @media (max-width: 768px) { .sidebar { position: fixed; left: -250px; height: 100vh; } .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); } .sidebar-overlay.show { display: block; } .content { padding: 15px; } }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header"><h5>AMS PKU</h5><small>Sultan Syarif Kasim II</small></div>
+        <div class="nav flex-column">
+            <a href="dashboard.html" class="nav-link"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
+            <a href="ams.html" class="nav-link"><i class="bi bi-grid-1x2"></i> Apron Management</a>
+            <a href="database.html" class="nav-link"><i class="bi bi-database"></i> Data Master</a>
+            <a href="#" class="nav-link active"><i class="bi bi-p-circle-fill"></i> Parking Stand</a>
+            <a href="download.html" class="nav-link"><i class="bi bi-cloud-arrow-down-fill"></i> Download Center</a>
+        </div>
+        <div class="mt-auto mb-4 px-3">
+            <button class="btn btn-outline-danger w-100 fw-bold" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-light border shadow-sm px-2 py-1 me-3" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
+                <h4 class="fw-bold text-dark m-0">Real-Time Parking Stand Monitor</h4>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-success px-2 py-1.5 shadow-sm"><i class="bi bi-arrow-repeat me-1"></i> Auto-Sync Aktif</span>
+                <span class="badge bg-primary px-3 py-2 fw-bold shadow-sm" id="liveClock" style="font-variant-numeric: tabular-nums;">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="d-flex gap-3 mb-4 flex-wrap">
+            <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-success p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">READY</small></div>
+            <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-warning p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">STANDBY / PLOTTING</small></div>
+            <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-danger p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">OCCUPIED</small></div>
+        </div>
+
+        <div class="stand-grid" id="gridContainer"></div>
+    </div>
+</div>
+
+<script>
+    const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co'; // JANGAN LUPA GANTI
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI'; // JANGAN LUPA GANTI
+    let sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+
+    function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) { s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); } else { s.classList.toggle('collapsed'); } }
+    
+    
+    setInterval(() => { 
+        document.getElementById('liveClock').innerText = new Date().toLocaleTimeString('en-GB', { 
+            timeZone: 'Asia/Jakarta', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' 
+        }); 
+    }, 1000);
+
+    function getLocalDateString() { return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }); }
+
+    
+    async function updateParkingStands() {
+        if(!sbClient) return;
+        const todayStr = getLocalDateString();
+        
+        try {
+            const { data: flights, error } = await sbClient.from('daily_flights').select('*').eq('date', todayStr);
+            if (error) throw error;
+            
+            const activeFlights = (flights || []).filter(f => f.status !== 'Cancel');
+
+            // 1. Kumpulan Pesawat Berdasarkan Registrasi
+            let aircraftTracker = {};
+            activeFlights.forEach(f => {
+                let reg = (f.reg || '').trim().toUpperCase();
+                if (!reg) reg = 'UNKNOWN_' + f.id; 
+                if (!aircraftTracker[reg]) aircraftTracker[reg] = { arrs: [], deps: [] };
+                
+                if (f.leg === 'A') aircraftTracker[reg].arrs.push(f);
+                else if (f.leg === 'D') aircraftTracker[reg].deps.push(f);
+            });
+
+            // Menyimpan seluruh paket penerbangan (cycle) yang valid hari ini
+            let allFlightCycles = [];
+
+            Object.keys(aircraftTracker).forEach(reg => {
+                let { arrs, deps } = aircraftTracker[reg];
+                arrs.sort((a, b) => (a.jadwal || '99:99').localeCompare(b.jadwal || '99:99'));
+                deps.sort((a, b) => (a.jadwal || '99:99').localeCompare(b.jadwal || '99:99'));
+
+                let maxPairs = Math.max(arrs.length, deps.length);
+
+                for (let k = 0; k < maxPairs; k++) {
+                    let a = arrs[k] || null;
+                    let d = deps[k] || null;
+
+                    let standNum = null;
+                    if (a && a.stand && a.stand.trim() !== '') standNum = parseInt(a.stand.replace(/\D/g, ''));
+                    else if (d && d.stand && d.stand.trim() !== '') standNum = parseInt(d.stand.replace(/\D/g, ''));
+
+                    if (!standNum || standNum < 1 || standNum > 12) continue;
+
+                    let status = 'READY';
+                    let d_hasBlock = d && d.block_time && d.block_time.trim() !== '';
+
+                    if (d_hasBlock) {
+                        status = 'READY';
+                    } else {
+                        if (a) {
+                            let a_hasBlock = a.block_time && a.block_time.trim() !== '';
+                            status = a_hasBlock ? 'OCCUPIED' : 'STANDBY';
+                        } else if (d) {
+                            status = 'OCCUPIED'; // RON Status
+                        }
+                    }
+
+                    if (status !== 'READY') {
+                        allFlightCycles.push({
+                            arr: a, dep: d, reg: reg, standNum: standNum, status: status,
+                            sortTime: a ? (a.jadwal || '99:99') : (d ? (d.jadwal || '99:99') : '99:99')
+                        });
+                    }
+                }
+            });
+
+            // 2.Data Stand 1 - 12 dengan Slot Current & Next
+            let standsData = {};
+            for (let i = 1; i <= 12; i++) { standsData[i] = { status: 'READY', current: null, next: null }; }
+
+            
+            allFlightCycles.sort((a, b) => a.sortTime.localeCompare(b.sortTime));
+
+            // 3. antrean ke dalam masing-masing Stand
+            for (let i = 1; i <= 12; i++) {
+                
+                let cyclesInStand = allFlightCycles.filter(c => c.standNum === i);
+                if (cyclesInStand.length === 0) continue;
+
+                
+                let occupiedCycle = cyclesInStand.find(c => c.status === 'OCCUPIED');
+               
+                let standbyCycles = cyclesInStand.filter(c => c.status === 'STANDBY');
+
+                if (occupiedCycle) {
+                    standsData[i].status = 'OCCUPIED';
+                    standsData[i].current = occupiedCycle;
+                    // Jika ada pesawat Standby di stand yang sedang Occupied, jadikan itu sebagai NEXT
+                    if (standbyCycles.length > 0) standsData[i].next = standbyCycles[0];
+                } else if (standbyCycles.length > 0) {
+                    standsData[i].status = 'STANDBY';
+                    standsData[i].current = standbyCycles[0];
+                    // Jika ada lebih dari 1 Standby, jadikan standby urutan kedua sebagai NEXT
+                    if (standbyCycles.length > 1) standsData[i].next = standbyCycles[1];
+                }
+            }
+
+            
+            const container = document.getElementById('gridContainer');
+            container.innerHTML = '';
+
+            for (let i = 1; i <= 12; i++) {
+                const stand = standsData[i];
+                const card = document.createElement('div');
+                card.className = `stand-card ${stand.status.toLowerCase()}`;
+
+                let headerColor = 'text-success', badgeColor = 'bg-success';
+                if (stand.status === 'STANDBY') { headerColor = 'text-warning'; badgeColor = 'bg-warning text-dark'; }
+                if (stand.status === 'OCCUPIED') { headerColor = 'text-danger'; badgeColor = 'bg-danger'; }
+
+                let bodyContent = '';
+                
+                
+                if (stand.status === 'READY') {
+                    bodyContent = `
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <div class="text-center text-success py-3">
+                                <i class="bi bi-check-circle-fill fs-1 d-block mb-1"></i>
+                                <span class="small fw-bold text-uppercase tracking-wide">Ready to Use</span>
+                            </div>
+                        </div>`;
+                } 
+                
+                else if (stand.current) {
+                    let arr = stand.current.arr;
+                    let dep = stand.current.dep;
+                    let primary = arr || dep;
+                    
+                    bodyContent += `<div class="flight-info text-dark">`;
+
+                    if (stand.status === 'OCCUPIED') {
+                        bodyContent += `
+                            <div class="text-center mb-2 pb-1 border-bottom">
+                                <span class="fs-6 fw-bold text-danger"><i class="bi bi-airplane-fill me-1"></i> ON BLOCK: ${primary.reg || '-'}</span>
+                                <span class="badge bg-secondary ms-2">${primary.tipe_ac || '-'}</span>
+                            </div>`;
+                        
+                        if (arr) {
+                            let timeDisplay = arr.block_time ? arr.block_time : (arr.jadwal || '-');
+                            bodyContent += `
+                                <div class="pair-box border-danger border-opacity-50 border-start border-4">
+                                    <div class="fs-7 text-muted fw-bold mb-1">Kedatangan</div>
+                                    <div class="row g-1 fs-7">
+                                        <div class="col-4 text-muted">Flight:</div><div class="col-8 text-end fw-bold">${arr.callsign || ''}${arr.flight_number || ''}</div>
+                                        <div class="col-4 text-muted">ATA:</div><div class="col-8 text-end text-danger fw-bold"><i class="bi bi-clock-fill"></i> ${timeDisplay}</div>
+                                    </div>
+                                </div>`;
+                        }
+                    } else if (stand.status === 'STANDBY') {
+                        if (arr) {
+                            bodyContent += `
+                                <div class="pair-box border-warning border-opacity-50 border-start border-4">
+                                    <div class="fs-6 fw-bold text-dark mb-1"><i class="bi bi-box-arrow-in-down-right text-warning me-1"></i> ARR: ${arr.callsign || ''}${arr.flight_number || ''}</div>
+                                    <div class="row g-1 fs-7">
+                                        <div class="col-6 text-muted">Reg / Tipe:</div><div class="col-6 text-end fw-bold">${arr.reg || '-'} (${arr.tipe_ac || '-'})</div>
+                                        <div class="col-6 text-muted">Est. STA:</div><div class="col-6 text-end fw-bold text-warning">${arr.jadwal || '-'}</div>
+                                    </div>
+                                </div>`;
+                        }
+                    }
+
+                    
+                    if (dep) {
+                        bodyContent += `
+                            <div class="pair-box border-primary border-opacity-50 border-start border-4 mt-2">
+                                <div class="fs-7 text-muted fw-bold mb-1">Keberangkatan</div>
+                                <div class="row g-1 fs-7">
+                                    <div class="col-4 text-muted">Flight:</div><div class="col-8 text-end fw-bold">${dep.callsign || ''}${dep.flight_number || ''}</div>
+                                    <div class="col-4 text-muted">STD:</div><div class="col-8 text-end fw-bold text-primary">${dep.jadwal || '-'}</div>
+                                </div>
+                            </div>`;
+                    }
+                    bodyContent += `</div>`; // End Flight-info
+
+                    // ==========================================
+                    
+                    // ==========================================
+                    if (stand.next) {
+                        let nArr = stand.next.arr;
+                        let nDep = stand.next.dep;
+                        let nPrimary = nArr || nDep;
+                        let nCallsign = nPrimary.callsign || '';
+                        let nFlNo = nPrimary.flight_number || '';
+                        let nTime = nArr ? nArr.jadwal : (nDep ? nDep.jadwal : '-');
+                        
+                        bodyContent += `
+                            <div class="next-flight-banner shadow-sm mt-auto">
+                                <div class="title"><i class="bi bi-info-circle-fill me-1"></i> NEXT PEMAKAIAN (STANDBY)</div>
+                                <div class="details d-flex justify-content-between align-items-center">
+                                    <span>${nCallsign}${nFlNo} <small class="text-muted">(${nPrimary.reg || '-'})</small></span>
+                                    <span class="badge bg-warning text-dark border border-warning shadow-sm"><i class="bi bi-clock"></i> ${nTime}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div class="stand-header ${headerColor}">
+                        <span>Parking Stand D${i}</span>
+                        <span class="status-badge ${badgeColor} text-white">${stand.status}</span>
+                    </div>
+                    <div class="stand-body">
+                        ${bodyContent}
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        } catch (err) {
+            console.error("Gagal mensinkronkan data:", err);
+        }
+    }
+
+    setInterval(updateParkingStands, 5000);
+    async function logout() { if(!sbClient) return; await sbClient.auth.signOut(); window.location.replace('index.html'); }
+    window.onload = () => { updateParkingStands(); };
+</script>
+</body>
+</html>
