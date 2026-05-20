@@ -6,7 +6,7 @@
     <title>Data Master - AMS PKU</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- LIBRARY SUPABASE -->
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; overflow-x: hidden; }
@@ -219,7 +219,7 @@
         renderJadwal();
     }
 
-    // --- LOGIKA JADWAL (WITH ERROR HANDLING) ---
+    // --- LOGIKA JADWAL  ---
     async function renderJadwal() {
         if(!sbClient) return alert("Koneksi Supabase Gagal.");
         try {
@@ -370,7 +370,7 @@
         } 
     }
 
-    // --- LOGIKA PESAWAT (WITH ERROR HANDLING) ---
+    // --- LOGIKA PESAWAT ---
     async function renderPesawat() {
         if(!sbClient) return;
         try {
@@ -461,11 +461,11 @@
     async function logout() {
         if (!sbClient) return;
         try {
-            // Perintahkan Supabase untuk menghapus sesi login
+            
             const { error } = await sbClient.auth.signOut();
             if (error) throw error;
             
-            // Jika berhasil, alihkan kembali ke halaman login
+            
             window.location.replace('index.html');
         } catch (err) {
             console.error("Logout Error:", err);
