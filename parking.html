@@ -38,7 +38,7 @@
             flex-direction: column;
         }
         
-        .stand-card.ready { border-color: #198754; background-image: linear-gradient(rgba(235, 247, 241, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); box-shadow: 0 6px 15px rgba(25, 135, 84, 0.08); }
+        .stand-card.vacant { border-color: #198754; background-image: linear-gradient(rgba(235, 247, 241, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); box-shadow: 0 6px 15px rgba(25, 135, 84, 0.08); }
         .stand-card.standby { border-color: #ffc107; background-image: linear-gradient(rgba(255, 249, 225, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); box-shadow: 0 6px 15px rgba(255, 193, 7, 0.12); }
         .stand-card.occupied { border-color: #dc3545; background-image: linear-gradient(rgba(253, 237, 237, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); box-shadow: 0 6px 15px rgba(220, 53, 69, 0.15); }
 
@@ -101,7 +101,7 @@
         </div>
 
         <div class="d-flex gap-3 mb-4 flex-wrap">
-            <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-success p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">READY</small></div>
+            <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-success p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">VACANT</small></div>
             <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-warning p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">STANDBY / PLOTTING</small></div>
             <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-danger p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">OCCUPIED</small></div>
             <div class="d-flex align-items-center gap-2 bg-white px-3 py-1.5 border rounded-pill shadow-sm"><span class="badge bg-primary p-1.5 rounded-circle">&nbsp;</span> <small class="fw-bold text-muted">RON (MENGINAP)</small></div>
@@ -112,8 +112,8 @@
 </div>
 
 <script>
-    const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
+    const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co'; // GANTI DENGAN URL SUPABASE ANDA
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI'; // GANTI DENGAN KEY SUPABASE ANDA
     let sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
     function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) { s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); } else { s.classList.toggle('collapsed'); } }
@@ -147,125 +147,108 @@
         return `${timeStr} <span class="badge bg-secondary text-white ms-1" style="font-size:0.6rem;">${dFmt}</span>`;
     }
 
-    // --- LOGIKA UTAMA PARKING MONITOR (SMART MATCHER ALGORITHM) ---
+    // --- LOGIKA UTAMA PARKING MONITOR (SMART CHRONOLOGICAL STITCHING) ---
     async function updateParkingStands() {
         if(!sbClient) return;
         
-        
+        // Buat Array 5 Hari: H-2, H-1, Hari Ini, H+1, H+2 (Untuk mendeteksi RON panjang dan koneksi data)
         let datesToFetch = [];
         for (let i = -2; i <= 2; i++) datesToFetch.push(getLocalDateString(i));
         
         try {
-            
+            // 1. Tarik Data 5 Hari Sekaligus
             const { data: flights, error } = await sbClient.from('daily_flights').select('*').in('date', datesToFetch);
             if (error) throw error;
             
             const activeFlights = (flights || []).filter(f => f.status !== 'Cancel');
 
-            
+            // 2. Kumpulkan Semua Leg (Baris Data) Berdasarkan Registrasi Pesawat
             let aircraftTracker = {};
             activeFlights.forEach(f => {
                 let reg = (f.reg || '').trim().toUpperCase();
                 if (!reg) reg = 'UNKNOWN_' + f.id; 
                 if (!aircraftTracker[reg]) aircraftTracker[reg] = [];
-                aircraftTracker[reg].push({ type: f.leg, data: f });
+                
+                // Masukkan semua data ke dalam array, buatkan timestamp palsu untuk sorting kronologis
+                aircraftTracker[reg].push({
+                    type: f.leg, // 'A' atau 'D'
+                    data: f,
+                    sortTime: f.date + (f.jadwal || '99:99')
+                });
             });
 
             let allFlightCycles = [];
 
-            
+            // 3. Mesin Penjahit Siklus Pesawat (A -> D -> A -> D)
             Object.keys(aircraftTracker).forEach(reg => {
                 let legs = aircraftTracker[reg];
-                
-                let arrs = legs.filter(l => l.type === 'A').map(l => l.data);
-                let deps = legs.filter(l => l.type === 'D').map(l => l.data);
+                legs.sort((a, b) => a.sortTime.localeCompare(b.sortTime)); // Urutkan dari terlama ke terbaru
 
-                // Urutkan berdasarkan tanggal & jam
-                arrs.sort((a,b) => (a.date+(a.jadwal||'99:99')).localeCompare(b.date+(b.jadwal||'99:99')));
-                deps.sort((a,b) => (a.date+(a.jadwal||'99:99')).localeCompare(b.date+(b.jadwal||'99:99')));
+                let currentCycle = { arr: null, dep: null };
 
-                // Fungsi menghitung selisih jam jika terjadi Typo
-                function getTimeDiff(t1, t2) {
-                    let [h1, m1] = (t1||'00:00').split(':').map(Number);
-                    let [h2, m2] = (t2||'00:00').split(':').map(Number);
-                    if(isNaN(h1)) h1=0; if(isNaN(m1)) m1=0; if(isNaN(h2)) h2=0; if(isNaN(m2)) m2=0;
-                    return Math.abs((h1*60+m1) - (h2*60+m2));
-                }
-
-                // Pasangkan Kedatangan (A) dengan Keberangkatan (D)
-                arrs.forEach(a => {
-                    let dIndex = -1;
-                    
-                    // Filter keberangkatan di hari yang SAMA
-                    let sameDayDeps = deps.filter(d => d.date === a.date);
-                    
-                    if (sameDayDeps.length > 0) {
-                        let logicalDeps = sameDayDeps.filter(d => (d.jadwal||'99:99') >= (a.jadwal||'00:00'));
-                        if (logicalDeps.length > 0) {
-                            
-                            dIndex = deps.indexOf(logicalDeps[0]); 
+                legs.forEach(leg => {
+                    if (leg.type === 'A') {
+                        if (currentCycle.arr) {
+                            // Tutup cycle sebelumnya jika ada 2 Arrival berturut-turut (misal ferry flight tanpa data dep)
+                            allFlightCycles.push({...currentCycle, reg: reg});
+                            currentCycle = { arr: leg.data, dep: null };
                         } else {
-                            // KONDISI TYPO (Jadwal Arrival > Departure): Paksa ikat data yang selisih jamnya paling kecil
-                            sameDayDeps.sort((d1, d2) => getTimeDiff(a.jadwal, d1.jadwal) - getTimeDiff(a.jadwal, d2.jadwal));
-                            dIndex = deps.indexOf(sameDayDeps[0]);
+                            currentCycle.arr = leg.data;
                         }
-                    } else {
-                        // Jika tidak ada di hari yang sama, cari keberangkatan di hari BERIKUTNYA (RON)
-                        dIndex = deps.findIndex(d => d.date > a.date);
-                    }
-
-                    if (dIndex !== -1) {
-                        let d = deps[dIndex];
-                        allFlightCycles.push({ arr: a, dep: d, reg: reg });
-                        deps.splice(dIndex, 1);
-                    } else {
-                        // Tidak ada jadwal keberangkatan terdaftar (RON panjang)
-                        allFlightCycles.push({ arr: a, dep: null, reg: reg });
+                    } else if (leg.type === 'D') {
+                        currentCycle.dep = leg.data;
+                        allFlightCycles.push({...currentCycle, reg: reg}); // Tutup cycle karena pesawat berangkat
+                        currentCycle = { arr: null, dep: null };
                     }
                 });
-
-                // Sisa Keberangkatan yang tidak punya Kedatangan (Pesawat RON dari hari sebelumnya)
-                deps.forEach(d => {
-                    allFlightCycles.push({ arr: null, dep: d, reg: reg });
-                });
+                
+                // Push sisa cycle (misal RON yang belum punya jadwal departure)
+                if (currentCycle.arr || currentCycle.dep) {
+                    allFlightCycles.push({...currentCycle, reg: reg});
+                }
             });
 
-            
+            // 4. Evaluasi Status Tiap Cycle & Saring yang relevan untuk HARI INI
             let relevantCycles = [];
             
             allFlightCycles.forEach(c => {
                 let a = c.arr;
                 let d = c.dep;
 
+                // Pewarisan Stand
                 let standNum = null;
                 if (a && a.stand && a.stand.trim() !== '') standNum = parseInt(a.stand.replace(/\D/g, ''));
                 else if (d && d.stand && d.stand.trim() !== '') standNum = parseInt(d.stand.replace(/\D/g, ''));
 
                 if (!standNum || standNum < 1 || standNum > 12) return;
 
-                let cycleStatus = 'READY';
+                let cycleStatus = 'VACANT';
                 let d_hasBlock = d && d.block_time && d.block_time.trim() !== '';
                 let a_hasBlock = a && a.block_time && a.block_time.trim() !== '';
 
                 if (d_hasBlock) {
-                    cycleStatus = 'READY'; // Pesawat sudah terbang pergi
+                    cycleStatus = 'VACANT'; // Pesawat sudah terbang pergi
                 } else {
                     if (a) {
                         cycleStatus = a_hasBlock ? 'OCCUPIED' : 'STANDBY';
                     } else if (d) {
-                        cycleStatus = 'OCCUPIED'; // RON yang akan terbang
+                        cycleStatus = 'OCCUPIED'; // Tidak ada arrival, tapi siap depart (Pesawat nginap sejak lama)
                     }
                 }
 
+                // --- SARINGAN RELEVANSI UNTUK HARI INI ---
+                if (cycleStatus === 'VACANT') return; // Abaikan yang sudah lewat
                 
-                if (cycleStatus === 'READY') return; 
-                if (cycleStatus === 'STANDBY' && a && a.date > todayStr) return; 
+                if (cycleStatus === 'STANDBY') {
+                    // Jika ini Standby tapi jatuhnya BESOK atau lusa, sembunyikan dari monitor hari ini
+                    if (a && a.date > todayStr) return; 
+                }
 
-                
+                // Cek apakah RON (Remain Over Night)
                 let isRON = false;
                 if (a && d && a.date !== d.date) isRON = true;
-                if (!a && d) isRON = true; 
-                if (a && !d && cycleStatus === 'OCCUPIED' && a.date < todayStr) isRON = true; 
+                if (!a && d) isRON = true; // Arrived long time ago
+                if (a && !d && cycleStatus === 'OCCUPIED' && a.date < todayStr) isRON = true; // Arrived yesterday, stays today
 
                 let sortKey = a ? (a.date + (a.jadwal || '99:99')) : (d ? (d.date + (d.jadwal || '99:99')) : '99:9999:99');
 
@@ -275,9 +258,9 @@
                 });
             });
 
-            
+            // 5. Masukkan ke dalam Slot 1-12
             let standsData = {};
-            for (let i = 1; i <= 12; i++) { standsData[i] = { status: 'READY', current: null, next: null }; }
+            for (let i = 1; i <= 12; i++) { standsData[i] = { status: 'VACANT', current: null, next: null }; }
 
             relevantCycles.sort((a, b) => a.sortTime.localeCompare(b.sortTime));
 
@@ -299,7 +282,7 @@
                 }
             }
 
-            
+            // 6. RENDER UI TAMPILAN
             const container = document.getElementById('gridContainer');
             container.innerHTML = '';
 
@@ -314,17 +297,17 @@
 
                 let bodyContent = '';
                 
-                
-                if (stand.status === 'READY') {
+                // === JIKA KOSONG (VACANT) ===
+                if (stand.status === 'VACANT') {
                     bodyContent = `
                         <div class="d-flex justify-content-center align-items-center h-100">
                             <div class="text-center text-success py-3">
                                 <i class="bi bi-check-circle-fill fs-1 d-block mb-1"></i>
-                                <span class="small fw-bold text-uppercase tracking-wide">Ready to Use</span>
+                                <span class="small fw-bold text-uppercase tracking-wide">Ready for Docking</span>
                             </div>
                         </div>`;
                 } 
-                
+                // === JIKA OCCUPIED ATAU STANDBY ===
                 else if (stand.current) {
                     let arr = stand.current.arr;
                     let dep = stand.current.dep;
@@ -381,7 +364,7 @@
                                 </div>
                             </div>`;
                     }
-                    bodyContent += `</div>`; 
+                    bodyContent += `</div>`; // Tutup flight-info
 
                     // ==========================================
                     //  BANNER NOTIFIKASI NEXT PEMAKAIAN
@@ -406,7 +389,7 @@
 
                 card.innerHTML = `
                     <div class="stand-header ${headerColor}">
-                        <span>Parking Stand D${i}</span>
+                        <span>Stand ${i}</span>
                         <span class="status-badge ${badgeColor} text-white">${stand.status}</span>
                     </div>
                     <div class="stand-body">
