@@ -75,7 +75,7 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header"><h5>AMC PKU</h5><small>Sultan Syarif Kasim II</small></div>
+        <div class="sidebar-header"><h5>AMS PKU</h5><small>Sultan Syarif Kasim II</small></div>
         <div class="nav flex-column">
             <a href="dashboard.html" class="nav-link"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
             <a href="ams.html" class="nav-link"><i class="bi bi-grid-1x2"></i> Apron Management</a>
@@ -147,11 +147,11 @@
         return `${timeStr} <span class="badge bg-secondary text-white ms-1" style="font-size:0.6rem;">${dFmt}</span>`;
     }
 
-    // --- LOGIKA UTAMA PARKING MONITOR (SMART CHRONOLOGICAL STITCHING) ---
+    // --- LOGIKA UTAMA PARKING MONITOR (SMART MATCHER ALGORITHM) ---
     async function updateParkingStands() {
         if(!sbClient) return;
         
-        // Buat Array 5 Hari: H-2, H-1, Hari Ini, H+1, H+2 (Untuk mendeteksi RON panjang dan koneksi data)
+        // Buat Array 5 Hari: H-2, H-1, Hari Ini, H+1, H+2
         let datesToFetch = [];
         for (let i = -2; i <= 2; i++) datesToFetch.push(getLocalDateString(i));
         
@@ -162,50 +162,72 @@
             
             const activeFlights = (flights || []).filter(f => f.status !== 'Cancel');
 
-            // 2. Kumpulkan Semua Leg (Baris Data) Berdasarkan Registrasi Pesawat
+            // 2. Kumpulkan Semua Leg Berdasarkan Registrasi Pesawat
             let aircraftTracker = {};
             activeFlights.forEach(f => {
                 let reg = (f.reg || '').trim().toUpperCase();
                 if (!reg) reg = 'UNKNOWN_' + f.id; 
                 if (!aircraftTracker[reg]) aircraftTracker[reg] = [];
-                
-                // Masukkan semua data ke dalam array, buatkan timestamp palsu untuk sorting kronologis
-                aircraftTracker[reg].push({
-                    type: f.leg, // 'A' atau 'D'
-                    data: f,
-                    sortTime: f.date + (f.jadwal || '99:99')
-                });
+                aircraftTracker[reg].push({ type: f.leg, data: f });
             });
 
             let allFlightCycles = [];
 
-            // 3. Mesin Penjahit Siklus Pesawat (A -> D -> A -> D)
+            // 3. Mesin Penjahit Siklus Pesawat (Smart Pairing)
             Object.keys(aircraftTracker).forEach(reg => {
                 let legs = aircraftTracker[reg];
-                legs.sort((a, b) => a.sortTime.localeCompare(b.sortTime)); // Urutkan dari terlama ke terbaru
+                
+                let arrs = legs.filter(l => l.type === 'A').map(l => l.data);
+                let deps = legs.filter(l => l.type === 'D').map(l => l.data);
 
-                let currentCycle = { arr: null, dep: null };
+                // Urutkan berdasarkan tanggal & jam
+                arrs.sort((a,b) => (a.date+(a.jadwal||'99:99')).localeCompare(b.date+(b.jadwal||'99:99')));
+                deps.sort((a,b) => (a.date+(a.jadwal||'99:99')).localeCompare(b.date+(b.jadwal||'99:99')));
 
-                legs.forEach(leg => {
-                    if (leg.type === 'A') {
-                        if (currentCycle.arr) {
-                            // Tutup cycle sebelumnya jika ada 2 Arrival berturut-turut (misal ferry flight tanpa data dep)
-                            allFlightCycles.push({...currentCycle, reg: reg});
-                            currentCycle = { arr: leg.data, dep: null };
+                // Fungsi menghitung selisih jam jika terjadi Typo
+                function getTimeDiff(t1, t2) {
+                    let [h1, m1] = (t1||'00:00').split(':').map(Number);
+                    let [h2, m2] = (t2||'00:00').split(':').map(Number);
+                    if(isNaN(h1)) h1=0; if(isNaN(m1)) m1=0; if(isNaN(h2)) h2=0; if(isNaN(m2)) m2=0;
+                    return Math.abs((h1*60+m1) - (h2*60+m2));
+                }
+
+                // Pasangkan Kedatangan (A) dengan Keberangkatan (D)
+                arrs.forEach(a => {
+                    let dIndex = -1;
+                    
+                    // Filter keberangkatan di hari yang SAMA
+                    let sameDayDeps = deps.filter(d => d.date === a.date);
+                    
+                    if (sameDayDeps.length > 0) {
+                        let logicalDeps = sameDayDeps.filter(d => (d.jadwal||'99:99') >= (a.jadwal||'00:00'));
+                        if (logicalDeps.length > 0) {
+                            // Normal: Ambil Keberangkatan yang jamnya lebih besar/sama dengan Kedatangan
+                            dIndex = deps.indexOf(logicalDeps[0]); 
                         } else {
-                            currentCycle.arr = leg.data;
+                            // KONDISI TYPO (Jadwal Arrival > Departure): Paksa ikat data yang selisih jamnya paling kecil
+                            sameDayDeps.sort((d1, d2) => getTimeDiff(a.jadwal, d1.jadwal) - getTimeDiff(a.jadwal, d2.jadwal));
+                            dIndex = deps.indexOf(sameDayDeps[0]);
                         }
-                    } else if (leg.type === 'D') {
-                        currentCycle.dep = leg.data;
-                        allFlightCycles.push({...currentCycle, reg: reg}); // Tutup cycle karena pesawat berangkat
-                        currentCycle = { arr: null, dep: null };
+                    } else {
+                        // Jika tidak ada di hari yang sama, cari keberangkatan di hari BERIKUTNYA (Kasus RON)
+                        dIndex = deps.findIndex(d => d.date > a.date);
+                    }
+
+                    if (dIndex !== -1) {
+                        let d = deps[dIndex];
+                        allFlightCycles.push({ arr: a, dep: d, reg: reg });
+                        deps.splice(dIndex, 1); // Hapus dari daftar antrean
+                    } else {
+                        // Tidak ada jadwal keberangkatan terdaftar (RON panjang)
+                        allFlightCycles.push({ arr: a, dep: null, reg: reg });
                     }
                 });
-                
-                // Push sisa cycle (misal RON yang belum punya jadwal departure)
-                if (currentCycle.arr || currentCycle.dep) {
-                    allFlightCycles.push({...currentCycle, reg: reg});
-                }
+
+                // Sisa Keberangkatan yang tidak punya Kedatangan (Pesawat RON dari hari sebelumnya)
+                deps.forEach(d => {
+                    allFlightCycles.push({ arr: null, dep: d, reg: reg });
+                });
             });
 
             // 4. Evaluasi Status Tiap Cycle & Saring yang relevan untuk HARI INI
@@ -215,7 +237,6 @@
                 let a = c.arr;
                 let d = c.dep;
 
-                // Pewarisan Stand
                 let standNum = null;
                 if (a && a.stand && a.stand.trim() !== '') standNum = parseInt(a.stand.replace(/\D/g, ''));
                 else if (d && d.stand && d.stand.trim() !== '') standNum = parseInt(d.stand.replace(/\D/g, ''));
@@ -232,23 +253,19 @@
                     if (a) {
                         cycleStatus = a_hasBlock ? 'OCCUPIED' : 'STANDBY';
                     } else if (d) {
-                        cycleStatus = 'OCCUPIED'; // Tidak ada arrival, tapi siap depart (Pesawat nginap sejak lama)
+                        cycleStatus = 'OCCUPIED'; // RON yang akan terbang
                     }
                 }
 
-                // --- SARINGAN RELEVANSI UNTUK HARI INI ---
-                if (cycleStatus === 'VACANT') return; // Abaikan yang sudah lewat
-                
-                if (cycleStatus === 'STANDBY') {
-                    // Jika ini Standby tapi jatuhnya BESOK atau lusa, sembunyikan dari monitor hari ini
-                    if (a && a.date > todayStr) return; 
-                }
+                // Saringan Visibilitas
+                if (cycleStatus === 'VACANT') return; 
+                if (cycleStatus === 'STANDBY' && a && a.date > todayStr) return; 
 
-                // Cek apakah RON (Remain Over Night)
+                // Penentu Badge RON
                 let isRON = false;
                 if (a && d && a.date !== d.date) isRON = true;
-                if (!a && d) isRON = true; // Arrived long time ago
-                if (a && !d && cycleStatus === 'OCCUPIED' && a.date < todayStr) isRON = true; // Arrived yesterday, stays today
+                if (!a && d) isRON = true; 
+                if (a && !d && cycleStatus === 'OCCUPIED' && a.date < todayStr) isRON = true; 
 
                 let sortKey = a ? (a.date + (a.jadwal || '99:99')) : (d ? (d.date + (d.jadwal || '99:99')) : '99:9999:99');
 
@@ -364,7 +381,7 @@
                                 </div>
                             </div>`;
                     }
-                    bodyContent += `</div>`; // Tutup flight-info
+                    bodyContent += `</div>`; 
 
                     // ==========================================
                     //  BANNER NOTIFIKASI NEXT PEMAKAIAN
