@@ -309,10 +309,13 @@
                     }
 
                     let t = f.fl_type || 'UNKNOWN';
-                    if (!movMap[t]) movMap[t] = { a: 0, d: 0 };
-                    if (f.leg === 'A') movMap[t].a++; else movMap[t].d++;
+                    let di = f.dom_intl === 'INTL' ? 'intl' : 'dom';
+                    if (!movMap[t]) movMap[t] = { dom: { a: 0, d: 0 }, intl: { a: 0, d: 0 } };
+                    if (f.leg === 'A') movMap[t][di].a++; else movMap[t][di].d++;
 
                     if (!paxMap[t]) paxMap[t] = {
+                        dom: { a: { p: 0, s: 0 }, d: { p: 0, s: 0 } },
+                        intl: { a: { p: 0, s: 0 }, d: { p: 0, s: 0 } },
                         a: { p: 0, s: 0 },
                         d: { p: 0, s: 0 },
                         t: { p: 0, s: 0 }
@@ -320,9 +323,13 @@
                     const paxVal = (parseInt(f.pax) || 0);
                     const seatVal = (parseInt(f.seat) || 0);
                     if (f.leg === 'A') {
+                        paxMap[t][di].a.p += paxVal;
+                        paxMap[t][di].a.s += seatVal;
                         paxMap[t].a.p += paxVal;
                         paxMap[t].a.s += seatVal;
                     } else if (f.leg === 'D') {
+                        paxMap[t][di].d.p += paxVal;
+                        paxMap[t][di].d.s += seatVal;
                         paxMap[t].d.p += paxVal;
                         paxMap[t].d.s += seatVal;
                     }
@@ -349,12 +356,20 @@
             let movStr = "", paxStr = "";
             let movGrandA = 0, movGrandD = 0;
             Object.keys(movMap).sort().forEach(k => {
-                const arr = movMap[k].a || 0;
-                const dep = movMap[k].d || 0;
+                const m = movMap[k];
+                const domArr = m.dom ? (m.dom.a || 0) : 0;
+                const domDep = m.dom ? (m.dom.d || 0) : 0;
+                const intlArr = m.intl ? (m.intl.a || 0) : 0;
+                const intlDep = m.intl ? (m.intl.d || 0) : 0;
+                const arr = domArr + intlArr;
+                const dep = domDep + intlDep;
                 const tot = arr + dep;
                 movGrandA += arr;
                 movGrandD += dep;
-                movStr += `- ${k}: Arr ${arr} | Dep ${dep} | Total ${tot}\n`;
+                movStr += `- ${k}\n`;
+                movStr += `  [Domestik]     : Arr ${domArr} | Dep ${domDep} | Total ${domArr + domDep}\n`;
+                movStr += `  [Internasional]: Arr ${intlArr} | Dep ${intlDep} | Total ${intlArr + intlDep}\n`;
+                movStr += `  [Total]        : Arr ${arr} | Dep ${dep} | Total ${tot}\n`;
             });
             const movGrandT = movGrandA + movGrandD;
             if (movStr) {
@@ -362,13 +377,37 @@
             }
             Object.keys(paxMap).sort().forEach(k => {
                 let p = paxMap[k];
+                // Domestik
+                let domAP = p.dom.a.p, domAS = p.dom.a.s;
+                let domDP = p.dom.d.p, domDS = p.dom.d.s;
+                let domTP = domAP + domDP, domTS = domAS + domDS;
+                let domLfA = domAS > 0 ? ((domAP / domAS) * 100).toFixed(1) : 0;
+                let domLfD = domDS > 0 ? ((domDP / domDS) * 100).toFixed(1) : 0;
+                let domLfT = domTS > 0 ? ((domTP / domTS) * 100).toFixed(1) : 0;
+                // Internasional
+                let intlAP = p.intl.a.p, intlAS = p.intl.a.s;
+                let intlDP = p.intl.d.p, intlDS = p.intl.d.s;
+                let intlTP = intlAP + intlDP, intlTS = intlAS + intlDS;
+                let intlLfA = intlAS > 0 ? ((intlAP / intlAS) * 100).toFixed(1) : 0;
+                let intlLfD = intlDS > 0 ? ((intlDP / intlDS) * 100).toFixed(1) : 0;
+                let intlLfT = intlTS > 0 ? ((intlTP / intlTS) * 100).toFixed(1) : 0;
+                // Total
                 let lfA = p.a.s > 0 ? ((p.a.p / p.a.s) * 100).toFixed(1) : 0;
                 let lfD = p.d.s > 0 ? ((p.d.p / p.d.s) * 100).toFixed(1) : 0;
                 let lfT = p.t.s > 0 ? ((p.t.p / p.t.s) * 100).toFixed(1) : 0;
                 paxStr += `- ${k}\n`;
-                paxStr += `  Arr: Pax ${p.a.p.toLocaleString('id-ID')} | Seat ${p.a.s.toLocaleString('id-ID')} | L/F ${lfA}%\n`;
-                paxStr += `  Dep: Pax ${p.d.p.toLocaleString('id-ID')} | Seat ${p.d.s.toLocaleString('id-ID')} | L/F ${lfD}%\n`;
-                paxStr += `  Total: Pax ${p.t.p.toLocaleString('id-ID')} | Seat ${p.t.s.toLocaleString('id-ID')} | L/F ${lfT}%\n`;
+                paxStr += `  [Domestik]\n`;
+                paxStr += `    Arr  : Pax ${domAP.toLocaleString('id-ID')} | Seat ${domAS.toLocaleString('id-ID')} | L/F ${domLfA}%\n`;
+                paxStr += `    Dep  : Pax ${domDP.toLocaleString('id-ID')} | Seat ${domDS.toLocaleString('id-ID')} | L/F ${domLfD}%\n`;
+                paxStr += `    Total: Pax ${domTP.toLocaleString('id-ID')} | Seat ${domTS.toLocaleString('id-ID')} | L/F ${domLfT}%\n`;
+                paxStr += `  [Internasional]\n`;
+                paxStr += `    Arr  : Pax ${intlAP.toLocaleString('id-ID')} | Seat ${intlAS.toLocaleString('id-ID')} | L/F ${intlLfA}%\n`;
+                paxStr += `    Dep  : Pax ${intlDP.toLocaleString('id-ID')} | Seat ${intlDS.toLocaleString('id-ID')} | L/F ${intlLfD}%\n`;
+                paxStr += `    Total: Pax ${intlTP.toLocaleString('id-ID')} | Seat ${intlTS.toLocaleString('id-ID')} | L/F ${intlLfT}%\n`;
+                paxStr += `  [Total]\n`;
+                paxStr += `    Arr  : Pax ${p.a.p.toLocaleString('id-ID')} | Seat ${p.a.s.toLocaleString('id-ID')} | L/F ${lfA}%\n`;
+                paxStr += `    Dep  : Pax ${p.d.p.toLocaleString('id-ID')} | Seat ${p.d.s.toLocaleString('id-ID')} | L/F ${lfD}%\n`;
+                paxStr += `    Total: Pax ${p.t.p.toLocaleString('id-ID')} | Seat ${p.t.s.toLocaleString('id-ID')} | L/F ${lfT}%\n`;
             });
 
             let otp = depTot > 0 ? ((onTime / depTot) * 100).toFixed(1) : 100;
