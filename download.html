@@ -20,7 +20,6 @@
         
         .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; transition: all 0.3s ease; }
         
-        
         .nav-tabs .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 12px 25px; border-bottom: 3px solid transparent; transition: 0.3s; }
         .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
         .card-custom { border: none; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); background: #fff; padding: 25px; }
@@ -41,7 +40,7 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header"><h5>AMC PKU</h5><small>Sultan Syarif Kasim II</small></div>
+        <div class="sidebar-header"><h5>AMS PKU</h5><small>Sultan Syarif Kasim II</small></div>
         <div class="nav flex-column">
             <a href="dashboard.html" class="nav-link"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
             <a href="ams.html" class="nav-link"><i class="bi bi-grid-1x2"></i> Apron Management</a>
@@ -154,11 +153,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
+    const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co'; 
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI'; 
     let sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
-    
     function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) { s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); } else { s.classList.toggle('collapsed'); } }
 
     // Helpers
@@ -200,8 +198,8 @@
             otp: document.getElementById('c_otp').checked, ron: document.getElementById('c_ron').checked
         };
 
-        let headHtml = `<tr><th>Tanggal</th><th>CS</th><th>No. Fl</th><th>Rute</th><th>Jadwal</th><th>Reg</th>`;
-        if(opt.type) headHtml += `<th>Type</th><th>Flt Type</th>`; else headHtml += `<th>Type</th>`;
+        let headHtml = `<tr><th>Tanggal</th><th>CS</th><th>No. Fl</th><th>Rute</th><th>Leg</th><th>Tipe</th><th>Jadwal</th><th>Reg</th>`;
+        if(opt.type) headHtml += `<th>AC Type</th><th>Flt Type</th>`; else headHtml += `<th>AC Type</th>`;
         if(opt.pax) headHtml += `<th>Pax</th><th>Seat</th><th>L/F</th>`;
         if(opt.bag) headHtml += `<th>Bagasi</th><th>Kargo</th>`;
         if(opt.avio) headHtml += `<th>Avio</th>`;
@@ -211,7 +209,9 @@
         h.innerHTML = headHtml;
 
         b.innerHTML = flights.map(f => {
-            let row = `<tr><td>${f.date}</td><td>${f.callsign||''}</td><td>${f.flight_number||''}</td><td>${f.rute||''}</td><td>${f.jadwal||''}</td><td>${f.reg||''}</td><td>${f.tipe_ac||''}</td>`;
+            let badgeLeg = f.leg === 'A' ? 'bg-primary' : (f.leg === 'D' ? 'bg-info text-dark' : 'bg-secondary');
+            let badgeDom = f.dom_intl === 'INTL' ? 'bg-dark' : 'bg-secondary';
+            let row = `<tr><td>${f.date}</td><td>${f.callsign||''}</td><td>${f.flight_number||''}</td><td>${f.rute||''}</td><td><span class="badge ${badgeLeg}">${f.leg||'-'}</span></td><td><span class="badge ${badgeDom}">${f.dom_intl||'-'}</span></td><td>${f.jadwal||''}</td><td>${f.reg||''}</td><td>${f.tipe_ac||''}</td>`;
             if(opt.type) row += `<td>${f.fl_type||''}</td>`;
             if(opt.pax) {
                 let lf = f.seat > 0 ? ((f.pax/f.seat)*100).toFixed(1) + '%' : '-';
@@ -246,7 +246,7 @@
             otp: document.getElementById('c_otp').checked, ron: document.getElementById('c_ron').checked
         };
 
-        let headers = ["Tanggal", "Callsign", "FlightNo", "Rute", "Jadwal", "Reg", "TypeAC"];
+        let headers = ["Tanggal", "Callsign", "FlightNo", "Rute", "Leg", "Tipe", "Jadwal", "Reg", "TypeAC"];
         if(opt.type) headers.push("FlightType");
         if(opt.pax) headers.push("Pax", "Seat", "LF");
         if(opt.bag) headers.push("Bagasi(Kg)", "Kargo(Kg)");
@@ -257,7 +257,7 @@
 
         let csv = headers.join(",") + "\n";
         flights.forEach(f => {
-            let row = [f.date, f.callsign, f.flight_number, f.rute, f.jadwal, f.reg, f.tipe_ac];
+            let row = [f.date, f.callsign, f.flight_number, f.rute, f.leg, f.dom_intl, f.jadwal, f.reg, f.tipe_ac];
             if(opt.type) row.push(f.fl_type);
             if(opt.pax) row.push(f.pax, f.seat, f.seat > 0 ? (f.pax/f.seat*100).toFixed(1) : 0);
             if(opt.bag) row.push(f.bagasi, f.kargo);
@@ -294,42 +294,50 @@
 
             (flights || []).forEach(f => {
                 if (f.fl_type === 'REGULER') {
-                    if (f.leg === 'A' && f.dom_intl === 'DOM') plAD++;
-                    if (f.leg === 'D' && f.dom_intl === 'DOM') plDD++;
-                    if (f.leg === 'A' && f.dom_intl === 'INTL') plAI++;
-                    if (f.leg === 'D' && f.dom_intl === 'INTL') plDI++;
+                    // Normalisasi input string agar tidak ada spasi sisa
+                    let di_raw = (f.dom_intl || '').trim().toUpperCase();
+                    if (f.leg === 'A' && di_raw === 'DOM') plAD++;
+                    if (f.leg === 'D' && di_raw === 'DOM') plDD++;
+                    if (f.leg === 'A' && di_raw === 'INTL') plAI++;
+                    if (f.leg === 'D' && di_raw === 'INTL') plDI++;
                 }
 
                 if (f.status === 'OPS') {
+                    // Normalisasi input string agar tidak ada spasi sisa
+                    let di_raw = (f.dom_intl || '').trim().toUpperCase();
                     if (f.fl_type === 'REGULER') {
-                        if (f.leg === 'A' && f.dom_intl === 'DOM') reAD++;
-                        if (f.leg === 'D' && f.dom_intl === 'DOM') reDD++;
-                        if (f.leg === 'A' && f.dom_intl === 'INTL') reAI++;
-                        if (f.leg === 'D' && f.dom_intl === 'INTL') reDI++;
+                        if (f.leg === 'A' && di_raw === 'DOM') reAD++;
+                        if (f.leg === 'D' && di_raw === 'DOM') reDD++;
+                        if (f.leg === 'A' && di_raw === 'INTL') reAI++;
+                        if (f.leg === 'D' && di_raw === 'INTL') reDI++;
                     }
 
-                    let t = f.fl_type || 'UNKNOWN';
-                    if (!movMap[t]) movMap[t] = { a: 0, d: 0 };
-                    if (f.leg === 'A') movMap[t].a++; else movMap[t].d++;
+                    // --- PERBAIKAN: NORMALISASI STRING FL_TYPE AGAR TIDAK DOUBLE KARENA SPASI ---
+                    let rawType = f.fl_type || 'UNKNOWN';
+                    let t = rawType.trim().toUpperCase(); 
+                    
+                    let di = (di_raw === 'INTL') ? 'intl' : 'dom'; 
+                    
+                    if (!movMap[t]) movMap[t] = { dom: {a: 0, d: 0}, intl: {a: 0, d: 0} };
+                    if (f.leg === 'A') movMap[t][di].a++; else movMap[t][di].d++;
 
                     if (!paxMap[t]) paxMap[t] = {
-                        a: { p: 0, s: 0 },
-                        d: { p: 0, s: 0 },
-                        t: { p: 0, s: 0 }
+                        dom: { a: { p: 0, s: 0 }, d: { p: 0, s: 0 }, t: { p: 0, s: 0 } },
+                        intl: { a: { p: 0, s: 0 }, d: { p: 0, s: 0 }, t: { p: 0, s: 0 } }
                     };
                     const paxVal = (parseInt(f.pax) || 0);
                     const seatVal = (parseInt(f.seat) || 0);
                     if (f.leg === 'A') {
-                        paxMap[t].a.p += paxVal;
-                        paxMap[t].a.s += seatVal;
+                        paxMap[t][di].a.p += paxVal;
+                        paxMap[t][di].a.s += seatVal;
                     } else if (f.leg === 'D') {
-                        paxMap[t].d.p += paxVal;
-                        paxMap[t].d.s += seatVal;
+                        paxMap[t][di].d.p += paxVal;
+                        paxMap[t][di].d.s += seatVal;
                     }
-                    paxMap[t].t.p += paxVal;
-                    paxMap[t].t.s += seatVal;
+                    paxMap[t][di].t.p += paxVal;
+                    paxMap[t][di].t.s += seatVal;
 
-                    paxToday += (parseInt(f.pax) || 0);
+                    paxToday += paxVal;
                     bagToday += (parseInt(f.bagasi) || 0);
                     kargoToday += (parseInt(f.kargo) || 0);
 
@@ -346,29 +354,92 @@
                 }
             });
 
+            // --- BUILDER STRING UNTUK MOVEMENT DOM/INTL ---
             let movStr = "", paxStr = "";
             let movGrandA = 0, movGrandD = 0;
+            
             Object.keys(movMap).sort().forEach(k => {
-                const arr = movMap[k].a || 0;
-                const dep = movMap[k].d || 0;
-                const tot = arr + dep;
-                movGrandA += arr;
-                movGrandD += dep;
-                movStr += `- ${k}: Arr ${arr} | Dep ${dep} | Total ${tot}\n`;
+                let m = movMap[k];
+                let domA = m.dom.a, domD = m.dom.d, domT = domA + domD;
+                let intlA = m.intl.a, intlD = m.intl.d, intlT = intlA + intlD;
+                let totA = domA + intlA, totD = domD + intlD, totT = totA + totD;
+                
+                movGrandA += totA;
+                movGrandD += totD;
+                
+                movStr += `- ${k}:\n`;
+                let hasDom = (domT > 0);
+                let hasIntl = (intlT > 0);
+                
+                if (hasDom || (!hasDom && !hasIntl)) {
+                    movStr += `  [DOMESTIK] Arr ${domA} | Dep ${domD} | Total ${domT}\n`;
+                }
+                if (hasIntl) {
+                    movStr += `  [INTERNASIONAL] Arr ${intlA} | Dep ${intlD} | Total ${intlT}\n`;
+                }
+                // HANYA MUNCULKAN TOTAL JIKA ADA CAMPURAN DOMESTIK & INTERNASIONAL 
+                // (Untuk menghindari kesan "Double" jika isinya cuma satu tipe)
+                if (hasDom && hasIntl) {
+                    movStr += `  [TOTAL ${k}] Arr ${totA} | Dep ${totD} | Total ${totT}\n`;
+                }
             });
+            
             const movGrandT = movGrandA + movGrandD;
             if (movStr) {
-                movStr += `- TOTAL: Arr ${movGrandA} | Dep ${movGrandD} | Total ${movGrandT}\n`;
+                movStr += `- GRAND TOTAL MOVEMENT: Arr ${movGrandA} | Dep ${movGrandD} | Total ${movGrandT}\n`;
             }
+
+            // --- BUILDER STRING UNTUK PAX, SEAT & L/F DOM/INTL ---
             Object.keys(paxMap).sort().forEach(k => {
                 let p = paxMap[k];
-                let lfA = p.a.s > 0 ? ((p.a.p / p.a.s) * 100).toFixed(1) : 0;
-                let lfD = p.d.s > 0 ? ((p.d.p / p.d.s) * 100).toFixed(1) : 0;
-                let lfT = p.t.s > 0 ? ((p.t.p / p.t.s) * 100).toFixed(1) : 0;
+                let domAp = p.dom.a.p, domAs = p.dom.a.s;
+                let domDp = p.dom.d.p, domDs = p.dom.d.s;
+                let domTp = p.dom.t.p, domTs = p.dom.t.s;
+                
+                let intlAp = p.intl.a.p, intlAs = p.intl.a.s;
+                let intlDp = p.intl.d.p, intlDs = p.intl.d.s;
+                let intlTp = p.intl.t.p, intlTs = p.intl.t.s;
+                
+                let totAp = domAp + intlAp, totAs = domAs + intlAs;
+                let totDp = domDp + intlDp, totDs = domDs + intlDs;
+                let totTp = domTp + intlTp, totTs = domTs + intlTs;
+                
+                let hasDom = domTs > 0 || domTp > 0;
+                let hasIntl = intlTs > 0 || intlTp > 0;
+                
                 paxStr += `- ${k}\n`;
-                paxStr += `  Arr: Pax ${p.a.p.toLocaleString('id-ID')} | Seat ${p.a.s.toLocaleString('id-ID')} | L/F ${lfA}%\n`;
-                paxStr += `  Dep: Pax ${p.d.p.toLocaleString('id-ID')} | Seat ${p.d.s.toLocaleString('id-ID')} | L/F ${lfD}%\n`;
-                paxStr += `  Total: Pax ${p.t.p.toLocaleString('id-ID')} | Seat ${p.t.s.toLocaleString('id-ID')} | L/F ${lfT}%\n`;
+                
+                if (hasDom || (!hasDom && !hasIntl)) {
+                    let lfA = domAs > 0 ? ((domAp / domAs) * 100).toFixed(1) : 0;
+                    let lfD = domDs > 0 ? ((domDp / domDs) * 100).toFixed(1) : 0;
+                    let lfT = domTs > 0 ? ((domTp / domTs) * 100).toFixed(1) : 0;
+                    paxStr += `  [DOMESTIK]\n`;
+                    paxStr += `  Arr: Pax ${domAp.toLocaleString('id-ID')} | Seat ${domAs.toLocaleString('id-ID')} | L/F ${lfA}%\n`;
+                    paxStr += `  Dep: Pax ${domDp.toLocaleString('id-ID')} | Seat ${domDs.toLocaleString('id-ID')} | L/F ${lfD}%\n`;
+                    paxStr += `  Tot: Pax ${domTp.toLocaleString('id-ID')} | Seat ${domTs.toLocaleString('id-ID')} | L/F ${lfT}%\n`;
+                }
+                
+                if (hasIntl) {
+                    let lfA = intlAs > 0 ? ((intlAp / intlAs) * 100).toFixed(1) : 0;
+                    let lfD = intlDs > 0 ? ((intlDp / intlDs) * 100).toFixed(1) : 0;
+                    let lfT = intlTs > 0 ? ((intlTp / intlTs) * 100).toFixed(1) : 0;
+                    paxStr += `  [INTERNASIONAL]\n`;
+                    paxStr += `  Arr: Pax ${intlAp.toLocaleString('id-ID')} | Seat ${intlAs.toLocaleString('id-ID')} | L/F ${lfA}%\n`;
+                    paxStr += `  Dep: Pax ${intlDp.toLocaleString('id-ID')} | Seat ${intlDs.toLocaleString('id-ID')} | L/F ${lfD}%\n`;
+                    paxStr += `  Tot: Pax ${intlTp.toLocaleString('id-ID')} | Seat ${intlTs.toLocaleString('id-ID')} | L/F ${lfT}%\n`;
+                }
+                
+                // HANYA MUNCULKAN TOTAL JIKA ADA CAMPURAN DOMESTIK & INTERNASIONAL 
+                if (hasDom && hasIntl) {
+                    let lfAtot = totAs > 0 ? ((totAp / totAs) * 100).toFixed(1) : 0;
+                    let lfDtot = totDs > 0 ? ((totDp / totDs) * 100).toFixed(1) : 0;
+                    let lfTtot = totTs > 0 ? ((totTp / totTs) * 100).toFixed(1) : 0;
+                    
+                    paxStr += `  [TOTAL ${k}]\n`;
+                    paxStr += `  Arr: Pax ${totAp.toLocaleString('id-ID')} | Seat ${totAs.toLocaleString('id-ID')} | L/F ${lfAtot}%\n`;
+                    paxStr += `  Dep: Pax ${totDp.toLocaleString('id-ID')} | Seat ${totDs.toLocaleString('id-ID')} | L/F ${lfDtot}%\n`;
+                    paxStr += `  Tot: Pax ${totTp.toLocaleString('id-ID')} | Seat ${totTs.toLocaleString('id-ID')} | L/F ${lfTtot}%\n`;
+                }
             });
 
             let otp = depTot > 0 ? ((onTime / depTot) * 100).toFixed(1) : 100;
@@ -416,7 +487,7 @@ ${delayList.length > 0 ? delayList.join("\n") : "- Nihil"}
 - PTO: ${daily.pto_malam || "-"}
 - Pelaksana: ${(daily.pelaksana_malam || []).join(", ") || "-"}`;
 
-        } catch (e) { txt.value = "Error: " + e.message; }
+        } catch (e) { txt.value = "Error: " + e.message; console.error(e); }
     }
 
     function copyWA() { const t = document.getElementById('waTextarea'); if(!t.value) return; t.select(); navigator.clipboard.writeText(t.value).then(() => alert("Tersalin!")).catch(e => alert("Gagal menyalin.")); }
