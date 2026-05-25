@@ -17,6 +17,9 @@
         .sidebar-header { padding: 25px 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 15px; }
         .sidebar-header h5 { margin: 0; font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
         .sidebar-header small { color: #888; font-size: 0.75rem; letter-spacing: 0.5px; }
+        .user-profile-box { margin: 0 15px 15px; padding: 10px 12px; border: 1px solid #e9ecef; border-radius: 10px; background: #f8f9fa; }
+        .user-profile-box .name { font-size: 0.9rem; font-weight: 700; color: #2c3e50; line-height: 1.2; }
+        .user-profile-box .email { font-size: 0.75rem; color: #6c757d; }
         .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
         .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
         .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; }
@@ -56,6 +59,36 @@
         .btn-delete-row:hover { opacity: 1; transform: scale(1.1); }
         .search-input-group:focus-within { box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25); }
 
+        .restricted-sheet-container { position: relative; }
+        .readonly-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(245, 246, 248, 0.35);
+            z-index: 30;
+            display: none;
+            border-radius: 12px;
+            pointer-events: all;
+        }
+        .readonly-overlay .readonly-badge {
+            position: sticky;
+            top: 12px;
+            margin: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 999px;
+            background: rgba(13, 110, 253, 0.9);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        .readonly-blocked {
+            pointer-events: none !important;
+            user-select: none;
+        }
+
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: -250px; height: 100vh; }
             .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); }
@@ -77,6 +110,15 @@
             <a href="database.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-database"></i> Data Master</a>
             <a href="parking.html" class="nav-link"><i class="bi bi-p-circle-fill"></i> Parking Stand</a>
             <a href="download.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-cloud-arrow-down-fill"></i> Download Center</a>
+        </div>
+        <div class="user-profile-box">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-person-circle fs-4 text-primary"></i>
+                <div class="flex-grow-1 overflow-hidden">
+                    <div id="profileName" class="name text-truncate">User</div>
+                    <div id="profileEmail" class="email text-truncate">-</div>
+                </div>
+            </div>
         </div>
         <div class="mt-auto mb-4 px-3"><button class="btn btn-outline-danger w-100 fw-bold" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></div>
     </nav>
@@ -113,7 +155,11 @@
         </div>
 
         <!-- VIEW 2: SHEET -->
-        <div id="sheetView" class="d-none">
+        <div id="sheetView" class="d-none restricted-sheet-container">
+            <div id="amsReadonlyOverlay" class="readonly-overlay" aria-hidden="true">
+                <span class="readonly-badge"><i class="bi bi-eye-fill"></i> View Only - Akun ini tidak dapat mengubah data</span>
+            </div>
+
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex gap-2">
                     <button class="btn btn-light border fw-bold text-secondary shadow-sm" onclick="showCalendar()"><i class="bi bi-arrow-left me-1"></i> Kembali</button>
@@ -225,6 +271,8 @@
     let sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
     let currentDate = new Date();
+    const restrictedEmails = ['ssk2@amcpku.com'];
+    let isRestrictedUser = false;
     const parkingStands = ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "NA", "SA"];
     const avioStands = ["D5", "D6", "D7", "D8"];
     let globalAircraftDb = [];
@@ -233,6 +281,77 @@
 
     function toggleSidebar() { const s = document.getElementById('sidebar'); const o = document.getElementById('sidebarOverlay'); if (window.innerWidth <= 768) { s.classList.toggle('show'); o.classList.toggle('show'); } else { s.classList.toggle('collapsed'); } }
     function closeSidebarMobile() { if (window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('show'); document.getElementById('sidebarOverlay').classList.remove('show'); } }
+
+    function applyAmsReadonlyMode() {
+        const overlay = document.getElementById('amsReadonlyOverlay');
+        const resetBtn = document.querySelector('button[onclick="resetDataHariIni()"]');
+        const completeBtn = document.querySelector('button[onclick="completeData()"]');
+        const addManualBtn = document.querySelector('button[data-bs-target="#modalTambahManual"]');
+        const dosSelector = document.getElementById('dosSelector');
+
+        if (!overlay) return;
+
+        if (isRestrictedUser) {
+            overlay.style.display = 'block';
+
+            [resetBtn, completeBtn, addManualBtn].forEach(btn => {
+                if (!btn) return;
+                btn.classList.add('readonly-blocked');
+                btn.setAttribute('disabled', 'disabled');
+                btn.setAttribute('aria-disabled', 'true');
+                btn.title = 'View only: akun ini tidak punya izin edit';
+            });
+
+            if (dosSelector) {
+                dosSelector.setAttribute('disabled', 'disabled');
+                dosSelector.classList.add('readonly-blocked');
+                dosSelector.title = 'View only: akun ini tidak punya izin edit';
+            }
+        } else {
+            overlay.style.display = 'none';
+            [resetBtn, completeBtn, addManualBtn].forEach(btn => {
+                if (!btn) return;
+                btn.classList.remove('readonly-blocked');
+                btn.removeAttribute('disabled');
+                btn.removeAttribute('aria-disabled');
+                btn.removeAttribute('title');
+            });
+            if (dosSelector) {
+                dosSelector.classList.remove('readonly-blocked');
+                dosSelector.removeAttribute('disabled');
+                dosSelector.removeAttribute('title');
+            }
+        }
+    }
+
+    async function initUserProfile() {
+        if (!sbClient) return;
+        try {
+            const { data: { session } } = await sbClient.auth.getSession();
+            if (!session) { window.location.replace('index.html'); return; }
+
+            const user = session.user || {};
+            const storedName = localStorage.getItem('ams_user_name') || '';
+            const storedEmail = localStorage.getItem('ams_user_email') || '';
+            const metadataName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+            const finalName = (metadataName && metadataName.trim()) || storedName || (user.email ? user.email.split('@')[0] : 'User');
+            const finalEmail = user.email || storedEmail || '-';
+            isRestrictedUser = restrictedEmails.includes((finalEmail || '').toLowerCase());
+
+            localStorage.setItem('ams_user_name', finalName);
+            localStorage.setItem('ams_user_email', finalEmail);
+            localStorage.setItem('ams_user_id', user.id || '');
+
+            const elName = document.getElementById('profileName');
+            const elEmail = document.getElementById('profileEmail');
+            if (elName) elName.textContent = finalName;
+            if (elEmail) elEmail.textContent = finalEmail;
+            applyAmsReadonlyMode();
+        } catch (err) {
+            console.error('Gagal inisialisasi profil user:', err);
+            window.location.replace('index.html');
+        }
+    }
 
     async function updatePetugasDatalist() {
         if (!sbClient) return;
@@ -251,6 +370,7 @@
     }
 
     function addPelaksana(shift) {
+        if (isRestrictedUser) return;
         const container = document.getElementById(`containerPelaksana${shift}`);
         const div = document.createElement('div'); div.className = "d-flex gap-1 mb-1 align-items-center";
         div.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase pelaksana-${shift.toLowerCase()}" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()"><button type="button" class="btn btn-sm text-danger p-0 px-1" onclick="this.parentElement.remove(); markAsIncomplete()"><i class="bi bi-x-circle-fill"></i></button>`;
@@ -334,6 +454,7 @@
     }
 
     async function loadScheduleByDOS() {
+        if (isRestrictedUser) return;
         if (!sbClient) return;
         const dos = document.getElementById("dosSelector").value;
         if (!dos) return document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="18" class="text-center text-muted py-5">Pilih DOS terlebih dahulu.</td></tr>`;
@@ -421,7 +542,7 @@
     function updateLegColor(sel) { sel.className = `form-select input-leg ${sel.value === 'D' ? 'text-primary' : 'text-success'}`; updateRonDisplay(sel); }
     function autoFillKapasitas(el) { const row = el.closest("tr"); const cs = row.cells[0].querySelector("input").value.toUpperCase(); const match = globalAircraftDb.find(ac => ac.callsign === cs && ac.type === el.value.toUpperCase()); row.querySelector(".input-seat").value = match ? match.seat : ""; calculateLF(el); }
     function checkParkingStand(sel) { sel.closest("tr").querySelector(".avio-checkbox").checked = avioStands.includes(sel.value); }
-    function hapusBaris(btn) { if(confirm("Yakin hapus baris ini?")) { btn.closest("tr").remove(); markAsIncomplete(); } }
+    function hapusBaris(btn) { if(isRestrictedUser) return; if(confirm("Yakin hapus baris ini?")) { btn.closest("tr").remove(); markAsIncomplete(); } }
 
     function checkRowStatus(el) { 
         const r = el.closest("tr"); const reg = r.querySelector(".input-reg").value.trim(); const stand = r.querySelector(".input-stand").value.trim(); const bt = r.querySelector(".input-blocktime").value.trim(); const pax = r.querySelector(".input-pax").value.trim(); const flType = r.querySelector(".input-fltype").value.trim().toUpperCase(); const badge = r.querySelector(".status-badge"); const val = r.querySelector(".status-val");
@@ -431,6 +552,7 @@
     }
 
     function simpanBaris(btn) { 
+        if (isRestrictedUser) return;
         const r = btn.closest("tr"); const reg = r.querySelector(".input-reg").value.trim(); const stand = r.querySelector(".input-stand").value.trim(); const bt = r.querySelector(".input-blocktime").value.trim(); const pax = r.querySelector(".input-pax").value.trim(); const flType = r.querySelector(".input-fltype").value.trim().toUpperCase(); const badge = r.querySelector(".status-badge"); const val = r.querySelector(".status-val");
         const isStrict = ["REGULER", "EXTRA", "PERINTIS"].includes(flType); let count = 0; if(reg) count++; if(stand) count++; if(bt) count++; if(pax) count++;
         if (isStrict) { if (count === 4) { badge.className="badge bg-success rounded-pill status-badge"; badge.innerText="OPS"; val.value="OPS"; } else if (count > 0) { badge.className="badge bg-warning text-dark rounded-pill status-badge"; badge.innerText="NOT CLEAR"; val.value="NOT CLEAR"; } else { badge.className="badge bg-danger rounded-pill status-badge"; badge.innerText="NO OPS"; val.value="NO OPS"; } } 
@@ -439,6 +561,7 @@
     }
 
     function simpanDataManualModal() {
+        if (isRestrictedUser) return;
         const cs = document.getElementById('manualCallsign').value.toUpperCase(); const fn = document.getElementById('manualFlightNo').value; const rute = document.getElementById('manualRute').value.toUpperCase(); const jadwal = document.getElementById('manualJadwal').value;
         if(!cs || !fn || !rute || !jadwal) return alert("Lengkapi isian.");
         const tbody = document.querySelector("#apronTable tbody");
@@ -468,6 +591,7 @@
     }
 
     async function saveCurrentState(status = 'incomplete') {
+        if (isRestrictedUser) return;
         if (!sbClient) return;
         const dateStr = document.getElementById('currentSelectedDate').value;
         const dos = document.getElementById('dosSelector').value || null; // KINI MENGIZINKAN DOS KOSONG
@@ -518,12 +642,13 @@
     }
 
     let saveTimeout;
-    function markAsIncomplete() { clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveCurrentState('incomplete'); }, 1500); }
+    function markAsIncomplete() { if (isRestrictedUser) return; clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveCurrentState('incomplete'); }, 1500); }
     
     
-    function completeData() { if(!confirm("Selesaikan hari ini?")) return; saveCurrentState('complete').then(() => { alert("Complete!"); showCalendar(); }); }
+    function completeData() { if(isRestrictedUser) return; if(!confirm("Selesaikan hari ini?")) return; saveCurrentState('complete').then(() => { alert("Complete!"); showCalendar(); }); }
     
     async function resetDataHariIni() {
+        if (isRestrictedUser) return;
         const dateStr = document.getElementById('currentSelectedDate').value;
         if (!dateStr || !confirm("Yakin hapus semua data hari ini?")) return;
         try {
@@ -536,11 +661,13 @@
     async function logout() {
         if (!sbClient) return;
         try {
-            
             const { error } = await sbClient.auth.signOut();
             if (error) throw error;
-            
-            
+
+            localStorage.removeItem('ams_user_name');
+            localStorage.removeItem('ams_user_email');
+            localStorage.removeItem('ams_user_id');
+
             window.location.replace('index.html');
         } catch (err) {
             console.error("Logout Error:", err);
@@ -550,7 +677,7 @@
 
     window.addEventListener('error', (e) => { console.error('Global JS Error:', e.message, 'at', e.filename, 'line', e.lineno); });
     window.addEventListener('unhandledrejection', (e) => { console.error('Unhandled Promise Rejection:', e.reason); });
-    window.onload = () => { renderCalendar(); updatePetugasDatalist(); };
+    window.onload = async () => { await initUserProfile(); renderCalendar(); updatePetugasDatalist(); };
 </script>
 </body>
 </html>
