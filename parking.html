@@ -15,6 +15,9 @@
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1040; transition: opacity 0.3s ease; }
         .sidebar-header { padding: 25px 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 15px; }
         .sidebar-header h5 { margin: 0; font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
+        .user-profile-box { margin: 0 15px 15px; padding: 10px 12px; border: 1px solid #e9ecef; border-radius: 10px; background: #f8f9fa; }
+        .user-profile-box .name { font-size: 0.9rem; font-weight: 700; color: #2c3e50; line-height: 1.2; }
+        .user-profile-box .email { font-size: 0.75rem; color: #6c757d; }
         .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
         .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
         
@@ -83,6 +86,15 @@
             <a href="#" class="nav-link active"><i class="bi bi-p-circle-fill"></i> Parking Stand</a>
             <a href="download.html" class="nav-link"><i class="bi bi-cloud-arrow-down-fill"></i> Download Center</a>
         </div>
+        <div class="user-profile-box">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-person-circle fs-4 text-primary"></i>
+                <div class="flex-grow-1 overflow-hidden">
+                    <div id="profileName" class="name text-truncate">User</div>
+                    <div id="profileEmail" class="email text-truncate">-</div>
+                </div>
+            </div>
+        </div>
         <div class="mt-auto mb-4 px-3">
             <button class="btn btn-outline-danger w-100 fw-bold" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
         </div>
@@ -117,6 +129,33 @@
     let sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
     function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) { s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); } else { s.classList.toggle('collapsed'); } }
+
+    async function initUserProfile() {
+        if (!sbClient) return;
+        try {
+            const { data: { session } } = await sbClient.auth.getSession();
+            if (!session) { window.location.replace('index.html'); return; }
+
+            const user = session.user || {};
+            const storedName = localStorage.getItem('ams_user_name') || '';
+            const storedEmail = localStorage.getItem('ams_user_email') || '';
+            const metadataName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+            const finalName = (metadataName && metadataName.trim()) || storedName || (user.email ? user.email.split('@')[0] : 'User');
+            const finalEmail = user.email || storedEmail || '-';
+
+            localStorage.setItem('ams_user_name', finalName);
+            localStorage.setItem('ams_user_email', finalEmail);
+            localStorage.setItem('ams_user_id', user.id || '');
+
+            const elName = document.getElementById('profileName');
+            const elEmail = document.getElementById('profileEmail');
+            if (elName) elName.textContent = finalName;
+            if (elEmail) elEmail.textContent = finalEmail;
+        } catch (err) {
+            console.error('Gagal inisialisasi profil user:', err);
+            window.location.replace('index.html');
+        }
+    }
     
     setInterval(() => { 
         document.getElementById('liveClock').innerText = new Date().toLocaleTimeString('en-GB', { 
@@ -412,8 +451,15 @@
     }
 
     setInterval(updateParkingStands, 5000);
-    async function logout() { if(!sbClient) return; await sbClient.auth.signOut(); window.location.replace('index.html'); }
-    window.onload = () => { updateParkingStands(); };
+    async function logout() {
+        if(!sbClient) return;
+        await sbClient.auth.signOut();
+        localStorage.removeItem('ams_user_name');
+        localStorage.removeItem('ams_user_email');
+        localStorage.removeItem('ams_user_id');
+        window.location.replace('index.html');
+    }
+    window.onload = async () => { await initUserProfile(); updateParkingStands(); };
 </script>
 </body>
 </html>
