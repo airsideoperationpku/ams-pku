@@ -43,6 +43,13 @@
         .table-responsive { border-radius: 12px; border: 1px solid #eaeaea; background: #fff; }
         .table-spreadsheet th { background-color: #f8f9fa; color: #666; font-size: 0.65rem; font-weight: 700; border-bottom: 2px solid #eaeaea; text-transform: uppercase; text-align: center; vertical-align: middle; padding: 10px 4px; white-space: nowrap; }
         .table-spreadsheet td { border-bottom: 1px solid #f4f4f4; padding: 2px; vertical-align: middle; text-align: center; white-space: nowrap; }
+        #apronTable tbody tr.flight-row:nth-child(odd) { background-color: #fcfdff !important; }
+        #apronTable tbody tr.flight-row:nth-child(even) { background-color: #eef4ff !important; }
+        #apronTable tbody tr.flight-row > td { background-color: transparent !important; }
+        #apronTable thead th.sortable-header { cursor: pointer; user-select: none; position: relative; padding-right: 16px; }
+        #apronTable thead th.sortable-header::after { content: '↕'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #9aa4b2; }
+        #apronTable thead th.sortable-header.sort-asc::after { content: '↑'; color: #0d6efd; }
+        #apronTable thead th.sortable-header.sort-desc::after { content: '↓'; color: #0d6efd; }
         .table-spreadsheet .form-control, .table-spreadsheet .form-select { border: 1px solid transparent; border-radius: 6px; padding: 4px 4px; font-size: 0.75rem; text-align: center; background-color: transparent; height: 35px; width: 100%; box-shadow: none; font-weight: 600; }
         .table-spreadsheet .form-control:hover, .table-spreadsheet .form-select:hover { border-color: #e0e0e0; background-color: #fafafa; }
         .table-spreadsheet .form-control:focus, .table-spreadsheet .form-select:focus { border-color: #0d6efd; background-color: #fff; }
@@ -220,11 +227,11 @@
                 <table class="table table-spreadsheet table-hover" id="apronTable">
                     <thead>
                         <tr>
-                            <th class="col-cs">CS</th><th class="col-no">Fl. No</th><th class="col-rute">Rute</th><th class="col-jadwal">Jadwal</th>
-                            <th class="col-reg">Reg.</th><th class="col-ron">RON</th><th class="col-tipe">Tipe A/C</th><th class="col-seat">Seat</th>
-                            <th class="col-dom">Tipe</th><th class="col-leg">Leg</th><th class="col-stand">Stand</th><th class="col-avio">Avio</th>
-                            <th class="col-bt">Block Time</th><th class="col-pax">Pax</th><th class="col-lf">L/F</th><th class="col-bagasi">Bagasi</th>
-                            <th class="col-kargo">Kargo</th> <th class="col-fltype">Flight Type</th><th class="col-status">Status</th><th class="col-aksi">Aksi</th>
+                            <th class="col-cs sortable-header" onclick="sortTableByColumn(0)">CS</th><th class="col-no sortable-header" onclick="sortTableByColumn(1)">Fl. No</th><th class="col-rute sortable-header" onclick="sortTableByColumn(2)">Rute</th><th class="col-jadwal sortable-header" onclick="sortTableByColumn(3)">Jadwal</th>
+                            <th class="col-reg sortable-header" onclick="sortTableByColumn(4)">Reg.</th><th class="col-ron sortable-header" onclick="sortTableByColumn(5)">RON</th><th class="col-tipe sortable-header" onclick="sortTableByColumn(6)">Tipe A/C</th><th class="col-seat sortable-header" onclick="sortTableByColumn(7)">Seat</th>
+                            <th class="col-dom sortable-header" onclick="sortTableByColumn(8)">Tipe</th><th class="col-leg sortable-header" onclick="sortTableByColumn(9)">Leg</th><th class="col-stand sortable-header" onclick="sortTableByColumn(10)">Stand</th><th class="col-avio sortable-header" onclick="sortTableByColumn(11)">Avio</th>
+                            <th class="col-bt sortable-header" onclick="sortTableByColumn(12)">Block Time</th><th class="col-pax sortable-header" onclick="sortTableByColumn(13)">Pax</th><th class="col-lf sortable-header" onclick="sortTableByColumn(14)">L/F</th><th class="col-bagasi sortable-header" onclick="sortTableByColumn(15)">Bagasi</th>
+                            <th class="col-kargo sortable-header" onclick="sortTableByColumn(16)">Kargo</th> <th class="col-fltype sortable-header" onclick="sortTableByColumn(17)">Flight Type</th><th class="col-status sortable-header" onclick="sortTableByColumn(18)">Status</th><th class="col-aksi">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -534,6 +541,85 @@
             </tr>`;
         });
         tbody.innerHTML = htmlStr;
+    }
+
+    const activeSort = { index: null, direction: 'asc' };
+
+    function updateSortHeaderIndicator() {
+        const headers = document.querySelectorAll('#apronTable thead th.sortable-header');
+        headers.forEach((th, idx) => {
+            th.classList.remove('sort-asc', 'sort-desc');
+            if (idx === activeSort.index) {
+                th.classList.add(activeSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+        });
+    }
+
+    function getCellComparableValue(row, colIndex) {
+        const cell = row.cells[colIndex];
+        if (!cell) return '';
+
+        const input = cell.querySelector('input');
+        const select = cell.querySelector('select');
+        const statusBadge = cell.querySelector('.status-badge');
+
+        let val = '';
+        if (input) {
+            if (input.type === 'checkbox') val = input.checked ? '1' : '0';
+            else val = input.value || '';
+        } else if (select) {
+            val = select.value || '';
+        } else if (statusBadge) {
+            val = statusBadge.textContent || '';
+        } else {
+            val = cell.textContent || '';
+        }
+
+        val = String(val).trim();
+
+        if (colIndex === 3 || colIndex === 12) {
+            return val || '99:99';
+        }
+
+        if ([7, 13, 15, 16].includes(colIndex)) {
+            const n = parseFloat(val);
+            return isNaN(n) ? -1 : n;
+        }
+
+        if (colIndex === 14) {
+            const n = parseFloat((val || '').replace('%', ''));
+            return isNaN(n) ? -1 : n;
+        }
+
+        return val.toLowerCase();
+    }
+
+    function sortTableByColumn(colIndex) {
+        const tbody = document.querySelector('#apronTable tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr.flight-row'));
+        if (!rows.length) return;
+
+        if (activeSort.index === colIndex) {
+            activeSort.direction = activeSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            activeSort.index = colIndex;
+            activeSort.direction = 'asc';
+        }
+
+        rows.sort((a, b) => {
+            const aVal = getCellComparableValue(a, colIndex);
+            const bVal = getCellComparableValue(b, colIndex);
+
+            let compare = 0;
+            if (typeof aVal === 'number' && typeof bVal === 'number') compare = aVal - bVal;
+            else compare = String(aVal).localeCompare(String(bVal), 'id', { numeric: true, sensitivity: 'base' });
+
+            return activeSort.direction === 'asc' ? compare : -compare;
+        });
+
+        tbody.innerHTML = '';
+        rows.forEach(r => tbody.appendChild(r));
+        updateSortHeaderIndicator();
     }
 
     function filterTable() { const term = document.getElementById("searchInput").value.toLowerCase(); document.querySelectorAll("#apronTable tbody tr.flight-row").forEach(row => { row.style.display = Array.from(row.querySelectorAll("input, select")).map(i=>i.value.toLowerCase()).join(" ").includes(term) ? "" : "none"; }); }
