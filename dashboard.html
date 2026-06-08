@@ -360,6 +360,7 @@
     let refreshTimer = null;
     let movementPerHourChart = null;
     let paxPerHourChart = null;
+    let dashboardRealtimeChannel = null;
 
     const toInt = (v) => {
         const n = parseInt(v, 10);
@@ -399,6 +400,35 @@
                 }
             }
         });
+    }
+
+    function normalizeStatus(v) {
+        return String(v || '').trim().toUpperCase();
+    }
+
+    function isOpsStatus(v) {
+        return normalizeStatus(v) === 'OPS';
+    }
+
+    function stopDashboardRealtime() {
+        if (!sbClient || !dashboardRealtimeChannel) return;
+        try { sbClient.removeChannel(dashboardRealtimeChannel); } catch (_) {}
+        dashboardRealtimeChannel = null;
+    }
+
+    function startDashboardRealtime() {
+        if (!sbClient) return;
+        stopDashboardRealtime();
+
+        dashboardRealtimeChannel = sbClient
+            .channel(`dashboard-live-${Date.now()}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_flights' }, () => {
+                triggerDashboardLoad(
+                    document.getElementById('filterStart')?.value || null,
+                    document.getElementById('filterEnd')?.value || null
+                );
+            })
+            .subscribe();
     }
 
     async function loadDashboardStats(startDate = null, endDate = null) {
@@ -446,7 +476,7 @@
 
             if (flights) {
                 flights.forEach(f => {
-                    if (f.status !== 'OPS') return;
+                    if (!isOpsStatus(f.status)) return;
 
                     const leg = String(f.leg || '').toUpperCase();
                     const domIntl = String(f.dom_intl || '').toUpperCase();
@@ -609,9 +639,12 @@
         window.location.replace('index.html');
     }
 
+    window.addEventListener('beforeunload', () => { stopDashboardRealtime(); });
+
     window.onload = async () => {
         await initUserProfile();
         triggerDashboardLoad();
+        startDashboardRealtime();
     };
 </script>
 </body>
