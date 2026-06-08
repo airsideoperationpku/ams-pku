@@ -334,7 +334,19 @@
     async function initUserProfile() {
         if (!sbClient) return;
         try {
-            const { data: { session } } = await sbClient.auth.getSession();
+            const { data, error } = await sbClient.auth.getSession();
+
+            if (error && (error.code === 'refresh_token_not_found' || /Refresh Token/i.test(error.message || ''))) {
+                console.warn('Session invalid, clearing local auth state...');
+                try { await sbClient.auth.signOut({ scope: 'local' }); } catch (_) {}
+                localStorage.removeItem('ams_user_name');
+                localStorage.removeItem('ams_user_email');
+                localStorage.removeItem('ams_user_id');
+                window.location.replace('index.html');
+                return;
+            }
+
+            const session = data?.session;
             if (!session) { window.location.replace('index.html'); return; }
 
             const user = session.user || {};
@@ -355,6 +367,14 @@
             if (elEmail) elEmail.textContent = finalEmail;
             applyAmsReadonlyMode();
         } catch (err) {
+            if (err?.code === 'refresh_token_not_found' || /Refresh Token/i.test(err?.message || '')) {
+                try { await sbClient.auth.signOut({ scope: 'local' }); } catch (_) {}
+                localStorage.removeItem('ams_user_name');
+                localStorage.removeItem('ams_user_email');
+                localStorage.removeItem('ams_user_id');
+                window.location.replace('index.html');
+                return;
+            }
             console.error('Gagal inisialisasi profil user:', err);
             window.location.replace('index.html');
         }
@@ -415,49 +435,111 @@
     }
 
     function changeMonth(offset) { currentDate.setMonth(currentDate.getMonth() + offset); renderCalendar(); }
-    function showCalendar() { document.getElementById('calendarView').classList.remove('d-none'); document.getElementById('sheetView').classList.add('d-none'); renderCalendar(); updatePetugasDatalist(); }
+    function showCalendar() {
+        stopRealtimeSync();
+        document.getElementById('calendarView').classList.remove('d-none');
+        document.getElementById('sheetView').classList.add('d-none');
+        renderCalendar();
+        updatePetugasDatalist();
+    }
 
-    async function openSheet(dateStr) {
-        if (!sbClient) return;
-        document.getElementById('calendarView').classList.add('d-none'); document.getElementById('sheetView').classList.remove('d-none');
-        document.getElementById('currentSelectedDate').value = dateStr; document.getElementById('sheetDateDisplay').innerText = new Date(dateStr).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        
+    async function applySheetDataForDate(dateStr) {
+        if (!sbClient || !dateStr) return;
+
         try {
             const { data: acDb } = await sbClient.from('master_aircraft').select('*');
             globalAircraftDb = acDb || [];
             document.getElementById("list-tipe-pesawat").innerHTML = [...new Set(globalAircraftDb.map(i => i.type))].map(t => `<option value="${t}"></option>`).join('');
 
-            const { data: record, error: recErr } = await sbClient.from('daily_records').select('*').eq('date', dateStr).maybeSingle();
-            const { data: flights, error: flErr } = await sbClient.from('daily_flights').select('*').eq('date', dateStr).order('jadwal', {ascending: true});
+            const { data: record } = await sbClient.from('daily_records').select('*').eq('date', dateStr).maybeSingle();
+            const { data: flights } = await sbClient.from('daily_flights').select('*').eq('date', dateStr).order('jadwal', {ascending: true});
 
             if (record) {
                 document.getElementById('dosSelector').value = record.dos || "";
-                document.getElementById('ptoPagi').value = record.pto_pagi || ""; document.getElementById('ptoMalam').value = record.pto_malam || "";
-                
+                document.getElementById('ptoPagi').value = record.pto_pagi || "";
+                document.getElementById('ptoMalam').value = record.pto_malam || "";
+
                 const contPagi = document.getElementById('containerPelaksanaPagi'); contPagi.innerHTML = '';
                 if (record.pelaksana_pagi && record.pelaksana_pagi.length > 0) {
                     record.pelaksana_pagi.forEach((nama, idx) => {
-                        if(idx === 0) { contPagi.innerHTML += `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-pagi" list="list-petugas" value="${nama}" oninput="markAsIncomplete()">`; } 
-                        else { const div = document.createElement('div'); div.className = "d-flex gap-1 mb-1 align-items-center"; div.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase pelaksana-pagi" list="list-petugas" value="${nama}" oninput="markAsIncomplete()"><button type="button" class="btn btn-sm text-danger p-0 px-1" onclick="this.parentElement.remove(); markAsIncomplete()"><i class="bi bi-x-circle-fill"></i></button>`; contPagi.appendChild(div); }
+                        if (idx === 0) contPagi.innerHTML += `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-pagi" list="list-petugas" value="${nama}" oninput="markAsIncomplete()">`;
+                        else {
+                            const div = document.createElement('div');
+                            div.className = "d-flex gap-1 mb-1 align-items-center";
+                            div.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase pelaksana-pagi" list="list-petugas" value="${nama}" oninput="markAsIncomplete()"><button type="button" class="btn btn-sm text-danger p-0 px-1" onclick="this.parentElement.remove(); markAsIncomplete()"><i class="bi bi-x-circle-fill"></i></button>`;
+                            contPagi.appendChild(div);
+                        }
                     });
-                } else { contPagi.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-pagi" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`; }
+                } else {
+                    contPagi.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-pagi" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`;
+                }
 
                 const contMalam = document.getElementById('containerPelaksanaMalam'); contMalam.innerHTML = '';
                 if (record.pelaksana_malam && record.pelaksana_malam.length > 0) {
                     record.pelaksana_malam.forEach((nama, idx) => {
-                        if(idx === 0) { contMalam.innerHTML += `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-malam" list="list-petugas" value="${nama}" oninput="markAsIncomplete()">`; } 
-                        else { const div = document.createElement('div'); div.className = "d-flex gap-1 mb-1 align-items-center"; div.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase pelaksana-malam" list="list-petugas" value="${nama}" oninput="markAsIncomplete()"><button type="button" class="btn btn-sm text-danger p-0 px-1" onclick="this.parentElement.remove(); markAsIncomplete()"><i class="bi bi-x-circle-fill"></i></button>`; contMalam.appendChild(div); }
+                        if (idx === 0) contMalam.innerHTML += `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-malam" list="list-petugas" value="${nama}" oninput="markAsIncomplete()">`;
+                        else {
+                            const div = document.createElement('div');
+                            div.className = "d-flex gap-1 mb-1 align-items-center";
+                            div.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase pelaksana-malam" list="list-petugas" value="${nama}" oninput="markAsIncomplete()"><button type="button" class="btn btn-sm text-danger p-0 px-1" onclick="this.parentElement.remove(); markAsIncomplete()"><i class="bi bi-x-circle-fill"></i></button>`;
+                            contMalam.appendChild(div);
+                        }
                     });
-                } else { contMalam.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-malam" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`; }
+                } else {
+                    contMalam.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-malam" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`;
+                }
 
                 renderSavedTable(flights || []);
             } else {
-                document.getElementById('dosSelector').value = ""; document.getElementById('ptoPagi').value = ""; document.getElementById('ptoMalam').value = "";
-                document.getElementById('containerPelaksanaPagi').innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-pagi" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`; 
+                document.getElementById('dosSelector').value = "";
+                document.getElementById('ptoPagi').value = "";
+                document.getElementById('ptoMalam').value = "";
+                document.getElementById('containerPelaksanaPagi').innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-pagi" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`;
                 document.getElementById('containerPelaksanaMalam').innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-malam" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`;
                 document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="18" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Pilih DOS atau Tambah Manual Penerbangan.</td></tr>`;
             }
-        } catch(err) { console.error("Error Open Sheet:", err); }
+        } catch (err) {
+            console.error("Error applySheetDataForDate:", err);
+        }
+    }
+
+    function stopRealtimeSync() {
+        if (!sbClient || !realtimeChannel) return;
+        try { sbClient.removeChannel(realtimeChannel); } catch (_) {}
+        realtimeChannel = null;
+    }
+
+    function startRealtimeSyncForDate(dateStr) {
+        if (!sbClient || !dateStr) return;
+        stopRealtimeSync();
+
+        realtimeChannel = sbClient.channel(`ams-live-${dateStr}-${Date.now()}`);
+
+        realtimeChannel
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_records', filter: `date=eq.${dateStr}` }, async () => {
+                if (Date.now() < suppressRealtimeUntil) return;
+                await applySheetDataForDate(dateStr);
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_flights', filter: `date=eq.${dateStr}` }, async () => {
+                if (Date.now() < suppressRealtimeUntil) return;
+                await applySheetDataForDate(dateStr);
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Realtime sync aktif untuk tanggal:', dateStr);
+                }
+            });
+    }
+
+    async function openSheet(dateStr) {
+        if (!sbClient) return;
+        document.getElementById('calendarView').classList.add('d-none');
+        document.getElementById('sheetView').classList.remove('d-none');
+        document.getElementById('currentSelectedDate').value = dateStr;
+        document.getElementById('sheetDateDisplay').innerText = new Date(dateStr).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+        await applySheetDataForDate(dateStr);
+        startRealtimeSyncForDate(dateStr);
     }
 
     async function loadScheduleByDOS() {
@@ -676,26 +758,49 @@
         document.getElementById('formTambahManual').reset();
     }
 
+    let saveTimeout;
+    let saveInProgress = false;
+    let pendingSaveStatus = null;
+    let realtimeChannel = null;
+    let suppressRealtimeUntil = 0;
+
+    function buildFlightUniqueKey(flight) {
+        return [
+            flight.callsign || '',
+            flight.flight_number || '',
+            flight.rute || '',
+            flight.jadwal || '',
+            flight.leg || '',
+            flight.fl_type || ''
+        ].join('|');
+    }
+
     async function saveCurrentState(status = 'incomplete') {
         if (isRestrictedUser) return;
         if (!sbClient) return;
+
         const dateStr = document.getElementById('currentSelectedDate').value;
-        const dos = document.getElementById('dosSelector').value || null; // KINI MENGIZINKAN DOS KOSONG
-        
-        
-        if (!dateStr) return; 
+        const dos = document.getElementById('dosSelector').value || null;
+        if (!dateStr) return;
+
+        if (saveInProgress) {
+            pendingSaveStatus = status;
+            return;
+        }
+
+        saveInProgress = true;
 
         try {
+            suppressRealtimeUntil = Date.now() + 2500;
             const arrPelPagi = Array.from(document.querySelectorAll('.pelaksana-pagi')).map(i => i.value).filter(v => v.trim() !== "");
             const arrPelMalam = Array.from(document.querySelectorAll('.pelaksana-malam')).map(i => i.value).filter(v => v.trim() !== "");
 
-            await sbClient.from('daily_records').upsert({ 
-                date: dateStr, dos: dos, status: status, 
+            const { error: recordErr } = await sbClient.from('daily_records').upsert({
+                date: dateStr, dos: dos, status: status,
                 pto_pagi: document.getElementById('ptoPagi').value, pto_malam: document.getElementById('ptoMalam').value,
                 pelaksana_pagi: arrPelPagi, pelaksana_malam: arrPelMalam
             });
-
-            await sbClient.from('daily_flights').delete().eq('date', dateStr);
+            if (recordErr) throw recordErr;
 
             let flightsState = [];
             document.querySelectorAll("#apronTable tbody tr.flight-row").forEach(tr => {
@@ -710,7 +815,7 @@
                     seat: parseInt(tr.querySelector(".input-seat").value) || null,
                     dom_intl: tr.querySelector(".input-domintl").value,
                     leg: tr.querySelector(".input-leg").value,
-                    ron: tr.querySelector(".ron-checkbox").checked, 
+                    ron: tr.querySelector(".ron-checkbox").checked,
                     stand: tr.querySelector(".input-stand").value,
                     avio: tr.querySelector(".avio-checkbox").checked,
                     block_time: tr.querySelector(".input-blocktime").value || null,
@@ -723,12 +828,34 @@
                 });
             });
 
-            if(flightsState.length > 0) { await sbClient.from('daily_flights').insert(flightsState); }
-        } catch(err) { console.error("Error Saving:", err); }
+            const dedupedMap = new Map();
+            flightsState.forEach(f => dedupedMap.set(buildFlightUniqueKey(f), f));
+            flightsState = Array.from(dedupedMap.values());
+
+            const { error: deleteErr } = await sbClient.from('daily_flights').delete().eq('date', dateStr);
+            if (deleteErr) throw deleteErr;
+
+            if (flightsState.length > 0) {
+                const { error: insertErr } = await sbClient.from('daily_flights').insert(flightsState);
+                if (insertErr) throw insertErr;
+            }
+        } catch (err) {
+            console.error("Error Saving:", err);
+        } finally {
+            saveInProgress = false;
+            if (pendingSaveStatus !== null) {
+                const nextStatus = pendingSaveStatus;
+                pendingSaveStatus = null;
+                saveCurrentState(nextStatus);
+            }
+        }
     }
 
-    let saveTimeout;
-    function markAsIncomplete() { if (isRestrictedUser) return; clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveCurrentState('incomplete'); }, 1500); }
+    function markAsIncomplete() {
+        if (isRestrictedUser) return;
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => { saveCurrentState('incomplete'); }, 1500);
+    }
     
     
     function completeData() { if(isRestrictedUser) return; if(!confirm("Selesaikan hari ini?")) return; saveCurrentState('complete').then(() => { alert("Complete!"); showCalendar(); }); }
@@ -763,6 +890,7 @@
 
     window.addEventListener('error', (e) => { console.error('Global JS Error:', e.message, 'at', e.filename, 'line', e.lineno); });
     window.addEventListener('unhandledrejection', (e) => { console.error('Unhandled Promise Rejection:', e.reason); });
+    window.addEventListener('beforeunload', () => { stopRealtimeSync(); });
     window.onload = async () => { await initUserProfile(); renderCalendar(); updatePetugasDatalist(); };
 </script>
 </body>
