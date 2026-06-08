@@ -336,16 +336,32 @@
     const fmt = num => num ? num.toLocaleString('id-ID') : '0';
     const setT = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
+    let dashboardRequestId = 0;
+    let refreshTimer = null;
+
+    const toInt = (v) => {
+        const n = parseInt(v, 10);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+    };
+
     async function loadDashboardStats(startDate = null, endDate = null) {
         if (!sbClient) return;
+
+        const reqId = ++dashboardRequestId;
         
         try {
-            let query = sbClient.from('daily_flights').select('*');
+            let query = sbClient
+                .from('daily_flights')
+                .select('status, leg, dom_intl, pax, bagasi, kargo, callsign, jadwal, block_time, avio, rute, stand, tipe_ac, date')
+                .order('date', { ascending: true });
+
             if (startDate) query = query.gte('date', startDate);
             if (endDate) query = query.lte('date', endDate);
             
             const { data: flights, error } = await query;
             if (error) throw error;
+
+            if (reqId !== dashboardRequestId) return;
 
             let s = {
                 mvt: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
@@ -361,12 +377,14 @@
                 flights.forEach(f => {
                     if (f.status !== 'OPS') return;
 
-                    let isArr = f.leg === 'A', isDep = f.leg === 'D';
-                    let isDom = f.dom_intl === 'DOM', isIntl = f.dom_intl === 'INTL';
-                    let paxVal = parseInt(f.pax) || 0;
-                    let bagVal = parseInt(f.bagasi) || 0;
-                    let kargoVal = parseInt(f.kargo) || 0;
-                    let cs = f.callsign ? f.callsign.toUpperCase() : 'UNKNOWN';
+                    const leg = String(f.leg || '').toUpperCase();
+                    const domIntl = String(f.dom_intl || '').toUpperCase();
+                    let isArr = leg === 'A', isDep = leg === 'D';
+                    let isDom = domIntl === 'DOM', isIntl = domIntl === 'INTL';
+                    let paxVal = toInt(f.pax);
+                    let bagVal = toInt(f.bagasi);
+                    let kargoVal = toInt(f.kargo);
+                    let cs = f.callsign ? String(f.callsign).toUpperCase().trim() : 'UNKNOWN';
 
                     // 1. MOVEMENT
                     s.mvt.tot++; if(isArr) s.mvt.arr++; if(isDep) s.mvt.dep++;
@@ -411,10 +429,14 @@
                     }
 
                     // 7. FREQUENCIES
-                    let rute = f.rute ? f.rute.toUpperCase() : 'N/A';
+                    let rute = f.rute ? String(f.rute).toUpperCase().trim() : 'N/A';
                     s.freq.rute[rute] = (s.freq.rute[rute] || 0) + 1;
-                    if(f.stand && f.stand !== '-') s.freq.stand[f.stand.toUpperCase()] = (s.freq.stand[f.stand.toUpperCase()] || 0) + 1;
-                    if(f.tipe_ac) s.freq.ac[f.tipe_ac.toUpperCase()] = (s.freq.ac[f.tipe_ac.toUpperCase()] || 0) + 1;
+
+                    const stand = f.stand ? String(f.stand).toUpperCase().trim() : '';
+                    if(stand && stand !== '-') s.freq.stand[stand] = (s.freq.stand[stand] || 0) + 1;
+
+                    const ac = f.tipe_ac ? String(f.tipe_ac).toUpperCase().trim() : '';
+                    if(ac) s.freq.ac[ac] = (s.freq.ac[ac] || 0) + 1;
                 });
             }
 
@@ -444,6 +466,13 @@
         } catch (err) { console.error("Dashboard Error:", err); }
     }
 
+    function triggerDashboardLoad(startDate = null, endDate = null) {
+        if (refreshTimer) clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(() => {
+            loadDashboardStats(startDate, endDate);
+        }, 250);
+    }
+
     function applyFilter() {
         const start = document.getElementById('filterStart').value;
         const end = document.getElementById('filterEnd').value;
@@ -456,7 +485,7 @@
             badge.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data`;
             badge.className = "badge bg-success fs-6 fw-normal shadow-sm";
         }
-        loadDashboardStats(start, end);
+        triggerDashboardLoad(start, end);
     }
 
     function resetFilter() {
@@ -464,7 +493,7 @@
         document.getElementById('filterEnd').value = '';
         document.getElementById('badgeStatus').innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Keseluruhan Data`;
         document.getElementById('badgeStatus').className = "badge bg-success fs-6 fw-normal shadow-sm";
-        loadDashboardStats();
+        triggerDashboardLoad();
     }
 
     async function logout() {
@@ -478,7 +507,7 @@
 
     window.onload = async () => {
         await initUserProfile();
-        loadDashboardStats();
+        triggerDashboardLoad();
     };
 </script>
 </body>
