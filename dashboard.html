@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; overflow-x: hidden; }
         .wrapper { display: flex; width: 100%; height: 100vh; overflow: hidden; }
@@ -272,8 +273,27 @@
             </div>
         </div>
 
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="card border-top border-primary border-4">
+                    <div class="card-header text-primary"><i class="bi bi-bar-chart-fill me-2"></i>7. MOVEMENT PER HOUR (00:00 - 23:59)</div>
+                    <div class="card-body">
+                        <canvas id="chartMovementPerHour" height="120"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="card border-top border-success border-4">
+                    <div class="card-header text-success"><i class="bi bi-people-fill me-2"></i>8. PAX PER HOUR (00:00 - 23:59)</div>
+                    <div class="card-body">
+                        <canvas id="chartPaxPerHour" height="120"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card border-top border-dark border-4 mb-5">
-            <div class="card-header text-dark"><i class="bi bi-bar-chart-line-fill me-2"></i>7. TOP FREKUENSI TERTINGGI (TOP 5)</div>
+            <div class="card-header text-dark"><i class="bi bi-bar-chart-line-fill me-2"></i>9. TOP FREKUENSI TERTINGGI (TOP 5)</div>
             <div class="card-body">
                 <div class="row g-4">
                     <div class="col-12 col-md-6 col-lg-3"><h6 class="fw-bold text-center bg-light p-2 rounded small">Rute</h6><table class="table table-sm table-mini"><tbody id="tbl_rute"></tbody></table></div>
@@ -338,11 +358,48 @@
 
     let dashboardRequestId = 0;
     let refreshTimer = null;
+    let movementPerHourChart = null;
+    let paxPerHourChart = null;
 
     const toInt = (v) => {
         const n = parseInt(v, 10);
         return Number.isFinite(n) && n > 0 ? n : 0;
     };
+
+    function parseHourFromTime(timeStr) {
+        if (!timeStr) return null;
+        const m = String(timeStr).match(/^(\d{1,2}):(\d{2})/);
+        if (!m) return null;
+        const h = parseInt(m[1], 10);
+        if (!Number.isFinite(h) || h < 0 || h > 23) return null;
+        return h;
+    }
+
+    function initHourlyChart(canvasId, existingChart, datasets, title) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return existingChart;
+
+        const labels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+        if (existingChart) existingChart.destroy();
+
+        return new Chart(canvas, {
+            type: 'bar',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: title }
+                },
+                scales: {
+                    x: { stacked: false, ticks: { maxRotation: 0, autoSkip: true } },
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
 
     async function loadDashboardStats(startDate = null, endDate = null) {
         if (!sbClient) return;
@@ -370,7 +427,21 @@
                 kargo: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
                 otp: { depTot:0, ontime:0, d15:0, d30:0, d60:0 },
                 avio: { tot:0, arr:0, dep:0, arrD:0, depD:0, arrI:0, depI:0 },
-                freq: { rute:{}, stand:{}, airline:{}, ac:{} }
+                freq: { rute:{}, stand:{}, airline:{}, ac:{} },
+                hourly: {
+                    movement: {
+                        arrDom: Array(24).fill(0),
+                        depDom: Array(24).fill(0),
+                        arrIntl: Array(24).fill(0),
+                        depIntl: Array(24).fill(0)
+                    },
+                    pax: {
+                        arrDom: Array(24).fill(0),
+                        depDom: Array(24).fill(0),
+                        arrIntl: Array(24).fill(0),
+                        depIntl: Array(24).fill(0)
+                    }
+                }
             };
 
             if (flights) {
@@ -385,6 +456,7 @@
                     let bagVal = toInt(f.bagasi);
                     let kargoVal = toInt(f.kargo);
                     let cs = f.callsign ? String(f.callsign).toUpperCase().trim() : 'UNKNOWN';
+                    let hour = parseHourFromTime(f.jadwal || f.block_time);
 
                     // 1. MOVEMENT
                     s.mvt.tot++; if(isArr) s.mvt.arr++; if(isDep) s.mvt.dep++;
@@ -432,6 +504,14 @@
                     let rute = f.rute ? String(f.rute).toUpperCase().trim() : 'N/A';
                     s.freq.rute[rute] = (s.freq.rute[rute] || 0) + 1;
 
+                    // 8 & 9. HOURLY (00:00 - 23:59)
+                    if (hour !== null) {
+                        if (isArr && isDom) { s.hourly.movement.arrDom[hour] += 1; s.hourly.pax.arrDom[hour] += paxVal; }
+                        if (isDep && isDom) { s.hourly.movement.depDom[hour] += 1; s.hourly.pax.depDom[hour] += paxVal; }
+                        if (isArr && isIntl) { s.hourly.movement.arrIntl[hour] += 1; s.hourly.pax.arrIntl[hour] += paxVal; }
+                        if (isDep && isIntl) { s.hourly.movement.depIntl[hour] += 1; s.hourly.pax.depIntl[hour] += paxVal; }
+                    }
+
                     const stand = f.stand ? String(f.stand).toUpperCase().trim() : '';
                     if(stand && stand !== '-') s.freq.stand[stand] = (s.freq.stand[stand] || 0) + 1;
 
@@ -462,6 +542,30 @@
                 document.getElementById(id).innerHTML = sorted.length > 0 ? sorted.map(i => `<tr><td>${i[0]}</td><td class="text-end fw-bold text-primary">${fmt(i[1])}</td></tr>`).join('') : '<tr><td colspan="2" class="text-center text-muted">Data kosong</td></tr>';
             };
             ren('tbl_rute', s.freq.rute); ren('tbl_stand', s.freq.stand); ren('tbl_avio', s.freq.airline); ren('tbl_actype', s.freq.ac);
+
+            movementPerHourChart = initHourlyChart(
+                'chartMovementPerHour',
+                movementPerHourChart,
+                [
+                    { label: 'Arr Domestik', data: s.hourly.movement.arrDom, backgroundColor: '#198754' },
+                    { label: 'Dep Domestik', data: s.hourly.movement.depDom, backgroundColor: '#0dcaf0' },
+                    { label: 'Arr Internasional', data: s.hourly.movement.arrIntl, backgroundColor: '#ffc107' },
+                    { label: 'Dep Internasional', data: s.hourly.movement.depIntl, backgroundColor: '#dc3545' }
+                ],
+                'Movement per Jam'
+            );
+
+            paxPerHourChart = initHourlyChart(
+                'chartPaxPerHour',
+                paxPerHourChart,
+                [
+                    { label: 'Pax Arr Domestik', data: s.hourly.pax.arrDom, backgroundColor: '#198754' },
+                    { label: 'Pax Dep Domestik', data: s.hourly.pax.depDom, backgroundColor: '#0dcaf0' },
+                    { label: 'Pax Arr Internasional', data: s.hourly.pax.arrIntl, backgroundColor: '#ffc107' },
+                    { label: 'Pax Dep Internasional', data: s.hourly.pax.depIntl, backgroundColor: '#dc3545' }
+                ],
+                'Pax per Jam'
+            );
 
         } catch (err) { console.error("Dashboard Error:", err); }
     }
