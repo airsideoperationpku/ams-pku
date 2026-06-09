@@ -92,7 +92,7 @@
                             <div class="col-4 border-start"><div class="stat-value text-success" id="m_arr">0</div><div class="stat-label">Total Arr</div></div>
                             <div class="col-4 border-start"><div class="stat-value text-info" id="m_dep">0</div><div class="stat-label">Total Dep</div></div>
                         </div>
-                        <div class="row g-2">
+                        <div class="row g-2 mb-2">
                             <div class="col-6">
                                 <div class="p-2 bg-light rounded text-center mb-2"><h6 class="fw-bold m-0 small">Domestik (<span id="m_dom">0</span>)</h6></div>
                                 <ul class="list-group list-group-flush border">
@@ -105,6 +105,37 @@
                                 <ul class="list-group list-group-flush border">
                                     <li class="list-group-item">Arrival <span class="badge bg-success" id="m_arr_intl">0</span></li>
                                     <li class="list-group-item">Departure <span class="badge bg-info" id="m_dep_intl">0</span></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="p-2 bg-primary-subtle rounded text-center mb-2"><h6 class="fw-bold m-0 small text-primary">REGULER - Domestik</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="m_reg_arr_dom">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="m_reg_dep_dom">0</span></li>
+                                </ul>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 bg-primary-subtle rounded text-center mb-2"><h6 class="fw-bold m-0 small text-primary">REGULER - Internasional</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="m_reg_arr_intl">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="m_reg_dep_intl">0</span></li>
+                                </ul>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 bg-warning-subtle rounded text-center mb-2"><h6 class="fw-bold m-0 small text-warning-emphasis">IREGULER - Domestik</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="m_ir_arr_dom">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="m_ir_dep_dom">0</span></li>
+                                </ul>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 bg-warning-subtle rounded text-center mb-2"><h6 class="fw-bold m-0 small text-warning-emphasis">IREGULER - Internasional</h6></div>
+                                <ul class="list-group list-group-flush border">
+                                    <li class="list-group-item">Arrival <span class="badge bg-success" id="m_ir_arr_intl">0</span></li>
+                                    <li class="list-group-item">Departure <span class="badge bg-info" id="m_ir_dep_intl">0</span></li>
                                 </ul>
                             </div>
                         </div>
@@ -437,21 +468,38 @@
         const reqId = ++dashboardRequestId;
         
         try {
-            let query = sbClient
-                .from('daily_flights')
-                .select('status, leg, dom_intl, pax, bagasi, kargo, callsign, jadwal, block_time, avio, rute, stand, tipe_ac, date')
-                .order('date', { ascending: true });
+            const pageSize = 1000;
+            let from = 0;
+            let flights = [];
 
-            if (startDate) query = query.gte('date', startDate);
-            if (endDate) query = query.lte('date', endDate);
-            
-            const { data: flights, error } = await query;
-            if (error) throw error;
+            while (true) {
+                let query = sbClient
+                    .from('daily_flights')
+                .select('*')
+                    .order('date', { ascending: true })
+                    .range(from, from + pageSize - 1);
 
-            if (reqId !== dashboardRequestId) return;
+                if (startDate) query = query.gte('date', startDate);
+                if (endDate) query = query.lte('date', endDate);
+
+                const { data, error } = await query;
+                if (error) throw error;
+
+                if (reqId !== dashboardRequestId) return;
+
+                if (!data || data.length === 0) break;
+                flights = flights.concat(data);
+
+                if (data.length < pageSize) break;
+                from += pageSize;
+            }
 
             let s = {
-                mvt: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
+                mvt: {
+                    tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0,
+                    regArrD:0, regDepD:0, regArrI:0, regDepI:0,
+                    irArrD:0, irDepD:0, irArrI:0, irDepI:0
+                },
                 pax: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
                 bag: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
                 kargo: { tot:0, arr:0, dep:0, dom:0, intl:0, arrD:0, depD:0, arrI:0, depI:0 },
@@ -482,6 +530,22 @@
                     const domIntl = String(f.dom_intl || '').toUpperCase();
                     let isArr = leg === 'A', isDep = leg === 'D';
                     let isDom = domIntl === 'DOM', isIntl = domIntl === 'INTL';
+                    const flightTypeCandidates = [
+                        f.fl_type,          // sumber utama dari ams.html -> daily_flights.fl_type
+                        f.flight_type,
+                        f.flighttype,
+                        f.type_flight,
+                        f.jenis_flight,
+                        f.jenis_penerbangan,
+                        f.flight_category
+                    ];
+                    const rawFlightType = flightTypeCandidates.find(v => v !== null && v !== undefined && String(v).trim() !== '');
+                    const flightType = String(rawFlightType || '').trim().toUpperCase();
+
+                    // REGULER hanya jika benar-benar bernilai REGULER (atau variasi sangat dekat),
+                    // selain itu dianggap IREGULER sesuai requirement.
+                    const isReguler = flightType === 'REGULER' || flightType === 'REGULAR';
+                    const isIreguler = !isReguler;
                     let paxVal = toInt(f.pax);
                     let bagVal = toInt(f.bagasi);
                     let kargoVal = toInt(f.kargo);
@@ -493,6 +557,19 @@
                     if(isDom) s.mvt.dom++; if(isIntl) s.mvt.intl++;
                     if(isArr && isDom) s.mvt.arrD++; if(isDep && isDom) s.mvt.depD++;
                     if(isArr && isIntl) s.mvt.arrI++; if(isDep && isIntl) s.mvt.depI++;
+
+                    // 1a. MOVEMENT BY FLIGHT TYPE (REGULER vs IREGULER)
+                    if (isReguler) {
+                        if (isArr && isDom) s.mvt.regArrD++;
+                        if (isDep && isDom) s.mvt.regDepD++;
+                        if (isArr && isIntl) s.mvt.regArrI++;
+                        if (isDep && isIntl) s.mvt.regDepI++;
+                    } else if (isIreguler) {
+                        if (isArr && isDom) s.mvt.irArrD++;
+                        if (isDep && isDom) s.mvt.irDepD++;
+                        if (isArr && isIntl) s.mvt.irArrI++;
+                        if (isDep && isIntl) s.mvt.irDepI++;
+                    }
 
                     // 2. PAX
                     s.pax.tot += paxVal; if(isArr) s.pax.arr += paxVal; if(isDep) s.pax.dep += paxVal;
@@ -553,6 +630,11 @@
             // UPDATE HTML
             setT('m_tot', fmt(s.mvt.tot)); setT('m_arr', fmt(s.mvt.arr)); setT('m_dep', fmt(s.mvt.dep)); setT('m_dom', fmt(s.mvt.dom)); setT('m_intl', fmt(s.mvt.intl));
             setT('m_arr_dom', fmt(s.mvt.arrD)); setT('m_dep_dom', fmt(s.mvt.depD)); setT('m_arr_intl', fmt(s.mvt.arrI)); setT('m_dep_intl', fmt(s.mvt.depI));
+
+            setT('m_reg_arr_dom', fmt(s.mvt.regArrD)); setT('m_reg_dep_dom', fmt(s.mvt.regDepD));
+            setT('m_reg_arr_intl', fmt(s.mvt.regArrI)); setT('m_reg_dep_intl', fmt(s.mvt.regDepI));
+            setT('m_ir_arr_dom', fmt(s.mvt.irArrD)); setT('m_ir_dep_dom', fmt(s.mvt.irDepD));
+            setT('m_ir_arr_intl', fmt(s.mvt.irArrI)); setT('m_ir_dep_intl', fmt(s.mvt.irDepI));
 
             setT('p_tot', fmt(s.pax.tot)); setT('p_arr', fmt(s.pax.arr)); setT('p_dep', fmt(s.pax.dep)); setT('p_dom', fmt(s.pax.dom)); setT('p_intl', fmt(s.pax.intl));
             setT('p_arr_dom', fmt(s.pax.arrD)); setT('p_dep_dom', fmt(s.pax.depD)); setT('p_arr_intl', fmt(s.pax.arrI)); setT('p_dep_intl', fmt(s.pax.depI));
