@@ -268,64 +268,81 @@
 
             Object.keys(aircraftTracker).forEach(reg => {
                 let legs = aircraftTracker[reg];
-                
+
                 let arrs = legs.filter(l => l.type === 'A').map(l => l.data);
                 let deps = legs.filter(l => l.type === 'D').map(l => l.data);
 
-                arrs.sort((a,b) => (a.date+(a.jadwal||'99:99')).localeCompare(b.date+(b.jadwal||'99:99')));
-                deps.sort((a,b) => (a.date+(a.jadwal||'99:99')).localeCompare(b.date+(b.jadwal||'99:99')));
+                const normTime = (t) => {
+                    const m = (t || '').toString().trim().match(/^(\d{1,2}):(\d{2})/);
+                    if (!m) return null;
+                    const hh = String(Math.min(23, Math.max(0, Number(m[1])))).padStart(2, '0');
+                    const mm = String(Math.min(59, Math.max(0, Number(m[2])))).padStart(2, '0');
+                    return `${hh}:${mm}`;
+                };
 
-                function getTimeDiff(t1, t2) {
-                    let [h1, m1] = (t1||'00:00').split(':').map(Number);
-                    let [h2, m2] = (t2||'00:00').split(':').map(Number);
-                    if(isNaN(h1)) h1=0; if(isNaN(m1)) m1=0; if(isNaN(h2)) h2=0; if(isNaN(m2)) m2=0;
-                    return Math.abs((h1*60+m1) - (h2*60+m2));
-                }
+                const getEffectiveTime = (f) => normTime(f?.block_time) || normTime(f?.jadwal) || '99:99';
+
+                const toTs = (f) => {
+                    const d = (f?.date || '').trim();
+                    const t = getEffectiveTime(f);
+                    if (!d || t === '99:99') return Number.MAX_SAFE_INTEGER;
+                    return new Date(`${d}T${t}:00`).getTime();
+                };
+
+                const getStandNum = (f) => {
+                    const s = (f?.stand || '').toString().trim();
+                    if (!s) return null;
+                    const n = parseInt(s.replace(/\D/g, ''), 10);
+                    return Number.isNaN(n) ? null : n;
+                };
+
+                arrs.sort((a, b) => toTs(a) - toTs(b));
+                deps.sort((a, b) => toTs(a) - toTs(b));
+
+                const usedDepIds = new Set();
 
                 arrs.forEach(a => {
-                    let dIndex = -1;
-                    let sameDayDeps = deps.filter(d => d.date === a.date);
-                    
-                    if (sameDayDeps.length > 0) {
-                        let logicalDeps = sameDayDeps.filter(d => (d.jadwal||'99:99') >= (a.jadwal||'00:00'));
-                        if (logicalDeps.length > 0) {
-                            dIndex = deps.indexOf(logicalDeps[0]); 
-                        } else {
-                            // ==========================================
-                            
-                            // ==========================================
-                            sameDayDeps.sort((d1, d2) => getTimeDiff(a.jadwal, d1.jadwal) - getTimeDiff(a.jadwal, d2.jadwal));
-                            let closestDep = sameDayDeps[0];
-                            let timeDiffMins = getTimeDiff(a.jadwal, closestDep.jadwal);
-                            
-                            // Jika selisih Waktu di bawah 6 Jam (360 menit) -> Dimaklumi sebagai Typo/Delay
-                            if (timeDiffMins <= 360) {
-                                dIndex = deps.indexOf(closestDep);
-                            } else {
-                                // Jika selisih lebih dari 6 Jam (Misal Kedatangan 20:00 malam, Keberangkatan 08:00 pagi)
-                                // Sistem tahu ini BUKAN typo. Keberangkatan pagi milik pesawat kemaren.
-                                // Maka Kedatangan malam ini wajib dipasangkan ke HARI BESOK.
-                                dIndex = deps.findIndex(d => d.date > a.date);
-                            }
-                        }
-                    } else {
-                        // Pasang ke Hari Besok (Next Day RON)
-                        dIndex = deps.findIndex(d => d.date > a.date);
+                    const aTs = toTs(a);
+                    const aStand = getStandNum(a);
+
+                    const candidates = deps
+                        .filter(d => !usedDepIds.has(d.id))
+                        .map(d => {
+                            const dTs = toTs(d);
+                            const dStand = getStandNum(d);
+
+                            const sameStand = (aStand !== null && dStand !== null && aStand === dStand) ? 0 : 1;
+                            const afterArr = dTs >= aTs ? 0 : 1;
+                            const delta = Math.abs(dTs - aTs);
+
+                            return { d, sameStand, afterArr, delta };
+                        });
+
+                    if (candidates.length === 0) {
+                        allFlightCycles.push({ arr: a, dep: null, reg: reg });
+                        return;
                     }
 
-                    if (dIndex !== -1) {
-                        let d = deps[dIndex];
-                        allFlightCycles.push({ arr: a, dep: d, reg: reg });
-                        deps.splice(dIndex, 1); 
+                    candidates.sort((x, y) =>
+                        (x.sameStand - y.sameStand) ||
+                        (x.afterArr - y.afterArr) ||
+                        (x.delta - y.delta)
+                    );
+
+                    const chosen = candidates[0]?.d || null;
+
+                    if (chosen) {
+                        usedDepIds.add(chosen.id);
+                        allFlightCycles.push({ arr: a, dep: chosen, reg: reg });
                     } else {
-                        // Tetap sebagai Kedatangan untuk besok (Next Day)
                         allFlightCycles.push({ arr: a, dep: null, reg: reg });
                     }
                 });
 
-                //(Pesawat RON dari Kemarin)
                 deps.forEach(d => {
-                    allFlightCycles.push({ arr: null, dep: d, reg: reg });
+                    if (!usedDepIds.has(d.id)) {
+                        allFlightCycles.push({ arr: null, dep: d, reg: reg });
+                    }
                 });
             });
 
@@ -402,7 +419,7 @@
                 const card = document.createElement('div');
 
                 let isOver45 = false;
-                if (stand.status === 'OCCUPIED' && stand.current && stand.current.arr) {
+                if (stand.status === 'OCCUPIED' && stand.current && stand.current.arr && !stand.current.isRON) {
                     const occupiedMins = getOccupiedMinutesFromFlight(stand.current.arr);
                     isOver45 = occupiedMins > 45;
                 }
@@ -505,7 +522,7 @@
                         <span>Parking Stand D${i}</span>
                         <div class="d-flex align-items-center">
                             <span class="status-badge ${badgeColor} text-white">${stand.status}</span>
-                            ${isOver45 ? '<span class="remark-45"><i class="bi bi-exclamation-triangle-fill"></i>45 minutes</span>' : ''}
+                            ${isOver45 ? '<span class="remark-45"><i class="bi bi-exclamation-triangle-fill"></i>45 min</span>' : ''}
                         </div>
                     </div>
                     <div class="stand-body">
