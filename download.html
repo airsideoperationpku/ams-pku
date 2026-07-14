@@ -85,12 +85,12 @@
                 <div class="card-custom">
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">Tanggal Mulai</label>
-                            <input type="date" id="filterStart" class="form-control" onchange="loadPreview()">
+                            <label class="form-label small fw-bold">Rentang Tanggal (Mulai)</label>
+                            <input type="date" id="filterRangeStart" class="form-control" onchange="syncRangeAndLoad('start')">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">Tanggal Selesai</label>
-                            <input type="date" id="filterEnd" class="form-control" onchange="loadPreview()">
+                            <label class="form-label small fw-bold">Rentang Tanggal (Selesai)</label>
+                            <input type="date" id="filterRangeEnd" class="form-control" onchange="syncRangeAndLoad('end')">
                         </div>
                     </div>
 
@@ -206,12 +206,140 @@
     // ==========================================
     // LOGIKA EXPORT & PREVIEW
     // ==========================================
+    function normalizeDateOnly(v) {
+        if (!v) return '';
+        const d = new Date(`${v}T00:00:00`);
+        if (isNaN(d)) return '';
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    function getSelectedRange() {
+        return {
+            start: normalizeDateOnly(document.getElementById('filterRangeStart')?.value || ''),
+            end: normalizeDateOnly(document.getElementById('filterRangeEnd')?.value || '')
+        };
+    }
+
+    function syncRangeAndLoad(changed) {
+        const startEl = document.getElementById('filterRangeStart');
+        const endEl = document.getElementById('filterRangeEnd');
+        const s = normalizeDateOnly(startEl.value);
+        const e = normalizeDateOnly(endEl.value);
+
+        if (s && e && s > e) {
+            if (changed === 'start') endEl.value = s;
+            if (changed === 'end') startEl.value = e;
+        }
+        loadPreview();
+    }
+
     async function fetchFlights(s, e) {
         if(!sbClient) return [];
-        let q = sbClient.from('daily_flights').select('*');
-        if(s) q = q.gte('date', s); if(e) q = q.lte('date', e);
-        const {data, error} = await q.order('date', {ascending:true}).order('jadwal', {ascending:true});
-        return data || [];
+        const startDate = normalizeDateOnly(s);
+        const endDate = normalizeDateOnly(e);
+
+        let allData = [];
+        let page = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        // Loop pagination utama menggunakan .range() untuk menembus hard-limit 1000 baris Supabase
+        while (hasMore) {
+            let from = page * pageSize;
+            let to = from + pageSize - 1;
+
+            let q = sbClient.from('daily_flights').select('*');
+            if (startDate) q = q.gte('date', startDate);
+            if (endDate) q = q.lte('date', endDate);
+            
+            let { data, error } = await q
+                .order('date', { ascending: true })
+                .order('jadwal', { ascending: true })
+                .range(from, to);
+
+            // Fallback 1: jika kolom berupa timestamp text style
+            if (error) {
+                let q2 = sbClient.from('daily_flights').select('*');
+                if (startDate) q2 = q2.gte('date', `${startDate}T00:00:00`);
+                if (endDate) q2 = q2.lte('date', `${endDate}T23:59:59.999`);
+                const res2 = await q2
+                    .order('date', { ascending: true })
+                    .order('jadwal', { ascending: true })
+                    .range(from, to);
+                
+                if (!res2.error && Array.isArray(res2.data)) {
+                    data = res2.data;
+                } else {
+                    hasMore = false;
+                    break;
+                }
+            }
+
+            if (data && data.length > 0) {
+                allData = allData.concat(data);
+                if (data.length < pageSize) {
+                    hasMore = false; // Data halaman terakhir sudah tercapai
+                } else {
+                    page++; // Lanjut ke halaman berikutnya
+                }
+            } else {
+                hasMore = false;
+            }
+        }
+
+        // Fallback 2: Jika query spesifik gagal total, tarik semua data ter-paginasi lalu filter di sisi client
+        if (allData.length === 0) {
+            let allResData = [];
+            let pageFallback = 0;
+            let hasMoreFallback = true;
+            
+            while (hasMoreFallback) {
+                let from = pageFallback * pageSize;
+                let to = from + pageSize - 1;
+                
+                const res = await sbClient.from('daily_flights')
+                    .select('*')
+                    .order('date', { ascending: true })
+                    .order('jadwal', { ascending: true })
+                    .range(from, to);
+                    
+                if (res.error || !Array.isArray(res.data) || res.data.length === 0) {
+                    hasMoreFallback = false;
+                } else {
+                    allResData = allResData.concat(res.data);
+                    if (res.data.length < pageSize) {
+                        hasMoreFallback = false;
+                    } else {
+                        pageFallback++;
+                    }
+                }
+            }
+
+            if (allResData.length > 0) {
+                const toKey = (v) => {
+                    if (!v) return '';
+                    const raw = String(v).trim();
+                    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+                    const dmy = raw.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+                    if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+                    return '';
+                };
+
+                return allResData.filter(f => {
+                    const k = toKey(f.date);
+                    if (!k) return false;
+                    if (startDate && k < startDate) return false;
+                    if (endDate && k > endDate) return false;
+                    return true;
+                });
+            }
+        }
+
+        return allData;
     }
 
     function filterDataByStatus(data) {
@@ -225,7 +353,8 @@
     }
 
     async function loadPreview() {
-        const rawFlights = await fetchFlights(document.getElementById('filterStart').value, document.getElementById('filterEnd').value);
+        const { start, end } = getSelectedRange();
+        const rawFlights = await fetchFlights(start, end);
         const flights = filterDataByStatus(rawFlights);
         const h = document.getElementById('p_head'), b = document.getElementById('p_body');
         
@@ -266,16 +395,50 @@
     }
 
     async function exportExcel() {
-        const rawFlights = await fetchFlights(document.getElementById('filterStart').value, document.getElementById('filterEnd').value);
+        const { start, end } = getSelectedRange();
+        const rawFlights = await fetchFlights(start, end);
         const flights = filterDataByStatus(rawFlights);
         if(flights.length === 0) return alert("Data kosong.");
-        
-        let html = `<table border="1">${document.getElementById('p_head').innerHTML}<tbody>${document.getElementById('p_body').innerHTML}</tbody></table>`;
+
+        const opt = {
+            bag: document.getElementById('c_bagasi').checked, pax: document.getElementById('c_pax').checked,
+            avio: document.getElementById('c_avio').checked, type: document.getElementById('c_type').checked,
+            otp: document.getElementById('c_otp').checked, ron: document.getElementById('c_ron').checked
+        };
+
+        let headHtml = `<tr><th>Tanggal</th><th>CS</th><th>No. Fl</th><th>Rute</th><th>Leg</th><th>Tipe</th><th>Jadwal</th><th>Reg</th>`;
+        if(opt.type) headHtml += `<th>AC Type</th><th>Flt Type</th>`; else headHtml += `<th>AC Type</th>`;
+        if(opt.pax) headHtml += `<th>Pax</th><th>Seat</th><th>L/F</th>`;
+        if(opt.bag) headHtml += `<th>Bagasi</th><th>Kargo</th>`;
+        if(opt.avio) headHtml += `<th>Avio</th>`;
+        if(opt.otp) headHtml += `<th>Block</th><th>Delay</th>`;
+        if(opt.ron) headHtml += `<th>RON</th>`;
+        headHtml += `<th>Status</th></tr>`;
+
+        const bodyHtml = flights.map(f => {
+            let badgeLeg = f.leg === 'A' ? 'bg-primary' : (f.leg === 'D' ? 'bg-info text-dark' : 'bg-secondary');
+            let badgeDom = f.dom_intl === 'INTL' ? 'bg-dark' : 'bg-secondary';
+            let row = `<tr><td>${f.date}</td><td>${f.callsign||''}</td><td>${f.flight_number||''}</td><td>${f.rute||''}</td><td><span class="badge ${badgeLeg}">${f.leg||'-'}</span></td><td><span class="badge ${badgeDom}">${f.dom_intl||'-'}</span></td><td>${f.jadwal||''}</td><td>${f.reg||''}</td><td>${f.tipe_ac||''}</td>`;
+            if(opt.type) row += `<td>${f.fl_type||''}</td>`;
+            if(opt.pax) {
+                let lf = f.seat > 0 ? ((f.pax/f.seat)*100).toFixed(1) + '%' : '-';
+                row += `<td>${f.pax||0}</td><td>${f.seat||0}</td><td>${lf}</td>`;
+            }
+            if(opt.bag) row += `<td>${f.bagasi||0}</td><td>${f.kargo||0}</td>`;
+            if(opt.avio) row += `<td>${f.avio ? 'YES' : 'NO'}</td>`;
+            if(opt.otp) row += `<td>${f.block_time||'-'}</td><td>${getDelay(f.jadwal, f.block_time)}m</td>`;
+            if(opt.ron) row += `<td>${f.ron ? 'YES' : 'NO'}</td>`;
+            row += `<td>${f.status||''}</td></tr>`;
+            return row;
+        }).join('');
+
+        let html = `<table border="1"><thead>${headHtml}</thead><tbody>${bodyHtml}</tbody></table>`;
         const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([html], { type: 'application/vnd.ms-excel' })); link.download = `Export_AMS_PKU.xls`; link.click();
     }
 
     async function exportCSV() {
-        const rawFlights = await fetchFlights(document.getElementById('filterStart').value, document.getElementById('filterEnd').value);
+        const { start, end } = getSelectedRange();
+        const rawFlights = await fetchFlights(start, end);
         const flights = filterDataByStatus(rawFlights);
         if(flights.length === 0) return alert("Data kosong.");
         
@@ -317,12 +480,12 @@
         const txt = document.getElementById('waTextarea'); txt.value = "Memuat data...";
 
         try {
-            const { data: flights } = await sbClient.from('daily_flights').select('*').eq('date', d).order('jadwal', { ascending: true });
+            const { data: flights } = await sbClient.from('daily_flights').select('*').eq('date', d).order('jadwal', { ascending: true }).limit(1000);
             const { data: rec } = await sbClient.from('daily_records').select('*').eq('date', d).maybeSingle();
             
             let prevDate = new Date(d); prevDate.setDate(prevDate.getDate() - 1);
             let prevDateStr = prevDate.toISOString().split('T')[0];
-            const { data: pFlights } = await sbClient.from('daily_flights').select('pax, status').eq('date', prevDateStr);
+            const { data: pFlights } = await sbClient.from('daily_flights').select('pax, status').eq('date', prevDateStr).limit(1000);
 
             let daily = rec || {}, paxPrev = 0;
             if(pFlights) pFlights.forEach(f => { if(f.status === 'OPS') paxPrev += (parseInt(f.pax) || 0); });
@@ -333,7 +496,6 @@
 
             (flights || []).forEach(f => {
                 if (f.fl_type === 'REGULER') {
-                    // Normalisasi input string agar tidak ada spasi sisa
                     let di_raw = (f.dom_intl || '').trim().toUpperCase();
                     if (f.leg === 'A' && di_raw === 'DOM') plAD++;
                     if (f.leg === 'D' && di_raw === 'DOM') plDD++;
@@ -342,7 +504,6 @@
                 }
 
                 if (f.status === 'OPS') {
-                    // Normalisasi input string agar tidak ada spasi sisa
                     let di_raw = (f.dom_intl || '').trim().toUpperCase();
                     if (f.fl_type === 'REGULER') {
                         if (f.leg === 'A' && di_raw === 'DOM') reAD++;
@@ -351,7 +512,6 @@
                         if (f.leg === 'D' && di_raw === 'INTL') reDI++;
                     }
 
-                    // --- PERBAIKAN: NORMALISASI STRING FL_TYPE AGAR TIDAK DOUBLE KARENA SPASI ---
                     let rawType = f.fl_type || 'UNKNOWN';
                     let t = rawType.trim().toUpperCase(); 
                     
@@ -393,7 +553,6 @@
                 }
             });
 
-            // --- BUILDER STRING UNTUK MOVEMENT DOM/INTL ---
             let movStr = "", paxStr = "";
             let movGrandA = 0, movGrandD = 0;
             
@@ -416,8 +575,6 @@
                 if (hasIntl) {
                     movStr += `  [INTERNASIONAL] Arr ${intlA} | Dep ${intlD} | Total ${intlT}\n`;
                 }
-                // HANYA MUNCULKAN TOTAL JIKA ADA CAMPURAN DOMESTIK & INTERNASIONAL 
-                // (Untuk menghindari kesan "Double" jika isinya cuma satu tipe)
                 if (hasDom && hasIntl) {
                     movStr += `  [TOTAL ${k}] Arr ${totA} | Dep ${totD} | Total ${totT}\n`;
                 }
@@ -428,7 +585,6 @@
                 movStr += `- GRAND TOTAL MOVEMENT: Arr ${movGrandA} | Dep ${movGrandD} | Total ${movGrandT}\n`;
             }
 
-            // --- BUILDER STRING UNTUK PAX, SEAT & L/F DOM/INTL ---
             Object.keys(paxMap).sort().forEach(k => {
                 let p = paxMap[k];
                 let domAp = p.dom.a.p, domAs = p.dom.a.s;
@@ -468,7 +624,6 @@
                     paxStr += `  Tot: Pax ${intlTp.toLocaleString('id-ID')} | Seat ${intlTs.toLocaleString('id-ID')} | L/F ${lfT}%\n`;
                 }
                 
-                // HANYA MUNCULKAN TOTAL JIKA ADA CAMPURAN DOMESTIK & INTERNASIONAL 
                 if (hasDom && hasIntl) {
                     let lfAtot = totAs > 0 ? ((totAp / totAs) * 100).toFixed(1) : 0;
                     let lfDtot = totDs > 0 ? ((totDp / totDs) * 100).toFixed(1) : 0;
@@ -542,8 +697,8 @@ ${delayList.length > 0 ? delayList.join("\n") : "- Nihil"}
     window.onload = async () => {
         await initUserProfile();
         let t = new Date().toISOString().split('T')[0];
-        document.getElementById('filterStart').value = t; 
-        document.getElementById('filterEnd').value = t; 
+        document.getElementById('filterRangeStart').value = t; 
+        document.getElementById('filterRangeEnd').value = t; 
         document.getElementById('waDate').value = t;
         loadPreview();
     };
