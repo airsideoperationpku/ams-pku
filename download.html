@@ -34,6 +34,89 @@
         .check-group { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #eee; }
         .form-check-label { font-size: 0.85rem; font-weight: 500; }
 
+        .theme-badge-toggle {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            width: 132px;
+            height: 40px;
+            border-radius: 999px;
+            padding: 4px;
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.08);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.35s ease;
+        }
+        .theme-badge-toggle .pill {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 62px;
+            height: 32px;
+            border-radius: 999px;
+            background: #ffffff;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            transition: transform 0.35s cubic-bezier(.4,0,.2,1), background 0.35s ease;
+            z-index: 1;
+        }
+        .theme-badge-toggle .option {
+            position: relative;
+            z-index: 2;
+            width: 62px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: color 0.3s ease, transform 0.25s ease;
+        }
+        .theme-badge-toggle .option i { font-size: 0.8rem; }
+        .theme-badge-toggle .option.active { color: #0f172a; transform: scale(1.03); }
+        .theme-badge-toggle.dark { background: linear-gradient(135deg, #1e293b, #0f172a); }
+        .theme-badge-toggle.dark .pill { transform: translateX(62px); background: #1f2937; }
+        .theme-badge-toggle.dark .option { color: #cbd5e1; }
+        .theme-badge-toggle.dark .option.active { color: #f8fafc; }
+
+        body.dark-theme { background-color: #0b1220 !important; color: #e2e8f0; }
+        body.dark-theme .sidebar,
+        body.dark-theme .card-custom,
+        body.dark-theme .user-profile-box,
+        body.dark-theme .preview-container,
+        body.dark-theme .check-group {
+            background-color: #111827 !important;
+            color: #e5e7eb !important;
+            border-color: #1f2937 !important;
+        }
+        body.dark-theme .nav-link { color: #cbd5e1 !important; }
+        body.dark-theme .nav-link:hover,
+        body.dark-theme .nav-link.active { background-color: #1e293b !important; color: #93c5fd !important; }
+        body.dark-theme .table-preview thead { background: #0f172a !important; }
+        body.dark-theme .table-preview th, body.dark-theme .table-preview td { color: #e2e8f0 !important; border-color: #1f2937 !important; }
+        body.dark-theme .form-control, body.dark-theme .form-check-input { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+
+        body.dark-theme h4.fw-bold.text-dark,
+        body.dark-theme .text-dark { color: #e5e7eb !important; }
+
+        body.dark-theme .table-preview,
+        body.dark-theme .table-preview.table,
+        body.dark-theme .table-preview tbody,
+        body.dark-theme .table-preview tr,
+        body.dark-theme .table-preview td {
+            background-color: #111827 !important;
+            color: #e5e7eb !important;
+        }
+
+        body.dark-theme .table-preview thead,
+        body.dark-theme .table-preview thead th {
+            background-color: #0f172a !important;
+            color: #e5e7eb !important;
+            border-color: #1f2937 !important;
+        }
+
         @media (max-width: 768px) { .sidebar { position: fixed; left: -250px; height: 100vh; } .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); } .sidebar-overlay.show { display: block; } .content { padding: 15px; } }
     </style>
 </head>
@@ -66,9 +149,16 @@
     </nav>
 
     <div class="content">
-        <div class="d-flex align-items-center mb-4">
-            <button class="btn btn-light border shadow-sm px-2 py-1 me-3" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
-            <h4 class="fw-bold text-dark m-0">Download Center</h4>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-light border shadow-sm px-2 py-1 me-3" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
+                <h4 class="fw-bold text-dark m-0">Download Center</h4>
+            </div>
+            <div id="themeBadgeToggle" class="theme-badge-toggle" onclick="toggleThemeBadge()" title="Ganti tema">
+                <span class="pill"></span>
+                <span id="themeOptLight" class="option active"><i class="bi bi-sun-fill"></i> Light</span>
+                <span id="themeOptDark" class="option"><i class="bi bi-moon-stars-fill"></i> Dark</span>
+            </div>
         </div>
 
         <ul class="nav nav-tabs mb-4" id="downloadTabs" role="tablist">
@@ -694,7 +784,33 @@ ${delayList.length > 0 ? delayList.join("\n") : "- Nihil"}
         window.location.replace('index.html');
     }
 
+    function applyTheme(theme) {
+        const body = document.body;
+        const toggle = document.getElementById('themeBadgeToggle');
+        const optLight = document.getElementById('themeOptLight');
+        const optDark = document.getElementById('themeOptDark');
+
+        if (!toggle || !optLight || !optDark) return;
+
+        const isDark = theme === 'dark';
+        body.classList.toggle('dark-theme', isDark);
+        toggle.classList.toggle('dark', isDark);
+
+        optLight.classList.toggle('active', !isDark);
+        optDark.classList.toggle('active', isDark);
+
+        localStorage.setItem('ams_theme', isDark ? 'dark' : 'light');
+    }
+
+    function toggleThemeBadge() {
+        const isDark = document.body.classList.contains('dark-theme');
+        applyTheme(isDark ? 'light' : 'dark');
+    }
+
     window.onload = async () => {
+        const savedTheme = localStorage.getItem('ams_theme') || 'light';
+        applyTheme(savedTheme);
+
         await initUserProfile();
         let t = new Date().toISOString().split('T')[0];
         document.getElementById('filterRangeStart').value = t; 
