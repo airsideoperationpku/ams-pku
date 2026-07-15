@@ -23,13 +23,13 @@
         .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
         .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
         .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 20px; }
+        .card { border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 6px 20px rgba(15,23,42,0.05); margin-bottom: 20px; background: #fff; }
         
         /* Kalender */
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
         .calendar-day-name { text-align: center; font-weight: bold; color: #666; font-size: 0.85rem; padding-bottom: 10px; text-transform: uppercase; }
-        .calendar-day { background: #fff; border: 1px solid #eaeaea; border-radius: 10px; padding: 15px 10px; text-align: center; cursor: pointer; transition: all 0.2s; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+        .calendar-day { background: #fff; border: 1px solid #eaeaea; border-radius: 12px; padding: 15px 10px; text-align: center; cursor: pointer; transition: all 0.2s; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
         .calendar-day:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.08); border-color: #b3d4fc; }
         .calendar-day h5 { margin: 0; font-weight: 700; color: #333; }
         .calendar-day small { font-size: 0.65rem; font-weight: bold; margin-top: 5px; display: block; }
@@ -96,6 +96,150 @@
             user-select: none;
         }
 
+        /* ===== Animated Theme Badge Toggle ===== */
+        .theme-badge-toggle {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            width: 132px;
+            height: 40px;
+            border-radius: 999px;
+            padding: 4px;
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.08);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.35s ease;
+        }
+
+        .theme-badge-toggle .pill {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 62px;
+            height: 32px;
+            border-radius: 999px;
+            background: #ffffff;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            transition: transform 0.35s cubic-bezier(.4,0,.2,1), background 0.35s ease;
+            z-index: 1;
+        }
+
+        .theme-badge-toggle .option {
+            position: relative;
+            z-index: 2;
+            width: 62px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: color 0.3s ease, transform 0.25s ease;
+        }
+
+        .theme-badge-toggle .option i { font-size: 0.8rem; }
+
+        .theme-badge-toggle .option.active {
+            color: #0f172a;
+            transform: scale(1.03);
+        }
+
+        .theme-badge-toggle.dark {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+        }
+
+        .theme-badge-toggle.dark .pill {
+            transform: translateX(62px);
+            background: #1f2937;
+        }
+
+        .theme-badge-toggle.dark .option {
+            color: #cbd5e1;
+        }
+
+        .theme-badge-toggle.dark .option.active {
+            color: #f8fafc;
+        }
+
+        body.dark-theme {
+            background-color: #0b1220 !important;
+            color: #e2e8f0;
+        }
+
+        body.dark-theme .sidebar,
+        body.dark-theme .card,
+        body.dark-theme .table-responsive,
+        body.dark-theme .modal-content,
+        body.dark-theme .user-profile-box {
+            background-color: #111827 !important;
+            color: #e5e7eb !important;
+            border-color: #1f2937 !important;
+        }
+
+        body.dark-theme .sidebar-header h5,
+        body.dark-theme .fw-bold,
+        body.dark-theme h5,
+        body.dark-theme h6,
+        body.dark-theme .form-label {
+            color: #e5e7eb !important;
+        }
+
+        body.dark-theme .nav-link {
+            color: #cbd5e1 !important;
+        }
+        body.dark-theme .nav-link:hover,
+        body.dark-theme .nav-link.active {
+            background-color: #1e293b !important;
+            color: #93c5fd !important;
+        }
+
+        body.dark-theme .table-spreadsheet th {
+            background-color: #0f172a !important;
+            color: #cbd5e1 !important;
+            border-color: #1f2937 !important;
+        }
+        body.dark-theme #apronTable tbody tr.flight-row:nth-child(odd) { background-color: #0b1324 !important; }
+        body.dark-theme #apronTable tbody tr.flight-row:nth-child(even) { background-color: #111b32 !important; }
+
+        body.dark-theme .form-control,
+        body.dark-theme .form-select,
+        body.dark-theme .input-group {
+            background-color: #0f172a !important;
+            color: #e2e8f0 !important;
+            border-color: #1f2937 !important;
+        }
+        body.dark-theme .form-control::placeholder { color: #94a3b8 !important; }
+
+        /* Samakan feel tabel seperti tema light: bersih tanpa border permanen */
+        body.dark-theme .table-spreadsheet .form-control,
+        body.dark-theme .table-spreadsheet .form-select {
+            background-color: transparent !important;
+            border-color: transparent !important;
+            color: #e2e8f0 !important;
+            box-shadow: none !important;
+        }
+        body.dark-theme .table-spreadsheet .form-control:hover,
+        body.dark-theme .table-spreadsheet .form-select:hover {
+            border-color: #334155 !important;
+            background-color: rgba(15, 23, 42, 0.55) !important;
+        }
+        body.dark-theme .table-spreadsheet .form-control:focus,
+        body.dark-theme .table-spreadsheet .form-select:focus {
+            border-color: #60a5fa !important;
+            background-color: #0f172a !important;
+            box-shadow: none !important;
+        }
+
+        body.dark-theme .calendar-day {
+            background: #0f172a;
+            border-color: #1f2937;
+        }
+        body.dark-theme .calendar-day h5 { color: #e2e8f0; }
+        body.dark-theme .cal-empty small { color: #94a3b8; }
+
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: -250px; height: 100vh; }
             .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); }
@@ -104,12 +248,12 @@
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 antialiased">
 
-<div class="wrapper">
+<div class="wrapper min-h-screen w-full flex">
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-    <nav class="sidebar" id="sidebar">
+    <nav class="sidebar shadow-sm" id="sidebar">
         <div class="sidebar-header"><h5>AMC PKU</h5><small>Sultan Syarif Kasim II</small></div>
         <div class="nav flex-column">
             <a href="dashboard.html" class="nav-link" onclick="closeSidebarMobile()"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
@@ -130,14 +274,21 @@
         <div class="mt-auto mb-4 px-3"><button class="btn btn-outline-danger w-100 fw-bold" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></div>
     </nav>
 
-    <div class="content">
+    <div class="content flex-1 min-w-0 p-4 md:p-6 lg:p-8">
         <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
             <div class="d-flex align-items-center gap-2">
                 <button class="btn btn-light border shadow-sm px-2 py-1 me-2" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
                 <h5 class="fw-bold text-dark m-0 d-none d-sm-block">Sultan Syarif Kasim II</h5>
                 <h6 class="fw-bold text-dark m-0 d-block d-sm-none">AMS PKU</h6>
             </div>
-            <div><span class="badge bg-primary fs-6 fw-normal shadow-sm"><i class="bi bi-calendar3 me-1"></i> <span id="currentDateHeader">Hari Ini</span></span></div>
+            <div class="d-flex justify-content-md-end align-items-center gap-2">
+                <div id="themeBadgeToggle" class="theme-badge-toggle" onclick="toggleThemeBadge()" title="Ganti tema">
+                    <span class="pill"></span>
+                    <span id="themeOptLight" class="option active"><i class="bi bi-sun-fill"></i> Light</span>
+                    <span id="themeOptDark" class="option"><i class="bi bi-moon-stars-fill"></i> Dark</span>
+                </div>
+                <span class="badge bg-primary fs-6 fw-normal shadow-sm"><i class="bi bi-calendar3 me-1"></i> <span id="currentDateHeader">Hari Ini</span></span>
+            </div>
         </div>
         
         <!-- VIEW 1: KALENDER -->
@@ -154,9 +305,9 @@
                 </div>
                 <div id="calendarDates" class="calendar-grid"></div>
                 <div class="mt-4 d-flex flex-wrap gap-2 justify-content-center border-top pt-3 text-center">
-                    <span class="badge bg-light text-dark border"><i class="bi bi-circle-fill text-white border rounded-circle me-1"></i> Belum Diisi</span>
-                    <span class="badge" style="background:#fee2e2; color:#b91c1c;"><i class="bi bi-circle-fill text-danger me-1"></i> Belum Complete</span>
-                    <span class="badge" style="background:#dbeafe; color:#1d4ed8;"><i class="bi bi-circle-fill text-primary me-1"></i> Data Complete</span>
+                    <span class="badge bg-light text-dark border"><i class="bi bi-circle-fill text-white border rounded-circle me-1"></i> Kosong</span>
+                    <span class="badge" style="background:#fee2e2; color:#b91c1c;"><i class="bi bi-circle-fill text-danger me-1"></i> Draft</span>
+                    <span class="badge" style="background:#dbeafe; color:#1d4ed8;"><i class="bi bi-circle-fill text-primary me-1"></i> Complete</span>
                 </div>
             </div>
         </div>
@@ -606,7 +757,7 @@
                     </div>
                 </td>
                 <td class="col-ron"><div class="checkbox-center"><input class="form-check-input ron-checkbox" type="checkbox" ${isRonChecked} onchange="updateRonDisplay(this); markAsIncomplete()"></div></td>
-                <td class="col-tipe"><input list="list-tipe-pesawat" class="form-control text-primary text-uppercase input-tipe" placeholder="Ketik" value="${f.tipe_ac || ''}" onchange="autoFillKapasitas(this); markAsIncomplete()"></td>
+                <td class="col-tipe"><input list="list-tipe-pesawat" class="form-control text-primary text-uppercase input-tipe" value="${f.tipe_ac || ''}" onchange="autoFillKapasitas(this); markAsIncomplete()"></td>
                 <td class="col-seat"><input type="number" class="form-control input-seat border-0" value="${f.seat || ''}" readonly style="background:#f8f9fa;" placeholder="-"></td>
                 <td class="col-dom"><select class="form-select input-domintl" onchange="markAsIncomplete()"><option ${f.dom_intl=='DOM'?'selected':''}>DOM</option><option ${f.dom_intl=='INTL'?'selected':''}>INTL</option></select></td>
                 <td class="col-leg"><select class="form-select input-leg ${legClass}" onchange="updateLegColor(this); markAsIncomplete()"><option value="D" ${f.leg=='D'?'selected':''}>D</option><option value="A" ${f.leg=='A'?'selected':''}>A</option></select></td>
@@ -888,10 +1039,40 @@
         }
     }
 
+    function applyTheme(theme) {
+        const body = document.body;
+        const toggle = document.getElementById('themeBadgeToggle');
+        const optLight = document.getElementById('themeOptLight');
+        const optDark = document.getElementById('themeOptDark');
+
+        if (!toggle || !optLight || !optDark) return;
+
+        const isDark = theme === 'dark';
+        body.classList.toggle('dark-theme', isDark);
+        toggle.classList.toggle('dark', isDark);
+
+        optLight.classList.toggle('active', !isDark);
+        optDark.classList.toggle('active', isDark);
+
+        localStorage.setItem('ams_theme', isDark ? 'dark' : 'light');
+    }
+
+    function toggleThemeBadge() {
+        const isDark = document.body.classList.contains('dark-theme');
+        applyTheme(isDark ? 'light' : 'dark');
+    }
+
     window.addEventListener('error', (e) => { console.error('Global JS Error:', e.message, 'at', e.filename, 'line', e.lineno); });
     window.addEventListener('unhandledrejection', (e) => { console.error('Unhandled Promise Rejection:', e.reason); });
     window.addEventListener('beforeunload', () => { stopRealtimeSync(); });
-    window.onload = async () => { await initUserProfile(); renderCalendar(); updatePetugasDatalist(); };
+    window.onload = async () => {
+        const savedTheme = localStorage.getItem('ams_theme') || 'light';
+        applyTheme(savedTheme);
+
+        await initUserProfile();
+        renderCalendar();
+        updatePetugasDatalist();
+    };
 </script>
 </body>
 </html>
