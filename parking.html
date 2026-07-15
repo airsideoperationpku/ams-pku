@@ -104,6 +104,91 @@
             box-shadow: 0 2px 8px rgba(220, 53, 69, 0.35);
         }
 
+        .theme-badge-toggle {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            width: 132px;
+            height: 40px;
+            border-radius: 999px;
+            padding: 4px;
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.08);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.35s ease;
+        }
+        .theme-badge-toggle .pill {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 62px;
+            height: 32px;
+            border-radius: 999px;
+            background: #ffffff;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            transition: transform 0.35s cubic-bezier(.4,0,.2,1), background 0.35s ease;
+            z-index: 1;
+        }
+        .theme-badge-toggle .option {
+            position: relative;
+            z-index: 2;
+            width: 62px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: color 0.3s ease, transform 0.25s ease;
+        }
+        .theme-badge-toggle .option i { font-size: 0.8rem; }
+        .theme-badge-toggle .option.active { color: #0f172a; transform: scale(1.03); }
+        .theme-badge-toggle.dark { background: linear-gradient(135deg, #1e293b, #0f172a); }
+        .theme-badge-toggle.dark .pill { transform: translateX(62px); background: #1f2937; }
+        .theme-badge-toggle.dark .option { color: #cbd5e1; }
+        .theme-badge-toggle.dark .option.active { color: #f8fafc; }
+
+        body.dark-theme { background-color: #0b1220 !important; color: #e2e8f0; }
+        body.dark-theme .sidebar,
+        body.dark-theme .user-profile-box,
+        body.dark-theme .content,
+        body.dark-theme .stand-card,
+        body.dark-theme .pair-box,
+        body.dark-theme .next-flight-banner {
+            background-color: #111827 !important;
+            color: #e5e7eb !important;
+            border-color: #1f2937 !important;
+        }
+        body.dark-theme .flight-info,
+        body.dark-theme .flight-info * {
+            color: #e5e7eb !important;
+        }
+        body.dark-theme .flight-info .text-dark,
+        body.dark-theme .flight-info .text-muted {
+            color: #cbd5e1 !important;
+        }
+        body.dark-theme .nav-link { color: #cbd5e1 !important; }
+        body.dark-theme .nav-link:hover,
+        body.dark-theme .nav-link.active { background-color: #1e293b !important; color: #93c5fd !important; }
+
+        body.dark-theme h4.fw-bold.text-dark { color: #e5e7eb !important; }
+        body.dark-theme .stand-card .text-dark { color: #e5e7eb !important; }
+        body.dark-theme .stand-card .text-muted { color: #9ca3af !important; }
+        body.dark-theme .stand-card.occupied .pair-box,
+        body.dark-theme .stand-card.standby .pair-box { background: #0f172a !important; }
+        body.dark-theme .next-flight-banner .details,
+        body.dark-theme .next-flight-banner .title { color: #f1f5f9 !important; }
+
+        /* Fix kontras teks status penting pada dark theme */
+        body.dark-theme .stand-card .text-danger { color: #f87171 !important; }   /* ON BLOCK */
+        body.dark-theme .stand-card .text-warning { color: #facc15 !important; }  /* STANDBY / estimasi */
+        body.dark-theme .stand-card .text-primary { color: #60a5fa !important; }  /* STD/info primer */
+        body.dark-theme .stand-card .pair-box .fw-bold { color: #f8fafc !important; } /* isi termasuk registrasi */
+        body.dark-theme .stand-card .pair-box .text-muted { color: #cbd5e1 !important; } /* label Reg / Tipe */
+
         @media (max-width: 768px) { .sidebar { position: fixed; left: -250px; height: 100vh; } .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); } .sidebar-overlay.show { display: block; } .content { padding: 15px; } }
     </style>
 </head>
@@ -142,6 +227,11 @@
                 <h4 class="fw-bold text-dark m-0">Parking Stand Monitor</h4>
             </div>
             <div class="d-flex align-items-center gap-3">
+                <div id="themeBadgeToggle" class="theme-badge-toggle" onclick="toggleThemeBadge()" title="Ganti tema">
+                    <span class="pill"></span>
+                    <span id="themeOptLight" class="option active"><i class="bi bi-sun-fill"></i> Light</span>
+                    <span id="themeOptDark" class="option"><i class="bi bi-moon-stars-fill"></i> Dark</span>
+                </div>
                 <span class="badge bg-success px-2 py-1.5 shadow-sm"><i class="bi bi-arrow-repeat me-1"></i> Auto-Sync Aktif</span>
                 <span class="badge bg-primary px-3 py-2 fw-bold shadow-sm" id="liveClock" style="font-variant-numeric: tabular-nums;">00:00:00</span>
             </div>
@@ -536,6 +626,29 @@
         }
     }
 
+    function applyTheme(theme) {
+        const body = document.body;
+        const toggle = document.getElementById('themeBadgeToggle');
+        const optLight = document.getElementById('themeOptLight');
+        const optDark = document.getElementById('themeOptDark');
+
+        if (!toggle || !optLight || !optDark) return;
+
+        const isDark = theme === 'dark';
+        body.classList.toggle('dark-theme', isDark);
+        toggle.classList.toggle('dark', isDark);
+
+        optLight.classList.toggle('active', !isDark);
+        optDark.classList.toggle('active', isDark);
+
+        localStorage.setItem('ams_theme', isDark ? 'dark' : 'light');
+    }
+
+    function toggleThemeBadge() {
+        const isDark = document.body.classList.contains('dark-theme');
+        applyTheme(isDark ? 'light' : 'dark');
+    }
+
     setInterval(updateParkingStands, 5000);
     async function logout() {
         if(!sbClient) return;
@@ -545,7 +658,13 @@
         localStorage.removeItem('ams_user_id');
         window.location.replace('index.html');
     }
-    window.onload = async () => { await initUserProfile(); updateParkingStands(); };
+    window.onload = async () => {
+        const savedTheme = localStorage.getItem('ams_theme') || 'light';
+        applyTheme(savedTheme);
+
+        await initUserProfile();
+        updateParkingStands();
+    };
 </script>
 </body>
 </html>
