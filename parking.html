@@ -11,7 +11,21 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; overflow-x: hidden; }
         .wrapper { display: flex; width: 100%; height: 100vh; overflow: hidden; }
         .sidebar { min-width: 250px; max-width: 250px; background-color: #ffffff; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; transition: all 0.3s ease; z-index: 1050; }
-        .sidebar.collapsed { margin-left: -250px; }
+        .sidebar.no-transition { transition: none !important; }
+        .sidebar.collapsed { min-width: 72px; max-width: 72px; margin-left: 0; }
+        .sidebar-brand { display: flex; align-items: center; gap: 12px; }
+        .brand-logo { width: 40px; height: 40px; min-width: 40px; border-radius: 11px; background: #fff; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 14px rgba(13, 110, 253, 0.28); cursor: pointer; flex-shrink: 0; }
+        .brand-logo img { width: 100%; height: 100%; object-fit: contain; padding: 3px; display: block; }
+        .sidebar.collapsed .sidebar-header { padding: 16px 8px; }
+        .sidebar.collapsed .sidebar-brand { justify-content: center; gap: 0; }
+        .sidebar.collapsed .brand-text { display: none; }
+        .sidebar.collapsed .nav-link { justify-content: center; padding: 12px 0; margin: 4px 10px; gap: 0; font-size: 0; }
+        .sidebar.collapsed .nav-link i { font-size: 1.25rem; }
+        .sidebar.collapsed .user-profile-box { margin: 0 10px 15px; padding: 10px 0; }
+        .sidebar.collapsed .user-profile-box .d-flex { justify-content: center; }
+        .sidebar.collapsed .user-profile-box .flex-grow-1 { display: none; }
+        .sidebar.collapsed .btn-outline-danger { font-size: 0; padding: 9px 0; width: 100%; }
+        .sidebar.collapsed .btn-outline-danger i { font-size: 1.15rem; margin: 0; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1040; transition: opacity 0.3s ease; }
         .sidebar-header { padding: 25px 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 15px; }
         .sidebar-header h5 { margin: 0; font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
@@ -190,6 +204,18 @@
         body.dark-theme .stand-card .pair-box .text-muted { color: #cbd5e1 !important; } /* label Reg / Tipe */
 
         @media (max-width: 768px) { .sidebar { position: fixed; left: -250px; height: 100vh; } .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); } .sidebar-overlay.show { display: block; } .content { padding: 15px; } }
+        /* Bottom navigation untuk mobile */
+        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 1030; background: #fff; border-top: 1px solid #eaeaea; box-shadow: 0 -2px 12px rgba(0,0,0,0.08); }
+        .bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px calc(8px + env(safe-area-inset-bottom)); font-size: 0.62rem; font-weight: 600; color: #8a94a6; text-decoration: none; transition: color 0.2s ease; }
+        .bottom-nav-item i { font-size: 1.35rem; line-height: 1; }
+        .bottom-nav-item.active { color: #0d6efd; }
+        body.dark-theme .bottom-nav { background: #111827; border-color: #1f2937; }
+        body.dark-theme .bottom-nav-item { color: #9ca3af; }
+        body.dark-theme .bottom-nav-item.active { color: #93c5fd; }
+        @media (max-width: 768px) {
+            .bottom-nav { display: flex; }
+            .content { padding-bottom: 76px; }
+        }
     </style>
 </head>
 <body>
@@ -198,7 +224,7 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header"><h5>AMC PKU</h5><small>Sultan Syarif Kasim II</small></div>
+        <div class="sidebar-header"><div class="sidebar-brand"><div class="brand-logo" onclick="toggleSidebar()" title="Buka Menu"><img src="https://i.imgur.com/Lioli0P.png" alt="AMC PKU"></div><div class="brand-text"><h5>AMC PKU</h5><small>Sultan Syarif Kasim II</small></div></div></div>
         <div class="nav flex-column">
             <a href="dashboard.html" class="nav-link"><i class="bi bi-pie-chart-fill"></i> Dashboard</a>
             <a href="ams.html" class="nav-link"><i class="bi bi-grid-1x2"></i> Apron Management</a>
@@ -223,7 +249,6 @@
     <div class="content">
         <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
             <div class="d-flex align-items-center">
-                <button class="btn btn-light border shadow-sm px-2 py-1 me-3" onclick="toggleSidebar()"><i class="bi bi-list fs-4 text-dark"></i></button>
                 <h4 class="fw-bold text-dark m-0">Parking Stand Monitor</h4>
             </div>
             <div class="d-flex align-items-center gap-3">
@@ -253,7 +278,9 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
     let sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
-    function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) { s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); } else { s.classList.toggle('collapsed'); } }
+    function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) { s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); } else { s.classList.toggle('collapsed'); localStorage.setItem('ams_sidebar_collapsed', s.classList.contains('collapsed') ? '1' : '0'); } }
+    function applySidebarState() { if (window.innerWidth <= 768) return; const s = document.getElementById('sidebar'); if (!s) return; if (localStorage.getItem('ams_sidebar_collapsed') === '1') { s.classList.add('no-transition'); s.classList.add('collapsed'); void s.offsetWidth; s.classList.remove('no-transition'); } }
+    applySidebarState();
 
     async function initUserProfile() {
         if (!sbClient) return;
@@ -666,5 +693,12 @@
         updateParkingStands();
     };
 </script>
+<nav class="bottom-nav">
+  <a href="dashboard.html" class="bottom-nav-item"><i class="bi bi-pie-chart-fill"></i><span>Dashboard</span></a>
+  <a href="ams.html" class="bottom-nav-item"><i class="bi bi-grid-1x2"></i><span>Apron</span></a>
+  <a href="database.html" class="bottom-nav-item"><i class="bi bi-database"></i><span>Data</span></a>
+  <a href="#" class="bottom-nav-item active"><i class="bi bi-p-circle-fill"></i><span>Parking</span></a>
+  <a href="download.html" class="bottom-nav-item"><i class="bi bi-cloud-arrow-down-fill"></i><span>Download</span></a>
+</nav>
 </body>
 </html>
