@@ -280,6 +280,14 @@
             .bottom-nav { display: flex; }
             .content { padding-bottom: 76px; }
         }
+        /* Floating action button Tambah Data (Manual) */
+        .fab-tambah { position: fixed; right: 20px; bottom: 24px; width: 56px; height: 56px; border-radius: 50%; background: #0d6efd; color: #fff; border: none; box-shadow: 0 6px 18px rgba(13, 110, 253, 0.45); display: flex; align-items: center; justify-content: center; font-size: 1.7rem; cursor: pointer; z-index: 1060; transition: opacity 0.25s ease, transform 0.25s ease; }
+        .fab-tambah:hover { background: #0b5ed7; transform: scale(1.06); }
+        .fab-tambah.hidden { opacity: 0; pointer-events: none; transform: scale(0.75); }
+        body.dark-theme .fab-tambah { background: #2563eb; }
+        @media (max-width: 768px) {
+            .fab-tambah { bottom: 88px; right: 16px; }
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased">
@@ -425,7 +433,7 @@
             </div>
 
             <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 mb-5">
-                <button class="btn btn-outline-primary fw-bold px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalTambahManual"><i class="bi bi-plus-circle me-1"></i> TAMBAH DATA (MANUAL)</button>
+                <button id="btnTambahManual" class="btn btn-outline-primary fw-bold px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalTambahManual"><i class="bi bi-plus-circle me-1"></i> TAMBAH DATA (MANUAL)</button>
                 <button class="btn btn-success fw-bold px-4 py-2 shadow-sm" onclick="completeData()"><i class="bi bi-check-circle-fill me-1"></i> COMPLETE DATA</button>
             </div>
         </div>
@@ -452,6 +460,7 @@
   </div>
 </div>
 
+<button class="fab-tambah hidden" id="fabTambahManual" onclick="bukaModalTambahManual()" title="Tambah Data (Manual)"><i class="bi bi-plus-lg"></i></button>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
@@ -1100,6 +1109,35 @@
     window.addEventListener('error', (e) => { console.error('Global JS Error:', e.message, 'at', e.filename, 'line', e.lineno); });
     window.addEventListener('unhandledrejection', (e) => { console.error('Unhandled Promise Rejection:', e.reason); });
     window.addEventListener('beforeunload', () => { stopRealtimeSync(); });
+    function bukaModalTambahManual() {
+        if (isRestrictedUser) return;
+        const modalEl = document.getElementById('modalTambahManual');
+        if (!modalEl || !window.bootstrap) return;
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+
+    const btnTambahManualEl = document.getElementById('btnTambahManual');
+    const fabTambahManualEl = document.getElementById('fabTambahManual');
+    let tambahManualBtnVisible = false;
+
+    function updateFabTambahVisibility() {
+        if (!fabTambahManualEl) return;
+        const sheetVisible = !document.getElementById('sheetView').classList.contains('d-none');
+        const show = sheetVisible && !tambahManualBtnVisible;
+        fabTambahManualEl.classList.toggle('hidden', !show);
+    }
+
+    if (btnTambahManualEl && 'IntersectionObserver' in window) {
+        new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                tambahManualBtnVisible = entry.isIntersecting;
+                updateFabTambahVisibility();
+            });
+        }, { threshold: 0 }).observe(btnTambahManualEl);
+    } else if (fabTambahManualEl) {
+        fabTambahManualEl.classList.add('hidden');
+    }
+
     window.onload = async () => {
         const savedTheme = localStorage.getItem('ams_theme') || 'light';
         applyTheme(savedTheme);
