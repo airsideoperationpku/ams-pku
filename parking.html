@@ -360,6 +360,57 @@
         return Math.max(0, Math.floor(diffMs / 60000));
     }
 
+    // Helper: deteksi checkbox RON/ExRON dari field `ron`.
+    function isRonFlag(f) {
+        if (!f) return false;
+        const v = f.ron;
+        return v === true || v === 1 || v === '1' || v === 'true' || v === 'TRUE' || v === 't' || v === 'T';
+    }
+
+    // Helper: ekstrak waktu HH:MM dari string (robust thd "HH:MM", "HH:MM:SS", datetime, dsb).
+    function normTimeStr(t) {
+        const m = (t || '').toString().trim().match(/(\d{1,2}):(\d{2})/);
+        if (!m) return null;
+        const hh = String(Math.min(23, Math.max(0, Number(m[1])))).padStart(2, '0');
+        const mm = String(Math.min(59, Math.max(0, Number(m[2])))).padStart(2, '0');
+        return `${hh}:${mm}`;
+    }
+
+    // Helper: timestamp penerbangan (date + jadwal/block_time) dalam ms.
+    // Pakai jadwal dulu (selalu ada & konsisten utk pairing), fallback block_time.
+    // Robust thd date berupa timestamp penuh maupun "YYYY-MM-DD"; NaN/error -> MAX_SAFE_INTEGER.
+    function flightTs(f) {
+        const d = (f && f.date) ? String(f.date).trim().slice(0, 10) : '';
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return Number.MAX_SAFE_INTEGER;
+        const t = normTimeStr(f.jadwal) || normTimeStr(f.block_time);
+        if (!t) return Number.MAX_SAFE_INTEGER;
+        const ts = new Date(`${d}T${t}:00`).getTime();
+        return Number.isNaN(ts) ? Number.MAX_SAFE_INTEGER : ts;
+    }
+
+    // Helper: ambil nomor parking stand (D1..D12 -> 1..12; NA/SA/kosong -> null).
+    function standNumOf(f) {
+        const s = (f && f.stand) ? String(f.stand).trim() : '';
+        if (!s) return null;
+        const n = parseInt(s.replace(/\D/g, ''), 10);
+        return Number.isNaN(n) ? null : n;
+    }
+
+    // Helper: ambil kunci stand ("D1".."D12", "NA", "SA", atau null).
+    function standKeyOf(f) {
+        const s = (f && f.stand) ? String(f.stand).trim().toUpperCase() : '';
+        if (!s) return null;
+        if (s === 'NA' || s === 'SA') return s;
+        const n = parseInt(s.replace(/\D/g, ''), 10);
+        if (Number.isNaN(n) || n < 1 || n > 12) return null;
+        return 'D' + n;
+    }
+
+    // Helper: ambil tanggal YYYY-MM-DD dari sebuah flight.
+    function dateOf(f) {
+        return (f && f.date) ? String(f.date).trim().slice(0, 10) : '';
+    }
+
     // --- LOGIKA PARKING MONITOR ---
     async function updateParkingStands() {
         if(!sbClient) return;
@@ -377,8 +428,9 @@
             activeFlights.forEach(f => {
                 let reg = (f.reg || '').trim().toUpperCase();
                 if (!reg) reg = 'UNKNOWN_' + f.id; 
+                const legType = String(f.leg || '').trim().toUpperCase();
                 if (!aircraftTracker[reg]) aircraftTracker[reg] = [];
-                aircraftTracker[reg].push({ type: f.leg, data: f });
+                aircraftTracker[reg].push({ type: legType, data: f });
             });
 
             let allFlightCycles = [];
@@ -389,44 +441,32 @@
                 let arrs = legs.filter(l => l.type === 'A').map(l => l.data);
                 let deps = legs.filter(l => l.type === 'D').map(l => l.data);
 
-                const normTime = (t) => {
-                    const m = (t || '').toString().trim().match(/^(\d{1,2}):(\d{2})/);
-                    if (!m) return null;
-                    const hh = String(Math.min(23, Math.max(0, Number(m[1])))).padStart(2, '0');
-                    const mm = String(Math.min(59, Math.max(0, Number(m[2])))).padStart(2, '0');
-                    return `${hh}:${mm}`;
-                };
-
-                const getEffectiveTime = (f) => normTime(f?.block_time) || normTime(f?.jadwal) || '99:99';
-
-                const toTs = (f) => {
-                    const d = (f?.date || '').trim();
-                    const t = getEffectiveTime(f);
-                    if (!d || t === '99:99') return Number.MAX_SAFE_INTEGER;
-                    return new Date(`${d}T${t}:00`).getTime();
-                };
-
-                const getStandNum = (f) => {
-                    const s = (f?.stand || '').toString().trim();
-                    if (!s) return null;
-                    const n = parseInt(s.replace(/\D/g, ''), 10);
-                    return Number.isNaN(n) ? null : n;
-                };
-
-                arrs.sort((a, b) => toTs(a) - toTs(b));
-                deps.sort((a, b) => toTs(a) - toTs(b));
+                arrs.sort((a, b) => flightTs(a) - flightTs(b));
+                deps.sort((a, b) => flightTs(a) - flightTs(b));
 
                 const usedDepIds = new Set();
 
                 arrs.forEach(a => {
-                    const aTs = toTs(a);
-                    const aStand = getStandNum(a);
+                    const aTs = flightTs(a);
+                    const aStand = standNumOf(a);
+                    const aDate = dateOf(a);
+                    const aRon = isRonFlag(a);
 
                     const candidates = deps
-                        .filter(d => !usedDepIds.has(d.id))
+                        .filter(d => {
+                            if (usedDepIds.has(d.id)) return false;
+                            const dDate = dateOf(d);
+                            // Pairing normal harus pada tanggal yang sama (turn).
+                            // Cross-date HANYA utk RON (arr ron=true + dep ron=true/ExRON),
+                            // agar arrival yang tak terpairing tidak "mencuri" departure
+                            // tanggal berikutnya dan membuat turn berikutnya jadi OCCUPIED.
+                            if (dDate === aDate) return true;
+                            if (aRon && isRonFlag(d)) return true;
+                            return false;
+                        })
                         .map(d => {
-                            const dTs = toTs(d);
-                            const dStand = getStandNum(d);
+                            const dTs = flightTs(d);
+                            const dStand = standNumOf(d);
 
                             const sameStand = (aStand !== null && dStand !== null && aStand === dStand) ? 0 : 1;
                             const afterArr = dTs >= aTs ? 0 : 1;
@@ -469,11 +509,10 @@
                 let a = c.arr;
                 let d = c.dep;
 
-                let standNum = null;
-                if (a && a.stand && a.stand.trim() !== '') standNum = parseInt(a.stand.replace(/\D/g, ''));
-                else if (d && d.stand && d.stand.trim() !== '') standNum = parseInt(d.stand.replace(/\D/g, ''));
+                let standKey = a ? standKeyOf(a) : null;
+                if (!standKey && d) standKey = standKeyOf(d);
 
-                if (!standNum || standNum < 1 || standNum > 12) return;
+                if (!standKey) return;
 
                 let cycleStatus = 'READY';
                 let d_hasBlock = d && d.block_time && d.block_time.trim() !== '';
@@ -492,47 +531,60 @@
                 if (cycleStatus === 'READY') return; 
                 if (cycleStatus === 'STANDBY' && a && a.date > todayStr) return; 
 
-                let isRON = false;
-                if (a && d && a.date !== d.date) isRON = true;
-                if (!a && d) isRON = true; 
-                if (a && !d && cycleStatus === 'OCCUPIED' && a.date < todayStr) isRON = true; 
+                // Skip arrival yatim (tanpa departure) yang non-RON dan tanggalnya sudah lewat,
+                // karena itu data tidak lengkap (departure belum diinput), bukan kondisi OCCUPIED saat ini.
+                const aDate = a ? dateOf(a) : '';
+                if (cycleStatus === 'OCCUPIED' && a && !d && !isRonFlag(a) && aDate && aDate < todayStr) return;
 
-                let sortKey = a ? (a.date + (a.jadwal || '99:99')) : (d ? (d.date + (d.jadwal || '99:99')) : '99:9999:99');
+                // RON ditentukan dari CHECKBOX ron (RON/ExRON), BUKAN dari selisih tanggal.
+                // Sebelumnya banyak stand keliru jadi RON karena selisih tanggal atau
+                // arrival/departure yang tak terpairing dianggap RON.
+                let isRON = isRonFlag(a) || isRonFlag(d);
+
+                let primary = a || d;
+                let sortKey = primary ? (String(primary.date || '').trim().slice(0, 10) + (normTimeStr(primary.jadwal) || normTimeStr(primary.block_time) || '99:99')) : '99:9999:99';
 
                 relevantCycles.push({
-                    arr: a, dep: d, reg: c.reg, standNum: standNum, status: cycleStatus,
+                    arr: a, dep: d, reg: c.reg, standKey: standKey, status: cycleStatus,
                     sortTime: sortKey, isRON: isRON
                 });
             });
 
+            const ALL_STANDS = ['D1','D2','D3','D4','D5','D6','D7','D8','D9','D10','D11','D12'];
+            const SPECIAL_STANDS = ['NA','SA'];
+
             let standsData = {};
-            for (let i = 1; i <= 12; i++) { standsData[i] = { status: 'READY', current: null, next: null }; }
+            ALL_STANDS.concat(SPECIAL_STANDS).forEach(k => { standsData[k] = { status: 'READY', current: null, next: null }; });
 
             relevantCycles.sort((a, b) => a.sortTime.localeCompare(b.sortTime));
 
-            for (let i = 1; i <= 12; i++) {
-                let cyclesInStand = relevantCycles.filter(c => c.standNum === i);
-                if (cyclesInStand.length === 0) continue;
+            ALL_STANDS.concat(SPECIAL_STANDS).forEach(k => {
+                let cyclesInStand = relevantCycles.filter(c => c.standKey === k);
+                if (cyclesInStand.length === 0) return;
 
                 let occupiedCycle = cyclesInStand.find(c => c.status === 'OCCUPIED');
                 let standbyCycles = cyclesInStand.filter(c => c.status === 'STANDBY');
 
                 if (occupiedCycle) {
-                    standsData[i].status = 'OCCUPIED';
-                    standsData[i].current = occupiedCycle;
-                    if (standbyCycles.length > 0) standsData[i].next = standbyCycles[0];
+                    standsData[k].status = 'OCCUPIED';
+                    standsData[k].current = occupiedCycle;
+                    if (standbyCycles.length > 0) standsData[k].next = standbyCycles[0];
                 } else if (standbyCycles.length > 0) {
-                    standsData[i].status = 'STANDBY';
-                    standsData[i].current = standbyCycles[0];
-                    if (standbyCycles.length > 1) standsData[i].next = standbyCycles[1];
+                    standsData[k].status = 'STANDBY';
+                    standsData[k].current = standbyCycles[0];
+                    if (standbyCycles.length > 1) standsData[k].next = standbyCycles[1];
                 }
-            }
+            });
+
+            // Stand yang selalu tampil (D1..D12) + NA/SA hanya jika ada flight aktif.
+            const standsToRender = ALL_STANDS.slice();
+            SPECIAL_STANDS.forEach(k => { if (standsData[k].current) standsToRender.push(k); });
 
             const container = document.getElementById('gridContainer');
             container.innerHTML = '';
 
-            for (let i = 1; i <= 12; i++) {
-                const stand = standsData[i];
+            standsToRender.forEach(standKey => {
+                const stand = standsData[standKey];
                 const card = document.createElement('div');
 
                 let isOver45 = false;
@@ -636,7 +688,7 @@
 
                 card.innerHTML = `
                     <div class="stand-header ${headerColor}">
-                        <span>Parking Stand D${i}</span>
+                        <span>Parking Stand ${standKey}</span>
                         <div class="d-flex align-items-center">
                             <span class="status-badge ${badgeColor} text-white">${stand.status}</span>
                             ${isOver45 ? '<span class="remark-45"><i class="bi bi-exclamation-triangle-fill"></i>45 min</span>' : ''}
@@ -647,7 +699,7 @@
                     </div>
                 `;
                 container.appendChild(card);
-            }
+            });
         } catch (err) {
             console.error("Gagal mensinkronkan data:", err);
         }
