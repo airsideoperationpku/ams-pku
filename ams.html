@@ -178,6 +178,76 @@
             color: #f8fafc;
         }
 
+        /* ===== Notifikasi (Bell) ===== */
+        .notification-wrap { position: relative; }
+        .notification-bell {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 1.25rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .notification-bell:hover { background: #e2e8f0; }
+        .badge-notification {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.62rem;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            font-weight: 700;
+        }
+        .notification-panel {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 330px;
+            max-width: 88vw;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18);
+            z-index: 1080;
+            display: none;
+            overflow: hidden;
+        }
+        .notification-panel.show { display: block; }
+        .notification-panel .notif-header {
+            padding: 12px 16px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #eef1f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .notification-list { max-height: 380px; overflow-y: auto; }
+        .notif-item { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item .notif-title { font-weight: 700; font-size: 0.85rem; color: #1e293b; }
+        .notif-item .notif-meta { font-size: 0.75rem; color: #6c757d; }
+        .notif-empty { padding: 24px; text-align: center; color: #94a3b8; font-size: 0.85rem; }
+        body.dark-theme .notification-bell { background: #1f2937; color: #cbd5e1; }
+        body.dark-theme .notification-panel { background: #111827; border-color: #1f2937; }
+        body.dark-theme .notification-panel .notif-header { border-color: #1f2937; }
+        body.dark-theme .notif-item { border-color: #1f2937; }
+        body.dark-theme .notif-item .notif-title { color: #e5e7eb; }
+        body.dark-theme .notif-item .notif-meta { color: #9ca3af; }
+
         body.dark-theme {
             background-color: #0b1220 !important;
             color: #e2e8f0;
@@ -323,6 +393,19 @@
                 <h6 class="fw-bold text-dark m-0 d-block d-sm-none">AMS PKU</h6>
             </div>
             <div class="d-flex justify-content-md-end align-items-center gap-2">
+                <div class="notification-wrap">
+                    <a href="#" class="notification-bell" onclick="toggleNotifications(event)" title="Notifikasi">
+                        <i class="bi bi-bell-fill"></i>
+                        <span class="badge-notification" id="notifBadge" style="display:none;">0</span>
+                    </a>
+                    <div class="notification-panel" id="notifPanel">
+                        <div class="notif-header">
+                            <span><i class="bi bi-bell-fill me-1"></i>Notifikasi Request</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary border-0" onclick="clearNotifications()" title="Tandai semua dibaca"><i class="bi bi-check2-all"></i></button>
+                        </div>
+                        <div class="notification-list" id="notifList"></div>
+                    </div>
+                </div>
                 <div id="themeBadgeToggle" class="theme-badge-toggle" onclick="toggleThemeBadge()" title="Ganti tema">
                     <span class="pill"></span>
                     <span id="themeOptLight" class="option active"><i class="bi bi-sun-fill"></i> Light</span>
@@ -469,6 +552,98 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
     
     let sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+
+    // ===== NOTIFIKASI REQUEST PARKING (Supabase Realtime) =====
+    const REQ_TABLE = 'parking_requests';
+    const REQ_LAST_READ_KEY = 'ams_req_last_read';
+    let requestsCache = [];
+    let notifChannel = null;
+
+    function escapeHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function reqTs(r) {
+        const t = new Date(r.requested_at).getTime();
+        return Number.isFinite(t) ? t : 0;
+    }
+    function lastReadTs() {
+        const v = parseInt(localStorage.getItem(REQ_LAST_READ_KEY) || '0', 10);
+        return Number.isFinite(v) ? v : 0;
+    }
+    function setLastReadTs(ts) {
+        localStorage.setItem(REQ_LAST_READ_KEY, String(ts));
+    }
+    function unreadCount() {
+        const lr = lastReadTs();
+        return requestsCache.filter(r => reqTs(r) > lr).length;
+    }
+    async function loadRequests() {
+        if (!sbClient) return;
+        const { data, error } = await sbClient.from(REQ_TABLE).select('*').order('requested_at', { ascending: false }).limit(200);
+        if (error) return;
+        requestsCache = data || [];
+        updateNotifBadge();
+    }
+    function updateNotifBadge() {
+        const badge = document.getElementById('notifBadge');
+        if (!badge) return;
+        const n = unreadCount();
+        badge.textContent = n;
+        badge.style.display = n > 0 ? 'flex' : 'none';
+    }
+    function toggleNotifications(e) {
+        if (e) e.preventDefault();
+        const panel = document.getElementById('notifPanel');
+        if (!panel) return;
+        const willOpen = !panel.classList.contains('show');
+        panel.classList.toggle('show', willOpen);
+        if (willOpen) {
+            renderNotifications();
+            if (requestsCache.length > 0) {
+                setLastReadTs(Math.max(...requestsCache.map(reqTs)));
+            }
+            updateNotifBadge();
+        }
+    }
+    function renderNotifications() {
+        const listEl = document.getElementById('notifList');
+        if (!listEl) return;
+        if (requestsCache.length === 0) {
+            listEl.innerHTML = '<div class="notif-empty"><i class="bi bi-inbox d-block fs-3 mb-1"></i>Belum ada notifikasi.</div>';
+            return;
+        }
+        listEl.innerHTML = requestsCache.map(r => `
+            <div class="notif-item">
+                <div class="notif-title"><i class="bi bi-airplane-fill me-1 text-primary"></i>${escapeHtml(r.flight_number || '-')}</div>
+                <div class="notif-meta">Reg: ${escapeHtml(r.reg || '-')} &bull; ETA: ${escapeHtml(r.eta)} &bull; ${escapeHtml(r.date)}</div>
+                <div class="notif-meta">Oleh: ${escapeHtml(r.requested_by || '-')}</div>
+            </div>
+        `).join('');
+    }
+    function clearNotifications() {
+        if (requestsCache.length > 0) {
+            setLastReadTs(Math.max(...requestsCache.map(reqTs)));
+        }
+        updateNotifBadge();
+    }
+    function startNotifRealtime() {
+        if (!sbClient) return;
+        try { if (notifChannel) sbClient.removeChannel(notifChannel); } catch (_) {}
+        notifChannel = sbClient
+            .channel('parking-requests-live')
+            .on('postgres_changes', { event: '*', schema: 'public', table: REQ_TABLE }, () => loadRequests())
+            .subscribe();
+    }
+    window.addEventListener('storage', (e) => {
+        if (e.key === REQ_LAST_READ_KEY) updateNotifBadge();
+    });
+    document.addEventListener('click', (e) => {
+        const panel = document.getElementById('notifPanel');
+        const wrap = document.querySelector('.notification-wrap');
+        if (panel && panel.classList.contains('show') && wrap && !wrap.contains(e.target)) {
+            panel.classList.remove('show');
+        }
+    });
 
     let currentDate = new Date();
     const restrictedEmails = ['ssk2@amcpku.com'];
@@ -1143,6 +1318,8 @@
         applyTheme(savedTheme);
 
         await initUserProfile();
+        await loadRequests();
+        startNotifRealtime();
         renderCalendar();
         updatePetugasDatalist();
     };
