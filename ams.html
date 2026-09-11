@@ -54,19 +54,36 @@
         /* Tabel & Info Panel */
         .info-panel .form-label { font-size: 0.75rem; font-weight: 700; color: #888; margin-bottom: 4px; text-transform: uppercase; }
         .info-panel .form-control, .info-panel .form-select { border: 1px solid #e0e0e0; border-radius: 8px; font-weight: 500; color: #333; }
-        .table-responsive { border-radius: 12px; border: 1px solid #eaeaea; background: #fff; }
-        .table-spreadsheet th { background-color: #f8f9fa; color: #666; font-size: 0.65rem; font-weight: 700; border-bottom: 2px solid #eaeaea; text-transform: uppercase; text-align: center; vertical-align: middle; padding: 10px 4px; white-space: nowrap; }
-        .table-spreadsheet td { border-bottom: 1px solid #f4f4f4; padding: 2px; vertical-align: middle; text-align: center; white-space: nowrap; }
-        #apronTable tbody tr.flight-row:nth-child(odd) { background-color: #fcfdff !important; }
-        #apronTable tbody tr.flight-row:nth-child(even) { background-color: #eef4ff !important; }
+        .table-responsive { border-radius: 14px; border: 1px solid #e2e8f0; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07); }
+        .table-spreadsheet { border-collapse: separate; border-spacing: 0; }
+        .table-spreadsheet thead th {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff;
+            font-size: 0.63rem;
+            font-weight: 800;
+            letter-spacing: .4px;
+            border-bottom: 2px solid #1e40af;
+            text-transform: uppercase;
+            text-align: center;
+            vertical-align: middle;
+            padding: 13px 4px;
+            white-space: nowrap;
+        }
+        .table-spreadsheet tbody td { border-bottom: 1px solid #eef1f6; padding: 4px 2px; vertical-align: middle; text-align: center; white-space: nowrap; transition: background-color .15s ease; }
+        #apronTable tbody tr.flight-row:nth-child(odd) { background-color: #ffffff !important; }
+        #apronTable tbody tr.flight-row:nth-child(even) { background-color: #f2f7ff !important; }
         #apronTable tbody tr.flight-row > td { background-color: transparent !important; }
+        #apronTable tbody tr.flight-row { box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0); transition: box-shadow .15s ease, background-color .15s ease; }
+        #apronTable tbody tr.flight-row:hover { background-color: #e3edff !important; box-shadow: inset 3px 0 0 #2563eb; }
+        #apronTable tbody tr.flight-row:hover > td { background-color: transparent !important; }
         #apronTable thead th.sortable-header { cursor: pointer; user-select: none; position: relative; padding-right: 16px; }
-        #apronTable thead th.sortable-header::after { content: '↕'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #9aa4b2; }
-        #apronTable thead th.sortable-header.sort-asc::after { content: '↑'; color: #0d6efd; }
-        #apronTable thead th.sortable-header.sort-desc::after { content: '↓'; color: #0d6efd; }
-        .table-spreadsheet .form-control, .table-spreadsheet .form-select { border: 1px solid transparent; border-radius: 6px; padding: 4px 4px; font-size: 0.75rem; text-align: center; background-color: transparent; height: 35px; width: 100%; box-shadow: none; font-weight: 600; }
-        .table-spreadsheet .form-control:hover, .table-spreadsheet .form-select:hover { border-color: #e0e0e0; background-color: #fafafa; }
-        .table-spreadsheet .form-control:focus, .table-spreadsheet .form-select:focus { border-color: #0d6efd; background-color: #fff; }
+        #apronTable thead th.sortable-header::after { content: '↕'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: rgba(255,255,255,0.65); }
+        #apronTable thead th.sortable-header.sort-asc::after { content: '↑'; color: #ffffff; }
+        #apronTable thead th.sortable-header.sort-desc::after { content: '↓'; color: #ffffff; }
+        .table-spreadsheet .form-control, .table-spreadsheet .form-select { border: 1px solid transparent; border-radius: 7px; padding: 5px 4px; font-size: 0.75rem; text-align: center; background-color: rgba(148, 163, 184, 0.07); height: 35px; width: 100%; box-shadow: none; font-weight: 600; color: #1e293b; }
+        .table-spreadsheet .form-control:hover, .table-spreadsheet .form-select:hover { border-color: #cbd5e1; background-color: #ffffff; }
+        .table-spreadsheet .form-control:focus, .table-spreadsheet .form-select:focus { border-color: #2563eb; background-color: #ffffff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14); }
+        .table-spreadsheet .input-seat, .table-spreadsheet .input-lf { background-color: #e9eef6 !important; color: #475569; font-weight: 700; }
         
         .col-cs { min-width: 50px; max-width: 60px; } .col-no { min-width: 60px; max-width: 70px; } .col-rute { min-width: 60px; max-width: 70px; }
         .col-jadwal { min-width: 80px; max-width: 90px; } .col-reg { min-width: 95px; max-width: 105px; } .col-tipe { min-width: 75px; max-width: 85px; }
@@ -550,6 +567,8 @@
                 <div class="col-12 col-md-6"><label class="form-label fw-bold text-muted small mb-1">Flight No</label><input type="text" id="manualFlightNo" class="form-control fw-bold" required></div>
                 <div class="col-12 col-md-6"><label class="form-label fw-bold text-muted small mb-1">Rute</label><input type="text" id="manualRute" class="form-control text-uppercase" required></div>
                 <div class="col-12 col-md-6"><label class="form-label fw-bold text-muted small mb-1">Jadwal</label><input type="time" id="manualJadwal" class="form-control" required></div>
+                <div class="col-12 col-md-6"><label class="form-label fw-bold text-muted small mb-1">Leg (A/D)</label><select id="manualLeg" class="form-select fw-bold"><option value="D">D (Departure)</option><option value="A">A (Arrival)</option></select></div>
+                <div class="col-12 col-md-6"><label class="form-label fw-bold text-muted small mb-1">Flight Type</label><select id="manualFlType" class="form-select fw-bold"><option>REGULER</option><option>UNSCHEDULE</option><option selected>EXTRA</option><option>PERINTIS</option><option>POSITIONING</option><option>CHARTER</option><option>VIP</option><option>MILITER</option><option>FREIGHTER</option><option>DIVERT</option><option>REPOSITION</option><option>RTS</option><option>RTA</option><option>RTB</option><option>CALIBRATION</option><option>TRAINING</option><option>HAJI</option><option>POSTPONED</option><option>MEDICAL EVACUATION</option></select></div>
             </div>
         </form>
       </div>
@@ -1116,16 +1135,17 @@
     function simpanDataManualModal() {
         if (isRestrictedUser) return;
         const cs = document.getElementById('manualCallsign').value.toUpperCase(); const fn = document.getElementById('manualFlightNo').value; const rute = document.getElementById('manualRute').value.toUpperCase(); const jadwal = document.getElementById('manualJadwal').value;
+        const leg = document.getElementById('manualLeg').value; const flType = document.getElementById('manualFlType').value;
         if(!cs || !fn || !rute || !jadwal) return alert("Lengkapi isian.");
         const tbody = document.querySelector("#apronTable tbody");
         if(tbody.querySelector('td[colspan="18"]')) tbody.innerHTML = ''; 
         
         let psOps = '<option value="">-</option>' + parkingStands.map(ps => `<option value="${ps}">${ps}</option>`).join('');
         let flTypes = ['REGULER', 'UNSCHEDULE', 'EXTRA', 'PERINTIS', 'POSITIONING', 'CHARTER', 'VIP', 'MILITER', 'FREIGHTER', 'DIVERT', 'REPOSITION', 'RTS', 'RTA', 'RTB', 'CALIBRATION', 'TRAINING', 'HAJI', 'POSTPONED', 'MEDICAL EVACUATION'];
-        let flTypeOpts = flTypes.map(t => `<option ${t === 'EXTRA' ? 'selected' : ''}>${t}</option>`).join('');
+        let flTypeOpts = flTypes.map(t => `<option ${t === flType ? 'selected' : ''}>${t}</option>`).join('');
 
         const tr = document.createElement("tr"); tr.className = "flight-row";
-        tr.innerHTML = `<td class="col-cs"><input type="text" class="form-control text-primary text-uppercase" value="${cs}" onchange="markAsIncomplete()"></td><td class="col-no"><input type="text" class="form-control" value="${fn}" onchange="markAsIncomplete()"></td><td class="col-rute"><input type="text" class="form-control text-uppercase" value="${rute}" onchange="markAsIncomplete()"></td><td class="col-jadwal"><input type="time" class="form-control text-primary" value="${jadwal}" onchange="markAsIncomplete()"></td><td class="col-reg"><div class="d-flex align-items-center position-relative h-100"><input type="text" class="form-control text-uppercase input-reg w-100" oninput="checkRowStatus(this); markAsIncomplete()"><span class="suffix-reg position-absolute end-0 me-1 fw-bold text-danger d-none" style="font-size: 0.6rem; pointer-events: none;"></span></div></td><td class="col-ron"><div class="checkbox-center"><input class="form-check-input ron-checkbox" type="checkbox" onchange="updateRonDisplay(this); markAsIncomplete()"></div></td><td class="col-tipe"><input list="list-tipe-pesawat" class="form-control text-primary text-uppercase input-tipe" onchange="autoFillKapasitas(this); markAsIncomplete()"></td><td class="col-seat"><input type="number" class="form-control input-seat border-0" readonly style="background:#f8f9fa;"></td><td class="col-dom"><select class="form-select input-domintl" onchange="markAsIncomplete()"><option selected>DOM</option><option>INTL</option></select></td><td class="col-leg"><select class="form-select input-leg text-primary" onchange="updateLegColor(this); markAsIncomplete()"><option value="D" selected>D</option><option value="A">A</option></select></td><td class="col-stand"><select class="form-select input-stand" onchange="checkParkingStand(this); checkRowStatus(this); markAsIncomplete()">${psOps}</select></td><td class="col-avio"><div class="checkbox-center"><input class="form-check-input avio-checkbox" type="checkbox" onchange="markAsIncomplete()"></div></td><td class="col-bt"><input type="time" class="form-control input-blocktime" oninput="checkRowStatus(this); markAsIncomplete()"></td><td class="col-pax"><input type="number" class="form-control input-pax" oninput="calculateLF(this); checkRowStatus(this); markAsIncomplete()"></td><td class="col-lf"><input type="text" class="form-control input-lf border-0" readonly style="background:#f8f9fa;"></td><td class="col-bagasi"><input type="number" class="form-control input-bagasi" value="0" placeholder="0" oninput="markAsIncomplete()"></td><td class="col-kargo"><input type="number" class="form-control input-kargo" value="0" placeholder="0" oninput="markAsIncomplete()"></td><td class="col-fltype"><select class="form-select input-fltype" onchange="checkRowStatus(this); markAsIncomplete()">${flTypeOpts}</select></td><td class="col-status"><span class="badge bg-danger rounded-pill status-badge" style="font-size: 0.65rem;">NO OPS</span><input type="hidden" class="status-val" value="NO OPS"></td><td class="col-aksi"><div class="d-flex justify-content-center gap-1 align-items-center h-100"><button class="btn btn-sm btn-primary fw-bold px-2 py-1" onclick="simpanBaris(this)" title="Save Baris"><i class="bi bi-save"></i></button><button class="btn-delete-row" onclick="hapusBaris(this)" title="Hapus Baris"><i class="bi bi-x-circle-fill"></i></button></div></td>`;
+        tr.innerHTML = `<td class="col-cs"><input type="text" class="form-control text-primary text-uppercase" value="${cs}" onchange="markAsIncomplete()"></td><td class="col-no"><input type="text" class="form-control" value="${fn}" onchange="markAsIncomplete()"></td><td class="col-rute"><input type="text" class="form-control text-uppercase" value="${rute}" onchange="markAsIncomplete()"></td><td class="col-jadwal"><input type="time" class="form-control text-primary" value="${jadwal}" onchange="markAsIncomplete()"></td><td class="col-reg"><div class="d-flex align-items-center position-relative h-100"><input type="text" class="form-control text-uppercase input-reg w-100" oninput="checkRowStatus(this); markAsIncomplete()"><span class="suffix-reg position-absolute end-0 me-1 fw-bold text-danger d-none" style="font-size: 0.6rem; pointer-events: none;"></span></div></td><td class="col-ron"><div class="checkbox-center"><input class="form-check-input ron-checkbox" type="checkbox" onchange="updateRonDisplay(this); markAsIncomplete()"></div></td><td class="col-tipe"><input list="list-tipe-pesawat" class="form-control text-primary text-uppercase input-tipe" onchange="autoFillKapasitas(this); markAsIncomplete()"></td><td class="col-seat"><input type="number" class="form-control input-seat border-0" readonly style="background:#f8f9fa;"></td><td class="col-dom"><select class="form-select input-domintl" onchange="markAsIncomplete()"><option selected>DOM</option><option>INTL</option></select></td><td class="col-leg"><select class="form-select input-leg ${leg === 'D' ? 'text-primary' : 'text-success'}" onchange="updateLegColor(this); markAsIncomplete()"><option value="D" ${leg === 'D' ? 'selected' : ''}>D</option><option value="A" ${leg === 'A' ? 'selected' : ''}>A</option></select></td><td class="col-stand"><select class="form-select input-stand" onchange="checkParkingStand(this); checkRowStatus(this); markAsIncomplete()">${psOps}</select></td><td class="col-avio"><div class="checkbox-center"><input class="form-check-input avio-checkbox" type="checkbox" onchange="markAsIncomplete()"></div></td><td class="col-bt"><input type="time" class="form-control input-blocktime" oninput="checkRowStatus(this); markAsIncomplete()"></td><td class="col-pax"><input type="number" class="form-control input-pax" oninput="calculateLF(this); checkRowStatus(this); markAsIncomplete()"></td><td class="col-lf"><input type="text" class="form-control input-lf border-0" readonly style="background:#f8f9fa;"></td><td class="col-bagasi"><input type="number" class="form-control input-bagasi" value="0" placeholder="0" oninput="markAsIncomplete()"></td><td class="col-kargo"><input type="number" class="form-control input-kargo" value="0" placeholder="0" oninput="markAsIncomplete()"></td><td class="col-fltype"><select class="form-select input-fltype" onchange="checkRowStatus(this); markAsIncomplete()">${flTypeOpts}</select></td><td class="col-status"><span class="badge bg-danger rounded-pill status-badge" style="font-size: 0.65rem;">NO OPS</span><input type="hidden" class="status-val" value="NO OPS"></td><td class="col-aksi"><div class="d-flex justify-content-center gap-1 align-items-center h-100"><button class="btn btn-sm btn-primary fw-bold px-2 py-1" onclick="simpanBaris(this)" title="Save Baris"><i class="bi bi-save"></i></button><button class="btn-delete-row" onclick="hapusBaris(this)" title="Hapus Baris"><i class="bi bi-x-circle-fill"></i></button></div></td>`;
         tbody.appendChild(tr); 
         
         // MENGURUTKAN JADWAL MANUAL AGAR OTOMATIS TERSUSUN SAAT DITAMBAHKAN
