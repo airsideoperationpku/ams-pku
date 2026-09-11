@@ -186,6 +186,10 @@
             border-color: #1f2937 !important;
         }
         body.dark-theme .stand-header { border-bottom-color: #1f2937; }
+        body.dark-theme .modal-content { background-color: #111827 !important; color: #e5e7eb !important; border-color: #1f2937 !important; }
+        body.dark-theme .modal .form-control,
+        body.dark-theme .modal .form-select { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #1f2937 !important; }
+        body.dark-theme .modal .table-light { background-color: #0f172a !important; color: #cbd5e1 !important; }
         body.dark-theme .flight-info,
         body.dark-theme .flight-info * {
             color: #e5e7eb !important;
@@ -269,6 +273,7 @@
                 </div>
                 <span class="badge bg-success px-2 py-1.5 shadow-sm"><i class="bi bi-arrow-repeat me-1"></i> Auto-Sync Aktif</span>
                 <span class="badge bg-primary px-3 py-2 fw-bold shadow-sm" id="liveClock" style="font-variant-numeric: tabular-nums;">00:00:00</span>
+                <button class="btn btn-primary btn-sm fw-bold shadow-sm" onclick="openRequestModal()"><i class="bi bi-send-fill me-1"></i> Request</button>
             </div>
         </div>
 
@@ -283,6 +288,29 @@
     </div>
 </div>
 
+<!-- MODAL REQUEST PARKING STAND -->
+<div class="modal fade" id="modalRequest" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white border-0"><h5 class="modal-title fw-bold"><i class="bi bi-send-fill me-2"></i>Request Parking Stand</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body p-3">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-2">
+            <thead class="table-light"><tr><th style="min-width:190px;">Flight Number</th><th style="min-width:120px;">Registrasi</th><th style="min-width:130px;">ETA (Arrival)</th><th style="width:44px;"></th></tr></thead>
+            <tbody id="requestRows"></tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn-outline-primary btn-sm fw-bold" onclick="addRequestRow()"><i class="bi bi-plus-lg me-1"></i> Tambah Baris</button>
+      </div>
+      <div class="modal-footer border-0 bg-light">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-primary px-4 fw-bold" onclick="sendRequest()"><i class="bi bi-send me-1"></i> Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const supabaseUrl = 'https://hnlnkhbwbidthnupzhbp.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhubG5raGJ3YmlkdGhudXB6aGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDE5NjYsImV4cCI6MjA5MzExNzk2Nn0.NZkxKilb-CwTx3ffmzc8_sVOaSgeulJAihJUxaoRTXI';
@@ -736,6 +764,98 @@
     function toggleThemeBadge() {
         const isDark = document.body.classList.contains('dark-theme');
         applyTheme(isDark ? 'light' : 'dark');
+    }
+
+    // ===== REQUEST PARKING STAND =====
+    let requestFlights = [];
+
+    function escapeHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function openRequestModal() {
+        if (!sbClient) return alert('Koneksi Supabase belum siap.');
+        const today = getLocalDateString(0);
+
+        const { data: rec } = await sbClient.from('daily_records').select('dos').eq('date', today).maybeSingle();
+        if (!rec || !rec.dos) {
+            alert('Pilih DOS terlebih dahulu di halaman AMS untuk hari ini.');
+            return;
+        }
+
+        const { data: flights, error } = await sbClient.from('daily_flights').select('*').eq('date', today).order('jadwal', { ascending: true });
+        if (error) return alert('Gagal memuat data penerbangan: ' + error.message);
+        requestFlights = flights || [];
+
+        document.getElementById('requestRows').innerHTML = '';
+        addRequestRow();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalRequest')).show();
+    }
+
+    function buildFlightOptions() {
+        let opts = '<option value="">-- Pilih Flight --</option>';
+        requestFlights.forEach(f => {
+            const label = `${f.callsign || ''} ${f.flight_number || ''} (${f.leg === 'A' ? 'ARR' : 'DEP'})`.trim();
+            opts += `<option value="${escapeHtml(f.id)}">${escapeHtml(label)}</option>`;
+        });
+        return opts;
+    }
+
+    function addRequestRow() {
+        const tbody = document.getElementById('requestRows');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><select class="form-select form-select-sm req-flight" onchange="onRequestFlightChange(this)">${buildFlightOptions()}</select></td>
+            <td><input type="text" class="form-control form-control-sm req-reg text-uppercase" placeholder="Registrasi"></td>
+            <td><input type="time" class="form-control form-control-sm req-eta"></td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove()" title="Hapus baris"><i class="bi bi-x-lg"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function onRequestFlightChange(sel) {
+        const tr = sel.closest('tr');
+        const flight = requestFlights.find(f => String(f.id) === String(sel.value));
+        if (flight) {
+            tr.querySelector('.req-reg').value = flight.reg || '';
+            tr.querySelector('.req-eta').value = (flight.jadwal || '').slice(0, 5);
+        } else {
+            tr.querySelector('.req-reg').value = '';
+            tr.querySelector('.req-eta').value = '';
+        }
+    }
+
+    async function sendRequest() {
+        const rows = Array.from(document.querySelectorAll('#requestRows tr'));
+        const items = [];
+        for (const tr of rows) {
+            const sel = tr.querySelector('.req-flight');
+            const flight = requestFlights.find(f => String(f.id) === String(sel.value));
+            const reg = tr.querySelector('.req-reg').value.trim().toUpperCase();
+            const eta = tr.querySelector('.req-eta').value;
+            if (!eta) {
+                alert('ETA wajib diisi untuk setiap baris request.');
+                return;
+            }
+            items.push({
+                date: getLocalDateString(0),
+                flight_number: flight ? `${flight.callsign || ''} ${flight.flight_number || ''}`.trim() : '',
+                reg: reg,
+                eta: eta,
+                requested_by: localStorage.getItem('ams_user_name') || 'User'
+            });
+        }
+        if (items.length === 0) {
+            alert('Tambahkan minimal satu baris request.');
+            return;
+        }
+        const { error } = await sbClient.from('parking_requests').insert(items);
+        if (error) {
+            alert('Gagal mengirim request: ' + error.message + ' (pastikan tabel parking_requests sudah dibuat di Supabase)');
+            return;
+        }
+        bootstrap.Modal.getInstance(document.getElementById('modalRequest')).hide();
+        alert('Request parking stand berhasil dikirim!');
     }
 
     setInterval(updateParkingStands, 5000);
