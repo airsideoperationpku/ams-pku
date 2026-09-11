@@ -165,6 +165,18 @@
         body.dark-theme .notif-item .notif-title { color: #e5e7eb; }
         body.dark-theme .notif-item .notif-meta { color: #9ca3af; }
 
+        @media (max-width: 768px) {
+            .notification-panel {
+                position: fixed;
+                top: 70px;
+                left: 12px;
+                right: 12px;
+                width: auto;
+                max-width: none;
+            }
+            .notification-list { max-height: 62vh; }
+        }
+
         body.dark-theme { background-color: #0b1220 !important; color: #e2e8f0; }
         body.dark-theme .sidebar, body.dark-theme .card, body.dark-theme .user-profile-box, body.dark-theme .list-group-item, body.dark-theme .card-header { background-color: #111827 !important; color: #e5e7eb !important; border-color: #1f2937 !important; }
         body.dark-theme .nav-link { color: #cbd5e1 !important; }
@@ -230,7 +242,10 @@
                     <div class="notification-panel" id="notifPanel">
                         <div class="notif-header">
                             <span><i class="bi bi-bell-fill me-1"></i>Notifikasi Request</span>
-                            <button type="button" class="btn btn-sm btn-outline-secondary border-0" onclick="clearNotifications()" title="Tandai semua dibaca"><i class="bi bi-check2-all"></i></button>
+                            <div class="d-flex align-items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" onclick="clearNotifications()" title="Tandai semua dibaca"><i class="bi bi-check2-all"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" onclick="document.getElementById('notifPanel').classList.remove('show')" title="Tutup"><i class="bi bi-x-lg"></i></button>
+                            </div>
                         </div>
                         <div class="notification-list" id="notifList"></div>
                     </div>
