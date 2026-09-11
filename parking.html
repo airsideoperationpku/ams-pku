@@ -38,62 +38,71 @@
         .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; transition: all 0.3s ease; }
         
         /* Grid Parking Stand */
-        .stand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .stand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; }
         
-        /* Card Stand Base Layout */
+        /* Card Stand Base Layout (modern) */
         .stand-card { 
-            background-image: linear-gradient(rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); 
-            background-size: cover; 
-            background-position: center;
-            border: 2px solid #dee2e6; 
-            border-radius: 14px; 
-            overflow: hidden; 
-            transition: all 0.3s ease;
             position: relative;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            background: #ffffff;
+            border: 1px solid #e6eaf0; 
+            border-radius: 18px; 
+            overflow: hidden; 
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.05);
             display: flex;
             flex-direction: column;
         }
-        
-        .stand-card.ready { border-color: #198754; background-image: linear-gradient(rgba(235, 247, 241, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); box-shadow: 0 6px 15px rgba(25, 135, 84, 0.08); }
-        .stand-card.standby { border-color: #ffc107; background-image: linear-gradient(rgba(255, 249, 225, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); box-shadow: 0 6px 15px rgba(255, 193, 7, 0.12); }
-        .stand-card.occupied { border-color: #dc3545; background-image: linear-gradient(rgba(253, 237, 237, 0.92), rgba(255, 255, 255, 0.97)), url('bandar-udara-008-marka.jpg'); box-shadow: 0 6px 15px rgba(220, 53, 69, 0.15); }
+        .stand-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12), 0 4px 10px rgba(15, 23, 42, 0.08);
+        }
+        /* Garis aksen warna di atas kartu */
+        .stand-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: #94a3b8;
+            z-index: 2;
+        }
+        .stand-card.ready::before { background: #22c55e; }
+        .stand-card.standby::before { background: #f59e0b; }
+        .stand-card.occupied::before { background: #ef4444; }
 
-        .stand-header { padding: 12px 15px; font-weight: 800; font-size: 1.2rem; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .stand-body { padding: 15px; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
+        .stand-header { padding: 16px 18px 14px; font-weight: 800; font-size: 1.15rem; letter-spacing: .2px; border-bottom: 1px solid #eef1f5; display: flex; justify-content: space-between; align-items: center; }
+        .stand-body { padding: 16px 18px 18px; min-height: 190px; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; }
         
         .flight-info { font-size: 0.85rem; font-weight: 600; }
-        .status-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 30px; font-weight: 700; text-transform: uppercase; }
+        .status-badge { font-size: 0.7rem; padding: 5px 12px; border-radius: 999px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
         .fs-7 { font-size: 0.8rem; }
         
-        .pair-box { background: rgba(255, 255, 255, 0.65); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.05); }
+        .pair-box { background: #f8fafc; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; border: 1px solid #eef1f5; }
 
         /* BANNER NOTIFIKASI NEXT PEMAKAIAN */
         .next-flight-banner {
-            background: linear-gradient(135deg, #fffcf0 0%, #fff3cd 100%);
-            border-left: 5px solid #ffc107;
-            padding: 8px 12px;
-            border-radius: 6px;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-left: 5px solid #f59e0b;
+            padding: 10px 12px;
+            border-radius: 10px;
             font-size: 0.8rem;
-            border-top: 1px solid rgba(255, 193, 7, 0.2);
-            border-right: 1px solid rgba(255, 193, 7, 0.2);
-            border-bottom: 1px solid rgba(255, 193, 7, 0.2);
+            border-top: 1px solid rgba(245, 158, 11, 0.18);
+            border-right: 1px solid rgba(245, 158, 11, 0.18);
+            border-bottom: 1px solid rgba(245, 158, 11, 0.18);
             margin-top: 12px;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.08);
         }
-        .next-flight-banner .title { font-weight: 800; color: #856404; margin-bottom: 3px; font-size: 0.7rem; display: flex; align-items: center; }
+        .next-flight-banner .title { font-weight: 800; color: #b45309; margin-bottom: 4px; font-size: 0.7rem; display: flex; align-items: center; }
         .next-flight-banner .details { font-weight: 700; color: #333; }
 
         /* ALERT OCCUPIED > 45 MENIT */
         @keyframes occupiedBlink {
             0%, 100% {
-                box-shadow: 0 6px 15px rgba(220, 53, 69, 0.15);
-                border-color: #dc3545;
+                box-shadow: 0 8px 20px rgba(239, 68, 68, 0.18);
                 filter: brightness(1);
             }
             50% {
-                box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.25), 0 10px 24px rgba(220, 53, 69, 0.35);
-                border-color: #ff1f3d;
-                filter: brightness(1.06);
+                box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.28), 0 12px 28px rgba(239, 68, 68, 0.4);
+                filter: brightness(1.04);
             }
         }
 
@@ -109,13 +118,13 @@
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: .3px;
-            background: #ff1f3d;
+            background: #ef4444;
             color: #fff;
             border: 1px solid rgba(255,255,255,0.4);
             border-radius: 999px;
-            padding: 3px 8px;
+            padding: 3px 9px;
             margin-left: 8px;
-            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.35);
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
         }
 
         .theme-badge-toggle {
@@ -176,6 +185,7 @@
             color: #e5e7eb !important;
             border-color: #1f2937 !important;
         }
+        body.dark-theme .stand-header { border-bottom-color: #1f2937; }
         body.dark-theme .flight-info,
         body.dark-theme .flight-info * {
             color: #e5e7eb !important;
