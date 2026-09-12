@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - AMS PKU</title>
+    <link rel="icon" type="image/png" href="https://i.imgur.com/Lioli0P.png">
+    <link rel="apple-touch-icon" href="https://i.imgur.com/Lioli0P.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -182,6 +184,12 @@
         body.dark-theme .nav-link { color: #cbd5e1 !important; }
         body.dark-theme .nav-link:hover, body.dark-theme .nav-link.active { background-color: #1e293b !important; color: #93c5fd !important; }
         body.dark-theme .table-mini th { background-color: #0f172a !important; color: #cbd5e1 !important; }
+        body.dark-theme #tblPerJam,
+        body.dark-theme #tblPerJam th,
+        body.dark-theme #tblPerJam td { border-color: #1f2937 !important; }
+        .cell-max { background: #fef08a; color: #854d0e; font-weight: 800; padding: 2px 8px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+        .cell-max i { font-size: 0.65rem; }
+        body.dark-theme .cell-max { background: #854d0e; color: #fde68a; }
         body.dark-theme .table-mini td, body.dark-theme .stat-label, body.dark-theme .text-dark, body.dark-theme .text-muted { color: #cbd5e1 !important; }
         body.dark-theme .bg-light, body.dark-theme .bg-primary-subtle, body.dark-theme .bg-warning-subtle { background-color: #0f172a !important; color: #e2e8f0 !important; }
 
@@ -507,6 +515,32 @@
             </div>
         </div>
 
+        <div class="card border-top border-info border-4">
+            <div class="card-header text-info"><i class="bi bi-clock-fill me-2"></i>MOVEMENT &amp; PAX PER JAM (00:00 - 23:59)</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-mini text-center align-middle mb-0" id="tblPerJam">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="vertical-align:middle;">Jam</th>
+                                <th colspan="2" class="text-primary">MOVEMENT</th>
+                                <th colspan="2" class="text-success">PAX</th>
+                            </tr>
+                            <tr>
+                                <th>Arrival</th>
+                                <th>Departure</th>
+                                <th>Arrival</th>
+                                <th>Departure</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblPerJamBody">
+                            <tr><td colspan="5" class="text-center text-muted py-3">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div class="card border-top border-dark border-4 mb-5">
             <div class="card-header text-dark"><i class="bi bi-bar-chart-line-fill me-2"></i>9. TOP FREKUENSI TERTINGGI (TOP 5)</div>
             <div class="card-body">
@@ -740,6 +774,63 @@
             .subscribe();
     }
 
+    // Tabel rincian per jam (00:00 - 23:59) untuk Movement & Pax (Arrival/Departure).
+    // Angka tertinggi pada tiap kolom (Arr/Dep Movement & Pax) ditandai dengan bintang ★.
+    function renderHourlyTable(s) {
+        const tbody = document.getElementById('tblPerJamBody');
+        if (!tbody) return;
+
+        const MOV = s.hourly.movement;
+        const PAX = s.hourly.pax;
+
+        // Kumpulkan nilai per jam (24 baris) untuk mencari angka tertinggi tiap kolom
+        const mvtArr = [], mvtDep = [], paxArr = [], paxDep = [];
+        for (let h = 0; h < 24; h++) {
+            mvtArr.push(MOV.arrDom[h] + MOV.arrIntl[h]);
+            mvtDep.push(MOV.depDom[h] + MOV.depIntl[h]);
+            paxArr.push(PAX.arrDom[h] + PAX.arrIntl[h]);
+            paxDep.push(PAX.depDom[h] + PAX.depIntl[h]);
+        }
+        const maxMvtArr = Math.max(...mvtArr);
+        const maxMvtDep = Math.max(...mvtDep);
+        const maxPaxArr = Math.max(...paxArr);
+        const maxPaxDep = Math.max(...paxDep);
+
+        // Render satu sel; tandai bintang bila nilai = tertinggi kolomnya (dan > 0)
+        const cell = (val, max) => {
+            const isMax = max > 0 && val === max;
+            return isMax
+                ? `<span class="cell-max">${fmt(val)} <i class="bi bi-star-fill" title="Tertinggi"></i></span>`
+                : fmt(val);
+        };
+
+        let rowsHtml = '';
+        let tMvtArr = 0, tMvtDep = 0, tPaxArr = 0, tPaxDep = 0;
+
+        for (let h = 0; h < 24; h++) {
+            tMvtArr += mvtArr[h]; tMvtDep += mvtDep[h]; tPaxArr += paxArr[h]; tPaxDep += paxDep[h];
+
+            const label = `${String(h).padStart(2, '0')}:00 - ${String(h).padStart(2, '0')}:59`;
+            rowsHtml += `<tr>
+                <td class="fw-bold">${label}</td>
+                <td>${cell(mvtArr[h], maxMvtArr)}</td>
+                <td>${cell(mvtDep[h], maxMvtDep)}</td>
+                <td class="text-success fw-bold">${cell(paxArr[h], maxPaxArr)}</td>
+                <td class="text-success fw-bold">${cell(paxDep[h], maxPaxDep)}</td>
+            </tr>`;
+        }
+
+        rowsHtml += `<tr class="table-light fw-bold">
+            <td>TOTAL</td>
+            <td class="text-primary">${fmt(tMvtArr)}</td>
+            <td class="text-info">${fmt(tMvtDep)}</td>
+            <td class="text-success">${fmt(tPaxArr)}</td>
+            <td class="text-success">${fmt(tPaxDep)}</td>
+        </tr>`;
+
+        tbody.innerHTML = rowsHtml;
+    }
+
     async function loadDashboardStats(startDate = null, endDate = null) {
         if (!sbClient) return;
 
@@ -956,6 +1047,8 @@
                 ],
                 'Pax per Jam'
             );
+
+            renderHourlyTable(s);
 
         } catch (err) { console.error("Dashboard Error:", err); }
     }
