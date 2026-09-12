@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AMS Sheet - PKU</title>
+    <link rel="icon" type="image/png" href="https://i.imgur.com/Lioli0P.png">
+    <link rel="apple-touch-icon" href="https://i.imgur.com/Lioli0P.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <!-- LIBRARY SUPABASE -->
@@ -521,7 +523,7 @@
             </div>
 
             <div class="d-flex justify-content-between align-items-end mb-2 mt-4">
-                <h6 class="fw-bold text-secondary m-0"><i class="bi bi-table me-2"></i> Data Penerbangan</h6>
+                <h6 class="fw-bold text-secondary m-0"><i class="bi bi-table me-2"></i> Data Penerbangan <small class="d-md-none text-muted fw-normal" style="font-size:.65rem;">— ketuk baris untuk mengisi data</small></h6>
                 <div class="input-group input-group-sm bg-white border rounded shadow-sm search-input-group" style="max-width: 250px;">
                     <span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-search"></i></span>
                     <input type="text" id="searchInput" class="form-control border-0 ps-1 bg-transparent" placeholder="Cari data di tabel..." oninput="filterTable()">
@@ -578,6 +580,115 @@
         </form>
       </div>
       <div class="modal-footer border-0 bg-light"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="button" class="btn btn-primary px-4 fw-bold" onclick="simpanDataManualModal()">Tambahkan</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT BARIS (KHUSUS MOBILE VIEW) -->
+<div class="modal fade" id="modalEditBaris" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i>Edit Data Penerbangan</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-3">
+        <form id="editBarisForm" onsubmit="event.preventDefault(); simpanModalBaris()">
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Callsign</label>
+              <input type="text" id="meCallsign" class="form-control form-control-lg text-uppercase" placeholder="CS">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Flight No</label>
+              <input type="text" id="meFlightNo" class="form-control form-control-lg" placeholder="NO">
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold text-muted mb-1">Rute</label>
+              <input type="text" id="meRute" class="form-control form-control-lg text-uppercase" placeholder="RUTE">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Jadwal</label>
+              <input type="time" id="meJadwal" class="form-control form-control-lg">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Registrasi</label>
+              <input type="text" id="meReg" class="form-control form-control-lg text-uppercase" placeholder="PK-...">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Tipe A/C</label>
+              <input type="text" id="meTipe" class="form-control form-control-lg text-uppercase" list="list-tipe-pesawat" placeholder="Contoh: A320">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Seat</label>
+              <input type="number" id="meSeat" class="form-control form-control-lg" readonly>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Tipe</label>
+              <select id="meDom" class="form-select form-select-lg"><option>DOM</option><option>INTL</option></select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Leg</label>
+              <select id="meLeg" class="form-select form-select-lg"><option value="D">D — Departure</option><option value="A">A — Arrival</option></select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Parking Stand</label>
+              <select id="meStand" class="form-select form-select-lg">
+                <option value="">-</option><option>D1</option><option>D2</option><option>D3</option><option>D4</option><option>D5</option><option>D6</option><option>D7</option><option>D8</option><option>D9</option><option>D10</option><option>D11</option><option>D12</option><option>NA</option><option>SA</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Block Time</label>
+              <input type="time" id="meBt" class="form-control form-control-lg">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Pax</label>
+              <input type="number" id="mePax" class="form-control form-control-lg" placeholder="0">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">L/F (%)</label>
+              <input type="text" id="meLf" class="form-control form-control-lg" readonly>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Bagasi (Kg)</label>
+              <input type="number" id="meBagasi" class="form-control form-control-lg" placeholder="0">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-bold text-muted mb-1">Kargo (Kg)</label>
+              <input type="number" id="meKargo" class="form-control form-control-lg" placeholder="0">
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold text-muted mb-1">Flight Type</label>
+              <select id="meFltype" class="form-select form-select-lg">
+                <option>REGULER</option><option>UNSCHEDULE</option><option>EXTRA</option><option>PERINTIS</option><option>POSITIONING</option><option>CHARTER</option><option>VIP</option><option>MILITER</option><option>FREIGHTER</option><option>DIVERT</option><option>REPOSITION</option><option>RTS</option><option>RTA</option><option>RTB</option><option>CALIBRATION</option><option>TRAINING</option><option>HAJI</option><option>POSTPONED</option><option>MEDICAL EVACUATION</option>
+              </select>
+            </div>
+            <div class="col-6 d-flex align-items-end">
+              <div class="form-check form-switch mb-1 w-100">
+                <input class="form-check-input" type="checkbox" id="meRon">
+                <label class="form-check-label fw-bold" for="meRon">RON / ExRON</label>
+              </div>
+            </div>
+            <div class="col-6 d-flex align-items-end">
+              <div class="form-check form-switch mb-1 w-100">
+                <input class="form-check-input" type="checkbox" id="meAvio">
+                <label class="form-check-label fw-bold" for="meAvio">Avio</label>
+              </div>
+            </div>
+            <div class="col-12 d-flex align-items-center justify-content-between bg-light border rounded p-2 mt-2">
+              <span class="small fw-bold text-muted text-uppercase">Status</span>
+              <span class="badge bg-danger rounded-pill" id="meStatusText">NO OPS</span>
+            </div>
+          </div>
+          <div class="d-grid gap-2 mt-3">
+            <button type="submit" class="btn btn-primary btn-lg fw-bold"><i class="bi bi-save me-1"></i> Simpan Data</button>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-danger flex-fill fw-bold" onclick="hapusModalBaris()"><i class="bi bi-trash me-1"></i> Hapus</button>
+              <button type="button" class="btn btn-secondary flex-fill" data-bs-dismiss="modal">Tutup</button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </div>
@@ -943,6 +1054,7 @@
     }
 
     function renderEmptyTable(message, cls) {
+        closeRowEditorIfOpen();
         document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="20" class="text-center ${cls || 'text-muted'} py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>${message}</td></tr>`;
     }
     function showLoadError() {
@@ -1054,6 +1166,7 @@
 
     function renderSavedTable(flights, includeIds = true) {
         const tbody = document.querySelector("#apronTable tbody");
+        closeRowEditorIfOpen();
         explicitlyClearedTable = false;
         if (!flights || flights.length === 0) {
             return renderEmptyTable('Pilih DOS atau Tambah Manual Penerbangan.');
@@ -1248,6 +1361,159 @@
         markAsIncomplete();
         bootstrap.Modal.getInstance(document.getElementById('modalTambahManual')).hide(); 
         document.getElementById('formTambahManual').reset();
+    }
+
+    // ===== MOBILE: TAP BARIS → FORM INPUT BESAR =====
+    // Saat mobile view (<=768px), menyentuh baris tabel membuka form input besar
+    // yang terhubung langsung ke baris yang sama, sehingga autosave & semua
+    // logika (status, LF, RON, avio, sortir) tetap berjalan seperti biasanya.
+    let activeEditRow = null;
+    let lastModalStand = '';
+
+    function updateModalStatusBadge(status) {
+        const sb = document.getElementById('meStatusText');
+        if (!sb) return;
+        const s = String(status || 'NO OPS').toUpperCase();
+        sb.textContent = s;
+        sb.className = 'badge rounded-pill ' + (s === 'OPS' ? 'bg-success' : (s === 'NOT CLEAR' ? 'bg-warning text-dark' : 'bg-danger'));
+    }
+
+    function openRowEditor(row) {
+        if (!row || isRestrictedUser || !window.bootstrap) return;
+        activeEditRow = row;
+
+        document.getElementById('meCallsign').value = row.cells[0].querySelector("input").value;
+        document.getElementById('meFlightNo').value = row.cells[1].querySelector("input").value;
+        document.getElementById('meRute').value = row.cells[2].querySelector("input").value;
+        document.getElementById('meJadwal').value = row.cells[3].querySelector("input").value;
+        document.getElementById('meReg').value = row.querySelector(".input-reg").value;
+        document.getElementById('meRon').checked = row.querySelector(".ron-checkbox").checked;
+        document.getElementById('meTipe').value = row.querySelector(".input-tipe").value;
+        document.getElementById('meSeat').value = row.querySelector(".input-seat").value;
+        document.getElementById('meDom').value = row.querySelector(".input-domintl").value;
+        document.getElementById('meLeg').value = row.querySelector(".input-leg").value;
+        document.getElementById('meStand').value = row.querySelector(".input-stand").value;
+        lastModalStand = document.getElementById('meStand').value;
+        document.getElementById('meAvio').checked = row.querySelector(".avio-checkbox").checked;
+        document.getElementById('meBt').value = row.querySelector(".input-blocktime").value;
+        document.getElementById('mePax').value = row.querySelector(".input-pax").value;
+        document.getElementById('meLf').value = row.querySelector(".input-lf").value;
+        document.getElementById('meBagasi').value = row.querySelector(".input-bagasi").value;
+        document.getElementById('meKargo').value = row.querySelector(".input-kargo").value;
+        document.getElementById('meFltype').value = row.querySelector(".input-fltype").value;
+        updateModalStatusBadge(row.querySelector(".status-val").value);
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEditBaris')).show();
+    }
+    function syncModalToRow() {
+        const row = activeEditRow;
+        if (!row) return;
+
+        row.cells[0].querySelector("input").value = document.getElementById('meCallsign').value.toUpperCase();
+        row.cells[1].querySelector("input").value = document.getElementById('meFlightNo').value;
+        row.cells[2].querySelector("input").value = document.getElementById('meRute').value.toUpperCase();
+        row.cells[3].querySelector("input").value = document.getElementById('meJadwal').value;
+        row.querySelector(".input-reg").value = document.getElementById('meReg').value.toUpperCase();
+        row.querySelector(".ron-checkbox").checked = document.getElementById('meRon').checked;
+        row.querySelector(".input-tipe").value = document.getElementById('meTipe').value.toUpperCase();
+        row.querySelector(".input-domintl").value = document.getElementById('meDom').value;
+        row.querySelector(".input-leg").value = document.getElementById('meLeg').value;
+        row.querySelector(".input-stand").value = document.getElementById('meStand').value;
+        row.querySelector(".avio-checkbox").checked = document.getElementById('meAvio').checked;
+        row.querySelector(".input-blocktime").value = document.getElementById('meBt').value;
+        row.querySelector(".input-pax").value = document.getElementById('mePax').value;
+        row.querySelector(".input-bagasi").value = document.getElementById('meBagasi').value;
+        row.querySelector(".input-kargo").value = document.getElementById('meKargo').value;
+        row.querySelector(".input-fltype").value = document.getElementById('meFltype').value;
+
+        // Mirip perilaku inline: ganti stand → avio otomatis ikut (stand D5–D8)
+        if (document.getElementById('meStand').value !== lastModalStand) {
+            checkParkingStand(row.querySelector(".input-stand"));
+            lastModalStand = document.getElementById('meStand').value;
+        }
+
+        // Rekalkulasi turunan (RON label, seat dari master, LF, status)
+        updateRonDisplay(row.querySelector(".ron-checkbox"));
+        updateLegColor(row.querySelector(".input-leg"));
+        autoFillKapasitas(row.querySelector(".input-tipe"));
+        calculateLF(row.querySelector(".input-pax"));
+        checkRowStatus(row.querySelector(".input-reg"));
+
+        // Sinkronkan nilai turunan kembali ke modal
+        document.getElementById('meSeat').value = row.querySelector(".input-seat").value;
+        document.getElementById('meLf').value = row.querySelector(".input-lf").value;
+        updateModalStatusBadge(row.querySelector(".status-val").value);
+
+        markAsIncomplete();
+    }
+    function simpanModalBaris() {
+        const row = activeEditRow;
+        if (!row) return;
+        syncModalToRow();
+        const saveBtn = row.querySelector('td.col-aksi button[onclick^="simpanBaris"]');
+        if (saveBtn) simpanBaris(saveBtn);
+        closeRowEditor();
+    }
+
+    function hapusModalBaris() {
+        const row = activeEditRow;
+        if (!row) return;
+        closeRowEditor();
+        const delBtn = row.querySelector('td.col-aksi button.btn-delete-row');
+        if (delBtn) hapusBaris(delBtn);
+    }
+
+    function closeRowEditor() {
+        const modalEl = document.getElementById('modalEditBaris');
+        activeEditRow = null;
+        if (modalEl && window.bootstrap && bootstrap.Modal.getInstance(modalEl)) {
+            bootstrap.Modal.getInstance(modalEl).hide();
+        }
+    }
+
+    function closeRowEditorIfOpen() {
+        const modalEl = document.getElementById('modalEditBaris');
+        if (modalEl && modalEl.classList.contains('show')) {
+            activeEditRow = null;
+            if (window.bootstrap && bootstrap.Modal.getInstance(modalEl)) {
+                bootstrap.Modal.getInstance(modalEl).hide();
+            }
+        }
+    }
+
+    const modalEditEl = document.getElementById('modalEditBaris');
+    if (modalEditEl) {
+        modalEditEl.addEventListener('hidden.bs.modal', () => { activeEditRow = null; });
+    }
+    const editBarisFormEl = document.getElementById('editBarisForm');
+    if (editBarisFormEl) {
+        editBarisFormEl.addEventListener('input', syncModalToRow);
+        editBarisFormEl.addEventListener('change', syncModalToRow);
+    }
+
+    // Ketuk baris (hanya mobile) → buka form input besar.
+    // Tombol aksi (simpan/hapus) dan checkbox (RON/Avio) tetap berfungsi normal.
+    const apronTableBody = document.querySelector("#apronTable tbody");
+    if (apronTableBody) {
+        apronTableBody.addEventListener('mousedown', (e) => {
+            if (window.innerWidth > 768) return;
+            const t = e.target;
+            if (!(t instanceof Element)) return;
+            if (!t.closest('tr.flight-row')) return;
+            if (t.closest('button') || t.type === 'checkbox') return;
+            e.preventDefault(); // cegah fokus input / keyboard muncul di mobile
+        }, true);
+        apronTableBody.addEventListener('click', (e) => {
+            if (window.innerWidth > 768) return;
+            const t = e.target;
+            if (!(t instanceof Element)) return;
+            const row = t.closest('tr.flight-row');
+            if (!row) return;
+            if (t.closest('button') || t.type === 'checkbox') return;
+            e.preventDefault();
+            e.stopPropagation();
+            openRowEditor(row);
+        }, true);
     }
 
     let saveTimeout;
