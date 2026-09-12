@@ -530,6 +530,11 @@
 
             <datalist id="list-tipe-pesawat"></datalist>
 
+            <div id="loadErrorBanner" class="alert alert-danger d-none mb-2 py-2 small shadow-sm" role="alert">
+                <b><i class="bi bi-exclamation-triangle-fill me-1"></i>Gagal memuat data tanggal ini.</b> Koneksi ke server terputus atau sedang sibuk — data tetap aman di database.
+                <button type="button" class="btn btn-sm btn-outline-danger ms-1 fw-bold" onclick="retryLoadSheet()"><i class="bi bi-arrow-clockwise me-1"></i>Muat Ulang</button>
+            </div>
+
             <div class="table-responsive shadow-sm mb-3">
                 <table class="table table-spreadsheet table-hover" id="apronTable">
                     <thead>
@@ -542,7 +547,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colspan="18" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Pilih DOS untuk memuat jadwal hari ini.</td></tr>
+                        <tr><td colspan="20" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Pilih DOS untuk memuat jadwal hari ini.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -849,16 +854,40 @@
 
     async function applySheetDataForDate(dateStr) {
         if (!sbClient || !dateStr) return;
+        explicitlyClearedTable = false;
 
+        // 1) Master A/C hanya pengisi datalist (tidak kritis)
         try {
             const { data: acDb } = await sbClient.from('master_aircraft').select('*');
-            globalAircraftDb = acDb || [];
-            document.getElementById("list-tipe-pesawat").innerHTML = [...new Set(globalAircraftDb.map(i => i.type))].map(t => `<option value="${t}"></option>`).join('');
+            if (acDb) {
+                globalAircraftDb = acDb || [];
+                document.getElementById("list-tipe-pesawat").innerHTML = [...new Set(globalAircraftDb.map(i => i.type))].map(t => `<option value="${t}"></option>`).join('');
+            }
+        } catch (e) { console.warn('Gagal memuat master_aircraft:', e); }
 
-            const { data: record } = await sbClient.from('daily_records').select('*').eq('date', dateStr).maybeSingle();
-            const { data: flights } = await sbClient.from('daily_flights').select('*').eq('date', dateStr).order('jadwal', {ascending: true});
+        // 2) Data harian — KRITIS: jangan pernah render tabel kosong saat query gagal,
+        //    karena autosave akan membaca DOM kosong lalu menghapus semua baris di DB.
+        let record = null, flights = [];
+        try {
+            const [recRes, flRes] = await Promise.all([
+                sbClient.from('daily_records').select('*').eq('date', dateStr).maybeSingle(),
+                sbClient.from('daily_flights').select('*').eq('date', dateStr).order('jadwal', { ascending: true })
+            ]);
+            if (recRes.error) throw recRes.error;
+            if (flRes.error) throw flRes.error;
+            record = recRes.data;
+            flights = flRes.data || [];
+        } catch (err) {
+            console.error('Gagal memuat data tanggal', dateStr, ':', err);
+            showLoadError();
+            // JANGAN ubah isi tbody saat query gagal — data di layar dipertahankan,
+            // sehingga autosave berikutnya tetap membaca isian yang benar dari DOM.
+            return;
+        }
 
-            if (record) {
+        hideLoadError();
+
+        if (record) {
                 document.getElementById('dosSelector').value = record.dos || "";
                 document.getElementById('ptoPagi').value = record.pto_pagi || "";
                 document.getElementById('ptoMalam').value = record.pto_malam || "";
@@ -893,18 +922,43 @@
                     contMalam.innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-malam" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`;
                 }
 
-                renderSavedTable(flights || []);
+                renderSavedTable(flights);
+            } else if (flights.length > 0) {
+                // Data penerbangan ADA walau record DOS belum dibuat
+                // (misalnya sisa reset sebelum perbaikan ini). Tampilkan agar tidak hilang.
+                document.getElementById('dosSelector').value = "";
+                document.getElementById('ptoPagi').value = "";
+                document.getElementById('ptoMalam').value = "";
+                document.getElementById('containerPelaksanaPagi').innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-pagi" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`;
+                document.getElementById('containerPelaksanaMalam').innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-malam" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`;
+                renderSavedTable(flights);
             } else {
                 document.getElementById('dosSelector').value = "";
                 document.getElementById('ptoPagi').value = "";
                 document.getElementById('ptoMalam').value = "";
                 document.getElementById('containerPelaksanaPagi').innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-pagi" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`;
                 document.getElementById('containerPelaksanaMalam').innerHTML = `<input type="text" class="form-control form-control-sm text-uppercase mb-1 pelaksana-malam" list="list-petugas" placeholder="Ketik Nama" oninput="markAsIncomplete()">`;
-                document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="18" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Pilih DOS atau Tambah Manual Penerbangan.</td></tr>`;
+                renderEmptyTable('Pilih DOS atau Tambah Manual Penerbangan.');
             }
-        } catch (err) {
-            console.error("Error applySheetDataForDate:", err);
-        }
+    }
+
+    function renderEmptyTable(message, cls) {
+        document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="20" class="text-center ${cls || 'text-muted'} py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>${message}</td></tr>`;
+    }
+    function showLoadError() {
+        const el = document.getElementById('loadErrorBanner');
+        if (el) el.classList.remove('d-none');
+    }
+    function hideLoadError() {
+        const el = document.getElementById('loadErrorBanner');
+        if (el) el.classList.add('d-none');
+    }
+    async function retryLoadSheet() {
+        const dateStr = document.getElementById('currentSelectedDate').value;
+        if (!dateStr) return;
+        clearTimeout(saveTimeout); saveTimeout = null;
+        await applySheetDataForDate(dateStr);
+        startRealtimeSyncForDate(dateStr);
     }
 
     function stopRealtimeSync() {
@@ -921,18 +975,23 @@
 
         realtimeChannel
             .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_records', filter: `date=eq.${dateStr}` }, async () => {
-                if (Date.now() < suppressRealtimeUntil) return;
-                await applySheetDataForDate(dateStr);
+                await handleRealtimeChange(dateStr);
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_flights', filter: `date=eq.${dateStr}` }, async () => {
-                if (Date.now() < suppressRealtimeUntil) return;
-                await applySheetDataForDate(dateStr);
+                await handleRealtimeChange(dateStr);
             })
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
                     console.log('Realtime sync aktif untuk tanggal:', dateStr);
                 }
             });
+    }
+
+    async function handleRealtimeChange(dateStr) {
+        if (Date.now() < suppressRealtimeUntil) return; // event dari save sendiri — diabaikan
+        if (hasPendingAutosave()) return;               // user masih mengetik — biarkan autosave yang menang
+        await waitForSaveCompletion();                  // jangan render di tengah proses save
+        await applySheetDataForDate(dateStr);
     }
 
     async function openSheet(dateStr) {
@@ -950,7 +1009,7 @@
         if (isRestrictedUser) return;
         if (!sbClient) return;
         const dos = document.getElementById("dosSelector").value;
-        if (!dos) return document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="18" class="text-center text-muted py-5">Pilih DOS terlebih dahulu.</td></tr>`;
+        if (!dos) return renderEmptyTable('Pilih DOS terlebih dahulu.');
         if (document.querySelectorAll('.flight-row').length > 0 && !confirm("Mereload DOS akan menghapus isian manual Anda di tabel ini. Lanjut?")) return;
         
         try {
@@ -958,7 +1017,7 @@
             const { data: masterFlights, error } = await sbClient.from('master_schedule').select('*').eq('dos', dos);
             if(error) throw error;
             
-            if(!masterFlights || masterFlights.length === 0) return document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="18" class="text-center text-danger py-4">Jadwal kosong di Master.</td></tr>`;
+            if(!masterFlights || masterFlights.length === 0) return renderEmptyTable('Jadwal kosong di Master.', 'text-danger');
             
             const activeFlights = masterFlights.filter(f => {
                 if(!f.valid_to) return true;
@@ -968,7 +1027,7 @@
                 return checkDate >= vStart && checkDate <= vEnd;
             });
 
-            if(activeFlights.length === 0) return document.querySelector("#apronTable tbody").innerHTML = `<tr><td colspan="18" class="text-center text-danger py-4">Ada jadwal DOS, namun tanggal ini di luar masa aktif jadwal master.</td></tr>`;
+            if(activeFlights.length === 0) return renderEmptyTable('Ada jadwal DOS, namun tanggal ini di luar masa aktif jadwal master.', 'text-danger');
 
             // MENGURUTKAN JADWAL DARI TERKECIL KE TERBESAR (AUTO-SORT)
             activeFlights.sort((a, b) => {
@@ -983,6 +1042,10 @@
 
     function renderSavedTable(flights) {
         const tbody = document.querySelector("#apronTable tbody");
+        explicitlyClearedTable = false;
+        if (!flights || flights.length === 0) {
+            return renderEmptyTable('Pilih DOS atau Tambah Manual Penerbangan.');
+        }
         let psOps = '<option value="">-</option>' + parkingStands.map(ps => `<option value="${ps}">${ps}</option>`).join('');
         let htmlStr = "";
         
@@ -1114,7 +1177,18 @@
     function updateLegColor(sel) { sel.className = `form-select input-leg ${sel.value === 'D' ? 'text-primary' : 'text-success'}`; updateRonDisplay(sel); }
     function autoFillKapasitas(el) { const row = el.closest("tr"); const cs = row.cells[0].querySelector("input").value.toUpperCase(); const match = globalAircraftDb.find(ac => ac.callsign === cs && ac.type === el.value.toUpperCase()); row.querySelector(".input-seat").value = match ? match.seat : ""; calculateLF(el); }
     function checkParkingStand(sel) { sel.closest("tr").querySelector(".avio-checkbox").checked = avioStands.includes(sel.value); }
-    function hapusBaris(btn) { if(isRestrictedUser) return; if(confirm("Yakin hapus baris ini?")) { btn.closest("tr").remove(); markAsIncomplete(); } }
+    function hapusBaris(btn) {
+        if (isRestrictedUser) return;
+        if (confirm("Yakin hapus baris ini?")) {
+            const row = btn.closest("tr");
+            const tbody = row.parentElement;
+            row.remove();
+            // Jika ini baris terakhir yang dihapus, autosave BOLEH menghapus data di DB
+            // (penghapusan disengaja), sehingga pengaman di saveCurrentState tidak ikut campur.
+            if (!tbody.querySelector('.flight-row')) explicitlyClearedTable = true;
+            markAsIncomplete();
+        }
+    }
 
     function checkRowStatus(el) { 
         const r = el.closest("tr"); const reg = r.querySelector(".input-reg").value.trim(); const stand = r.querySelector(".input-stand").value.trim(); const bt = r.querySelector(".input-blocktime").value.trim(); const pax = r.querySelector(".input-pax").value.trim(); const flType = r.querySelector(".input-fltype").value.trim().toUpperCase(); const badge = r.querySelector(".status-badge"); const val = r.querySelector(".status-val");
@@ -1138,7 +1212,7 @@
         const leg = document.getElementById('manualLeg').value; const flType = document.getElementById('manualFlType').value;
         if(!cs || !fn || !rute || !jadwal) return alert("Lengkapi isian.");
         const tbody = document.querySelector("#apronTable tbody");
-        if(tbody.querySelector('td[colspan="18"]')) tbody.innerHTML = ''; 
+        if(tbody.querySelector('td[colspan="20"]')) tbody.innerHTML = ''; 
         
         let psOps = '<option value="">-</option>' + parkingStands.map(ps => `<option value="${ps}">${ps}</option>`).join('');
         let flTypes = ['REGULER', 'UNSCHEDULE', 'EXTRA', 'PERINTIS', 'POSITIONING', 'CHARTER', 'VIP', 'MILITER', 'FREIGHTER', 'DIVERT', 'REPOSITION', 'RTS', 'RTA', 'RTB', 'CALIBRATION', 'TRAINING', 'HAJI', 'POSTPONED', 'MEDICAL EVACUATION'];
@@ -1168,6 +1242,15 @@
     let pendingSaveStatus = null;
     let realtimeChannel = null;
     let suppressRealtimeUntil = 0;
+    let saveInFlight = null;
+    let completingData = false;
+    let explicitlyClearedTable = false;
+
+    function hasPendingAutosave() { return saveTimeout != null; }
+    function waitForSaveCompletion() {
+        if (!saveInFlight) return Promise.resolve();
+        return saveInFlight.catch(() => {});
+    }
 
     function buildFlightUniqueKey(flight) {
         return [
@@ -1195,84 +1278,132 @@
 
         saveInProgress = true;
 
-        try {
-            suppressRealtimeUntil = Date.now() + 2500;
-            const arrPelPagi = Array.from(document.querySelectorAll('.pelaksana-pagi')).map(i => i.value).filter(v => v.trim() !== "");
-            const arrPelMalam = Array.from(document.querySelectorAll('.pelaksana-malam')).map(i => i.value).filter(v => v.trim() !== "");
+        const run = (async () => {
+            try {
+                suppressRealtimeUntil = Date.now() + 5000;
+                const arrPelPagi = Array.from(document.querySelectorAll('.pelaksana-pagi')).map(i => i.value).filter(v => v.trim() !== "");
+                const arrPelMalam = Array.from(document.querySelectorAll('.pelaksana-malam')).map(i => i.value).filter(v => v.trim() !== "");
 
-            const { error: recordErr } = await sbClient.from('daily_records').upsert({
-                date: dateStr, dos: dos, status: status,
-                pto_pagi: document.getElementById('ptoPagi').value, pto_malam: document.getElementById('ptoMalam').value,
-                pelaksana_pagi: arrPelPagi, pelaksana_malam: arrPelMalam
-            });
-            if (recordErr) throw recordErr;
-
-            let flightsState = [];
-            document.querySelectorAll("#apronTable tbody tr.flight-row").forEach(tr => {
-                flightsState.push({
-                    date: dateStr,
-                    callsign: tr.cells[0].querySelector("input").value.toUpperCase(),
-                    flight_number: tr.cells[1].querySelector("input").value,
-                    rute: tr.cells[2].querySelector("input").value.toUpperCase(),
-                    jadwal: tr.cells[3].querySelector("input").value,
-                    reg: tr.querySelector(".input-reg").value.toUpperCase(),
-                    tipe_ac: tr.querySelector(".input-tipe").value.toUpperCase(),
-                    seat: parseInt(tr.querySelector(".input-seat").value) || null,
-                    dom_intl: tr.querySelector(".input-domintl").value,
-                    leg: tr.querySelector(".input-leg").value,
-                    ron: tr.querySelector(".ron-checkbox").checked,
-                    stand: tr.querySelector(".input-stand").value,
-                    avio: tr.querySelector(".avio-checkbox").checked,
-                    block_time: tr.querySelector(".input-blocktime").value || null,
-                    pax: parseInt(tr.querySelector(".input-pax").value) || null,
-                    lf: tr.querySelector(".input-lf").value,
-                    bagasi: parseInt(tr.querySelector(".input-bagasi").value) || 0,
-                    kargo: parseInt(tr.querySelector(".input-kargo").value) || 0,
-                    fl_type: tr.querySelector(".input-fltype").value,
-                    status: tr.querySelector(".status-val").value
+                let flightsState = [];
+                document.querySelectorAll("#apronTable tbody tr.flight-row").forEach(tr => {
+                    flightsState.push({
+                        date: dateStr,
+                        callsign: tr.cells[0].querySelector("input").value.toUpperCase(),
+                        flight_number: tr.cells[1].querySelector("input").value,
+                        rute: tr.cells[2].querySelector("input").value.toUpperCase(),
+                        jadwal: tr.cells[3].querySelector("input").value,
+                        reg: tr.querySelector(".input-reg").value.toUpperCase(),
+                        tipe_ac: tr.querySelector(".input-tipe").value.toUpperCase(),
+                        seat: parseInt(tr.querySelector(".input-seat").value) || null,
+                        dom_intl: tr.querySelector(".input-domintl").value,
+                        leg: tr.querySelector(".input-leg").value,
+                        ron: tr.querySelector(".ron-checkbox").checked,
+                        stand: tr.querySelector(".input-stand").value,
+                        avio: tr.querySelector(".avio-checkbox").checked,
+                        block_time: tr.querySelector(".input-blocktime").value || null,
+                        pax: parseInt(tr.querySelector(".input-pax").value) || null,
+                        lf: tr.querySelector(".input-lf").value,
+                        bagasi: parseInt(tr.querySelector(".input-bagasi").value) || 0,
+                        kargo: parseInt(tr.querySelector(".input-kargo").value) || 0,
+                        fl_type: tr.querySelector(".input-fltype").value,
+                        status: tr.querySelector(".status-val").value
+                    });
                 });
-            });
 
-            const dedupedMap = new Map();
-            flightsState.forEach(f => dedupedMap.set(buildFlightUniqueKey(f), f));
-            flightsState = Array.from(dedupedMap.values());
+                const dedupedMap = new Map();
+                flightsState.forEach(f => dedupedMap.set(buildFlightUniqueKey(f), f));
+                flightsState = Array.from(dedupedMap.values());
 
-            const { error: deleteErr } = await sbClient.from('daily_flights').delete().eq('date', dateStr);
-            if (deleteErr) throw deleteErr;
+                // ===== PENGAMAN ANTI DATA HILANG =====
+                // Jika tabel tampak kosong di layar padahal DB masih punya baris
+                // (kemungkinan karena query sempat gagal / render realtime di tengah save),
+                // autosave TIDAK boleh menghapus baris tersebut dari daily_flights.
+                let skipFlightRewrite = false;
+                if (flightsState.length === 0 && !explicitlyClearedTable) {
+                    const { count, error: countErr } = await sbClient.from('daily_flights').select('id', { count: 'exact', head: true }).eq('date', dateStr);
+                    if (!countErr && (count || 0) > 0) {
+                        console.warn('[AMS] Autosave: tabel tampak kosong tapi DB punya data. Baris penerbangan TIDAK dihapus.');
+                        skipFlightRewrite = true;
+                    }
+                }
 
-            if (flightsState.length > 0) {
-                const { error: insertErr } = await sbClient.from('daily_flights').insert(flightsState);
-                if (insertErr) throw insertErr;
+                const { error: recordErr } = await sbClient.from('daily_records').upsert({
+                    date: dateStr, dos: dos, status: status,
+                    pto_pagi: document.getElementById('ptoPagi').value, pto_malam: document.getElementById('ptoMalam').value,
+                    pelaksana_pagi: arrPelPagi, pelaksana_malam: arrPelMalam
+                });
+                if (recordErr) throw recordErr;
+
+                if (!skipFlightRewrite) {
+                    const { error: deleteErr } = await sbClient.from('daily_flights').delete().eq('date', dateStr);
+                    if (deleteErr) throw deleteErr;
+                    if (flightsState.length > 0) {
+                        const { error: insertErr } = await sbClient.from('daily_flights').insert(flightsState);
+                        if (insertErr) throw insertErr;
+                    }
+                } else {
+                    // Pulihkan tampilan dari DB agar baris yang "hilang" terlihat lagi.
+                    await applySheetDataForDate(dateStr);
+                }
+            } catch (err) {
+                console.error("Error Saving:", err);
+            } finally {
+                saveInProgress = false;
+                saveInFlight = null;
+                if (pendingSaveStatus !== null && !completingData) {
+                    const nextStatus = pendingSaveStatus;
+                    pendingSaveStatus = null;
+                    saveCurrentState(nextStatus);
+                }
             }
-        } catch (err) {
-            console.error("Error Saving:", err);
-        } finally {
-            saveInProgress = false;
-            if (pendingSaveStatus !== null) {
-                const nextStatus = pendingSaveStatus;
-                pendingSaveStatus = null;
-                saveCurrentState(nextStatus);
-            }
-        }
+        })();
+
+        saveInFlight = run;
+        return run.catch(() => {});
     }
 
     function markAsIncomplete() {
         if (isRestrictedUser) return;
+        if (completingData) return; // jangan timpa status 'complete' yang sedang diproses
         clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(() => { saveCurrentState('incomplete'); }, 1500);
+        saveTimeout = setTimeout(() => { saveTimeout = null; saveCurrentState('incomplete'); }, 1500);
     }
-    
-    
-    function completeData() { if(isRestrictedUser) return; if(!confirm("Selesaikan hari ini?")) return; saveCurrentState('complete').then(() => { alert("Complete!"); showCalendar(); }); }
-    
+
+    async function completeData() {
+        if (isRestrictedUser) return;
+        if (!confirm("Selesaikan hari ini?")) return;
+        completingData = true;
+        clearTimeout(saveTimeout);
+        saveTimeout = null;
+        pendingSaveStatus = null;
+        try {
+            while (saveInFlight) { await saveInFlight.catch(() => {}); }
+            await saveCurrentState('complete');
+            while (saveInFlight) { await saveInFlight.catch(() => {}); }
+            alert("Complete!");
+            showCalendar();
+        } finally {
+            completingData = false;
+            pendingSaveStatus = null;
+        }
+    }
+
     async function resetDataHariIni() {
         if (isRestrictedUser) return;
         const dateStr = document.getElementById('currentSelectedDate').value;
         if (!dateStr || !confirm("Yakin hapus semua data hari ini?")) return;
         try {
-            await sbClient.from('daily_records').delete().eq('date', dateStr); 
-            alert("Data dihapus."); showCalendar(); 
-        } catch(err) { alert("Gagal Reset: " + err.message); }
+            stopRealtimeSync();
+            explicitlyClearedTable = true;
+            suppressRealtimeUntil = Date.now() + 5000;
+            const [recRes, flRes] = await Promise.all([
+                sbClient.from('daily_records').delete().eq('date', dateStr),
+                sbClient.from('daily_flights').delete().eq('date', dateStr)
+            ]);
+            if (recRes.error) throw recRes.error;
+            if (flRes.error) throw flRes.error;
+            alert("Data dihapus."); showCalendar();
+        } catch (err) { alert("Gagal Reset: " + err.message); }
     }
 
     
