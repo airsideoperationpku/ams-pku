@@ -495,6 +495,12 @@
                     const candidates = deps
                         .filter(d => {
                             if (usedDepIds.has(d.id)) return false;
+                            // PERBAIKAN: departure harus terjadi SETELAH arrival.
+                            // Departure yang lebih awal (mis. keberangkatan ExRON pagi)
+                            // adalah milik rotasi/RON sebelumnya, bukan pasangan arrival ini.
+                            // Tanpa filter ini, RON arrival malam terpasangkan dengan
+                            // departure pagi yang sudah on-block -> stand keliru jadi READY/hilang.
+                            if (flightTs(d) < aTs) return false;
                             const dDate = dateOf(d);
                             // Pairing normal harus pada tanggal yang sama (turn).
                             // Cross-date HANYA utk RON (arr ron=true + dep ron=true/ExRON),
@@ -554,35 +560,39 @@
 
                 if (!standKey) return;
 
-                let cycleStatus = 'READY';
-                let d_hasBlock = d && d.block_time && d.block_time.trim() !== '';
-                let a_hasBlock = a && a.block_time && a.block_time.trim() !== '';
-
-                if (d_hasBlock) {
-                    cycleStatus = 'READY'; 
-                } else {
-                    if (a) {
-                        cycleStatus = a_hasBlock ? 'OCCUPIED' : 'STANDBY';
-                    } else if (d) {
-                        cycleStatus = 'OCCUPIED'; 
-                    }
-                }
-
-                if (cycleStatus === 'READY') return; 
-                if (cycleStatus === 'STANDBY' && a && a.date > todayStr) return; 
-
-                // Skip arrival yatim (tanpa departure) yang non-RON dan tanggalnya sudah lewat,
-                // karena itu data tidak lengkap (departure belum diinput), bukan kondisi OCCUPIED saat ini.
                 const aDate = a ? dateOf(a) : '';
-                if (cycleStatus === 'OCCUPIED' && a && !d && !isRonFlag(a) && aDate && aDate < todayStr) return;
+                const dDate = d ? dateOf(d) : '';
 
                 // RON ditentukan dari CHECKBOX ron (RON/ExRON), BUKAN dari selisih tanggal.
                 // Sebelumnya banyak stand keliru jadi RON karena selisih tanggal atau
                 // arrival/departure yang tak terpairing dianggap RON.
-                let isRON = isRonFlag(a) || isRonFlag(d);
+                const isRON = isRonFlag(a) || isRonFlag(d);
+
+                const d_hasBlock = d && d.block_time && d.block_time.trim() !== '';
+                const a_hasBlock = a && a.block_time && a.block_time.trim() !== '';
+
+                let cycleStatus = 'READY';
+
+                // PERBAIKAN: jangan langsung anggap stand "READY" hanya karena departure
+                // RON sudah ber-block_time padahal jadwalnya masih besok/lusa (cross-date).
+                // Pesawat RON yang sedang (atau akan) parkir malam ini harus tetap tampil.
+                if (d_hasBlock && !(isRON && dDate > todayStr)) {
+                    cycleStatus = 'READY';
+                } else if (a) {
+                    cycleStatus = a_hasBlock ? 'OCCUPIED' : 'STANDBY';
+                } else if (d) {
+                    cycleStatus = 'OCCUPIED';
+                }
+
+                if (cycleStatus === 'READY') return;
+                if (cycleStatus === 'STANDBY' && a && aDate > todayStr) return;
+
+                // Skip arrival yatim (tanpa departure) yang non-RON dan tanggalnya sudah lewat,
+                // karena itu data tidak lengkap (departure belum diinput), bukan kondisi OCCUPIED saat ini.
+                if (cycleStatus === 'OCCUPIED' && a && !d && !isRonFlag(a) && aDate && aDate < todayStr) return;
 
                 let primary = a || d;
-                let sortKey = primary ? (String(primary.date || '').trim().slice(0, 10) + (normTimeStr(primary.jadwal) || normTimeStr(primary.block_time) || '99:99')) : '99:9999:99';
+                let sortKey = primary ? (dateOf(primary) + (normTimeStr(primary.jadwal) || normTimeStr(primary.block_time) || '99:99')) : '99:9999:99';
 
                 relevantCycles.push({
                     arr: a, dep: d, reg: c.reg, standKey: standKey, status: cycleStatus,
