@@ -987,11 +987,23 @@
             });
     }
 
+    let realtimeApplyTimer = null;
+    function scheduleRealtimeApply(dateStr) {
+        clearTimeout(realtimeApplyTimer);
+        realtimeApplyTimer = setTimeout(async () => {
+            if (Date.now() < suppressRealtimeUntil) return;
+            if (hasPendingAutosave() || saveInProgress) return; // lagi mengetik/save — jangan timpa isian
+            try {
+                await applySheetDataForDate(dateStr);
+            } catch (err) { console.error('Error render realtime:', err); }
+        }, 400);
+    }
+
     async function handleRealtimeChange(dateStr) {
         if (Date.now() < suppressRealtimeUntil) return; // event dari save sendiri — diabaikan
         if (hasPendingAutosave()) return;               // user masih mengetik — biarkan autosave yang menang
         await waitForSaveCompletion();                  // jangan render di tengah proses save
-        await applySheetDataForDate(dateStr);
+        scheduleRealtimeApply(dateStr);                 // rakit burst event jadi satu render setelah DB tenang
     }
 
     async function openSheet(dateStr) {
@@ -1036,11 +1048,11 @@
                 return timeA.localeCompare(timeB);
             });
 
-            renderSavedTable(activeFlights); markAsIncomplete();
+            renderSavedTable(activeFlights, false); markAsIncomplete();
         } catch(err) { console.error("Error Load DOS:", err); }
     }
 
-    function renderSavedTable(flights) {
+    function renderSavedTable(flights, includeIds = true) {
         const tbody = document.querySelector("#apronTable tbody");
         explicitlyClearedTable = false;
         if (!flights || flights.length === 0) {
@@ -1060,8 +1072,9 @@
             let flTypes = ['REGULER', 'UNSCHEDULE', 'EXTRA', 'PERINTIS', 'POSITIONING', 'CHARTER', 'VIP', 'MILITER', 'FREIGHTER', 'DIVERT', 'REPOSITION', 'RTS', 'RTA', 'RTB', 'CALIBRATION', 'TRAINING', 'HAJI', 'POSTPONED', 'MEDICAL EVACUATION'];
             let flTypeOpts = flTypes.map(t => `<option ${f.fl_type === t ? 'selected' : ''}>${t}</option>`).join('');
 
+            let rowIdAttr = (includeIds && f.id) ? ` data-row-id="${f.id}"` : '';
             htmlStr += `
-            <tr class="flight-row">
+            <tr class="flight-row"${rowIdAttr}>
                 <td class="col-cs"><input type="text" class="form-control text-primary text-uppercase" value="${f.callsign || ''}" placeholder="CS" onchange="markAsIncomplete()"></td>
                 <td class="col-no"><input type="text" class="form-control" value="${f.flight_number || ''}" placeholder="NO" onchange="markAsIncomplete()"></td>
                 <td class="col-rute"><input type="text" class="form-control text-uppercase" value="${f.rute || ''}" placeholder="RUTE" onchange="markAsIncomplete()"></td>
@@ -1287,6 +1300,7 @@
                 let flightsState = [];
                 document.querySelectorAll("#apronTable tbody tr.flight-row").forEach(tr => {
                     flightsState.push({
+                        rowId: tr.getAttribute('data-row-id') || null,
                         date: dateStr,
                         callsign: tr.cells[0].querySelector("input").value.toUpperCase(),
                         flight_number: tr.cells[1].querySelector("input").value,
@@ -1311,20 +1325,18 @@
                 });
 
                 const dedupedMap = new Map();
-                flightsState.forEach(f => dedupedMap.set(buildFlightUniqueKey(f), f));
+                flightsState.forEach(f => dedupedMap.set(f.rowId ? 'id:' + f.rowId : buildFlightUniqueKey(f), f));
                 flightsState = Array.from(dedupedMap.values());
 
-                // ===== PENGAMAN ANTI DATA HILANG =====
-                // Jika tabel tampak kosong di layar padahal DB masih punya baris
-                // (kemungkinan karena query sempat gagal / render realtime di tengah save),
-                // autosave TIDAK boleh menghapus baris tersebut dari daily_flights.
+                // ===== PENGAMAN ANTI DATA HILANG (khusus tab/session ganda) =====
+                // Jika tabel tampak kosong di layar PADAHAL tidak ada indikasi penghapusan
+                // disengaja (hapus baris terakhir via tombol hapus / Reset Data), jangan
+                // ubah daily_flights sama sekali. Ini mencegah autosave dari satu tab
+                // menghapus baris yang baru saja ditulis tab lain pada tanggal yang sama.
                 let skipFlightRewrite = false;
                 if (flightsState.length === 0 && !explicitlyClearedTable) {
-                    const { count, error: countErr } = await sbClient.from('daily_flights').select('id', { count: 'exact', head: true }).eq('date', dateStr);
-                    if (!countErr && (count || 0) > 0) {
-                        console.warn('[AMS] Autosave: tabel tampak kosong tapi DB punya data. Baris penerbangan TIDAK dihapus.');
-                        skipFlightRewrite = true;
-                    }
+                    console.warn('[AMS] Autosave: tabel kosong tanpa indikasi penghapusan. Baris daily_flights TIDAK diubah.');
+                    skipFlightRewrite = true;
                 }
 
                 const { error: recordErr } = await sbClient.from('daily_records').upsert({
@@ -1335,12 +1347,7 @@
                 if (recordErr) throw recordErr;
 
                 if (!skipFlightRewrite) {
-                    const { error: deleteErr } = await sbClient.from('daily_flights').delete().eq('date', dateStr);
-                    if (deleteErr) throw deleteErr;
-                    if (flightsState.length > 0) {
-                        const { error: insertErr } = await sbClient.from('daily_flights').insert(flightsState);
-                        if (insertErr) throw insertErr;
-                    }
+                    await reconcileFlightRows(dateStr, flightsState);
                 } else {
                     // Pulihkan tampilan dari DB agar baris yang "hilang" terlihat lagi.
                     await applySheetDataForDate(dateStr);
@@ -1360,6 +1367,73 @@
 
         saveInFlight = run;
         return run.catch(() => {});
+    }
+
+    // ===== SINKRONISASI BARIS-PER-BARIS (bukan delete-total lalu insert) =====
+    // Dipakai saveCurrentState agar dua tab/session yang membuka tanggal yang sama
+    // TIDAK saling menghapus baris. Hanya baris tanggal itu yang dibandingkan:
+    // - baris ber-id di DOM → update (upsert by id)
+    // - baris DOM tanpa id       → insert baru
+    // - id di DB yang hilang dari DOM → hapus hanya id tersebut
+    async function reconcileFlightRows(dateStr, flightsState) {
+        const { data: existing, error: readErr } = await sbClient.from('daily_flights').select('*').eq('date', dateStr);
+        if (readErr) throw readErr;
+
+        const existingAll = existing || [];
+        if (existingAll.length > 0 && !existingAll.some(r => r.id)) {
+            // Skema tanpa kolom id: fallback ke perilaku lama (ganti total).
+            const { error: deleteErr } = await sbClient.from('daily_flights').delete().eq('date', dateStr);
+            if (deleteErr) throw deleteErr;
+            if (flightsState.length > 0) {
+                const rows = flightsState.map(f => { const { rowId, ...rest } = f; return rest; });
+                const { error: insertErr } = await sbClient.from('daily_flights').insert(rows);
+                if (insertErr) throw insertErr;
+            }
+            return;
+        }
+
+        const idSet = new Set(existingAll.map(r => r.id));
+        const domIds = new Set(flightsState.map(f => f.rowId).filter(Boolean));
+        const removedIds = existingAll.map(r => r.id).filter(id => !domIds.has(id));
+
+        const toUpdate = [];
+        const toInsert = [];
+        flightsState.forEach(f => {
+            const { rowId, ...rest } = f;
+            if (rowId && idSet.has(rowId)) toUpdate.push({ ...rest, id: rowId });
+            else toInsert.push(rest);
+        });
+
+        if (toUpdate.length > 0) {
+            const { error: updErr } = await sbClient.from('daily_flights').upsert(toUpdate, { onConflict: 'id' });
+            if (updErr) throw updErr;
+        }
+
+        if (removedIds.length > 0) {
+            const { error: delErr } = await sbClient.from('daily_flights').delete().in('id', removedIds);
+            if (delErr) throw delErr;
+        }
+
+        if (toInsert.length > 0) {
+            const { data: inserted, error: insErr } = await sbClient.from('daily_flights').insert(toInsert).select();
+            if (insErr) throw insErr;
+            // Tempelkan kembali id baris baru ke DOM agar save berikutnya tidak menduplikasi baris.
+            if (inserted && inserted.length > 0) {
+                const freshByKey = new Map(inserted.map(r => [buildFlightUniqueKey(r), r]));
+                document.querySelectorAll("#apronTable tbody tr.flight-row").forEach(tr => {
+                    if (tr.getAttribute('data-row-id')) return;
+                    const key = buildFlightUniqueKey({
+                        callsign: (tr.cells[0].querySelector("input").value || '').toUpperCase(),
+                        flight_number: tr.cells[1].querySelector("input").value,
+                        rute: (tr.cells[2].querySelector("input").value || '').toUpperCase(),
+                        jadwal: tr.cells[3].querySelector("input").value,
+                        leg: tr.querySelector(".input-leg").value,
+                        fl_type: tr.querySelector(".input-fltype").value
+                    });
+                    if (freshByKey.has(key)) tr.setAttribute('data-row-id', freshByKey.get(key).id);
+                });
+            }
+        }
     }
 
     function markAsIncomplete() {
