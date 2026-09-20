@@ -80,6 +80,39 @@
         
         .pair-box { background: #f8fafc; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; border: 1px solid #eef1f5; }
 
+        /* COMBO SEARCH FLIGHT NUMBER PADA MODAL REQUEST */
+        .req-combo-list {
+            position: fixed;
+            z-index: 2000;
+            max-height: 220px;
+            overflow-y: auto;
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+        }
+        .req-combo-list .req-combo-item {
+            padding: 7px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s ease;
+        }
+        .req-combo-list .req-combo-item:last-child { border-bottom: 0; }
+        .req-combo-list .req-combo-item:hover,
+        .req-combo-list .req-combo-item.active { background: #e8f0fe; color: #0d6efd; }
+        .req-combo-list .req-combo-item .text-muted { font-size: 0.72rem; }
+        .req-combo-list .req-combo-empty { font-size: 0.75rem; }
+        .req-combo-list .req-combo-item.req-combo-done { opacity: 0.6; }
+        .req-combo-list .req-combo-count {
+            position: sticky;
+            bottom: 0;
+            background: #f1f5f9;
+            padding: 5px 12px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.7rem;
+            letter-spacing: .2px;
+        }
+
         /* BANNER NOTIFIKASI NEXT PEMAKAIAN */
         .next-flight-banner {
             background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
@@ -211,6 +244,13 @@
         body.dark-theme .stand-card.standby .pair-box { background: #0f172a !important; }
         body.dark-theme .next-flight-banner .details,
         body.dark-theme .next-flight-banner .title { color: #f1f5f9 !important; }
+
+        body.dark-theme .req-combo-list { background: #111827; border-color: #1f2937; }
+        body.dark-theme .req-combo-list .req-combo-item { border-bottom-color: #1f2937; }
+        body.dark-theme .req-combo-list .req-combo-item:hover,
+        body.dark-theme .req-combo-list .req-combo-item.active { background: #1e293b; color: #93c5fd; }
+        body.dark-theme .req-combo-list .req-combo-item .text-muted { color: #9ca3af !important; }
+        body.dark-theme .req-combo-list .req-combo-count { background: #0f172a; border-top-color: #1f2937; }
 
         /* Fix kontras teks status penting pada dark theme */
         body.dark-theme .stand-card .text-danger { color: #f87171 !important; }   /* ON BLOCK */
@@ -797,27 +837,194 @@
 
         const { data: flights, error } = await sbClient.from('daily_flights').select('*').eq('date', today).order('jadwal', { ascending: true });
         if (error) return alert('Gagal memuat data penerbangan: ' + error.message);
-        requestFlights = flights || [];
+
+        // Hanya tampilkan penerbangan ARRIVAL (leg = "A") pada kolom Flight Number.
+        requestFlights = (flights || []).filter(f => String(f.leg || '').trim().toUpperCase() === 'A');
 
         document.getElementById('requestRows').innerHTML = '';
         addRequestRow();
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalRequest')).show();
+
+        // Pastikan baris pencarian flight number langsung terlihat di layar tanpa perlu scroll manual.
+        setTimeout(() => {
+            const firstInput = document.querySelector('#requestRows .req-flight');
+            if (firstInput) firstInput.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }, 250);
     }
 
-    function buildFlightOptions() {
-        let opts = '<option value="">-- Pilih Flight --</option>';
-        requestFlights.forEach(f => {
-            const label = `${f.callsign || ''} ${f.flight_number || ''} (${f.leg === 'A' ? 'ARR' : 'DEP'})`.trim();
-            opts += `<option value="${escapeHtml(f.id)}">${escapeHtml(label)}</option>`;
+    // Helper: label tampilan untuk sebuah flight (callsign + no. penerbangan).
+    function comboLabel(f) {
+        return `${f.callsign || ''} ${f.flight_number || ''}`.trim();
+    }
+
+    function closeComboList(list) {
+        if (list) {
+            list.classList.add('d-none');
+            list.style.top = '';
+            list.style.bottom = '';
+            list.style.left = '';
+            list.style.width = '';
+        }
+    }
+
+    // Posisikan dropdown tepat di bawah input (atau di atas bila ruang bawah tidak cukup),
+    // menggunakan koordinat layar (fixed) agar tidak terpotong oleh lapisan/overflow modal.
+    function positionComboList(inp, list) {
+        const r = inp.getBoundingClientRect();
+        const mg = 4;
+        const maxH = parseInt(getComputedStyle(list).maxHeight, 10) || 220;
+        const spaceBelow = window.innerHeight - r.bottom - mg;
+        const spaceAbove = r.top - mg;
+
+        list.style.left = Math.max(8, r.left) + 'px';
+        list.style.width = r.width + 'px';
+
+        if (spaceBelow >= Math.min(maxH, list.scrollHeight) || spaceBelow >= spaceAbove) {
+            // Buka ke bawah
+            list.style.top = (r.bottom + mg) + 'px';
+            list.style.bottom = 'auto';
+        } else {
+            // Buka ke atas (ruang bawah tidak cukup)
+            list.style.top = 'auto';
+            list.style.bottom = (window.innerHeight - r.top + mg) + 'px';
+        }
+    }
+
+    let comboScrollGuard = null;
+    function attachComboScrollGuard(inp, list) {
+        if (comboScrollGuard) window.removeEventListener('scroll', comboScrollGuard, true);
+        comboScrollGuard = () => {
+            if (list.classList.contains('d-none')) {
+                window.removeEventListener('scroll', comboScrollGuard, true);
+                comboScrollGuard = null;
+                return;
+            }
+            positionComboList(inp, list);
+        };
+        window.addEventListener('scroll', comboScrollGuard, true);
+    }
+
+    // Render daftar saran penerbangan arrival berdasarkan teks pencarian.
+    function renderRequestComboList(inp, term) {
+        if (!inp) return;
+        const tr = inp.closest('tr');
+        if (!tr) return;
+        const list = tr.querySelector('.req-combo-list');
+        if (!list) return;
+
+        const t = String(term || '').trim().toLowerCase();
+        let matches = requestFlights.filter(f => {
+            const label = comboLabel(f).toLowerCase();
+            const reg = (f.reg || '').toLowerCase();
+            return label.includes(t) || reg.includes(t);
         });
-        return opts;
+        if (t === '') matches = requestFlights.slice();
+        // Tampilkan SEMUA penerbangan yang cocok (tidak dibatasi jumlahnya),
+        // daftar bisa di-scroll jika banyak (max-height + overflow-y auto).
+
+        const alreadySelected = new Set(Array.from(document.querySelectorAll('#requestRows tr[data-flight-id]')).map(tr => String(tr.getAttribute('data-flight-id'))));
+
+        if (matches.length === 0) {
+            list.innerHTML = '<div class="req-combo-empty p-2 text-muted small">Tidak ada penerbangan arrival yang cocok.</div>';
+            list.classList.remove('d-none');
+            positionComboList(inp, list);
+            attachComboScrollGuard(inp, list);
+            return;
+        }
+
+        list.innerHTML = matches.map((f, i) => `
+            <div class="req-combo-item ${alreadySelected.has(String(f.id)) ? 'req-combo-done' : ''}" data-id="${escapeHtml(f.id)}" data-idx="${i}" onmousedown="event.preventDefault(); selectRequestFlight(this)">
+                <div class="fw-bold">${alreadySelected.has(String(f.id)) ? '<i class="bi bi-check2-circle me-1 text-success"></i>' : ''}${escapeHtml(comboLabel(f))}</div>
+                <div class="small text-muted">${escapeHtml(f.reg || '-')} &middot; STA ${escapeHtml((f.jadwal || '').slice(0, 5))}</div>
+            </div>
+        `).join('') + `
+            <div class="req-combo-count small text-muted fw-bold text-center">${matches.length} penerbangan arrival</div>`;
+        list.classList.remove('d-none');
+        positionComboList(inp, list);
+        attachComboScrollGuard(inp, list);
+    }
+
+    function onRequestComboFocus(inp) {
+        // Pastikan baris input/pencarian langsung terlihat (auto scroll bila tertutup layer).
+        inp.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        // Saat fokus: kosong -> tampilkan seluruh daftar arrival; terisi -> tampilkan hasil filter.
+        renderRequestComboList(inp, inp.value);
+        const tr = inp.closest('tr');
+        if (tr && !tr.getAttribute('data-flight-id')) {
+            tr.querySelector('.req-reg').value = '';
+            tr.querySelector('.req-eta').value = '';
+        }
+    }
+
+    function onRequestComboInput(inp) {
+        const val = inp.value.trim();
+        const tr = inp.closest('tr');
+        const storedId = tr.getAttribute('data-flight-id');
+        if (storedId) {
+            const sel = requestFlights.find(f => String(f.id) === String(storedId));
+            // Jika teks diubah sehingga tidak lagi cocok dengan pilihan, batal pilihannya.
+            if (!sel || comboLabel(sel).toLowerCase() !== val.toLowerCase()) {
+                tr.removeAttribute('data-flight-id');
+            }
+        }
+        renderRequestComboList(inp, inp.value);
+    }
+
+    function onRequestComboKeydown(ev, inp) {
+        const tr = inp.closest('tr');
+        const list = tr.querySelector('.req-combo-list');
+        const items = Array.from((list ? list.querySelectorAll('.req-combo-item') : []));
+        if (!list || items.length === 0) return;
+
+        const idx = items.findIndex(i => i.classList.contains('active'));
+
+        if (ev.key === 'ArrowDown') {
+            ev.preventDefault();
+            const n = (idx + 1) % items.length;
+            items.forEach((i, j) => i.classList.toggle('active', j === n));
+            items[n].scrollIntoView({ block: 'nearest' });
+        } else if (ev.key === 'ArrowUp') {
+            ev.preventDefault();
+            const n = (idx - 1 + items.length) % items.length;
+            items.forEach((i, j) => i.classList.toggle('active', j === n));
+            items[n].scrollIntoView({ block: 'nearest' });
+        } else if (ev.key === 'Enter') {
+            ev.preventDefault();
+            if (idx >= 0) selectRequestFlight(items[idx]);
+            else closeComboList(list);
+        } else if (ev.key === 'Escape') {
+            ev.preventDefault();
+            closeComboList(list);
+        }
+    }
+
+    // Pilih flight dari daftar saran -> isi input, dan autofill Reg + ETA.
+    function selectRequestFlight(item) {
+        const tr = item.closest('tr');
+        const inp = tr.querySelector('.req-flight');
+        const flight = requestFlights.find(f => String(f.id) === String(item.dataset.id));
+        if (!flight) return;
+        inp.value = comboLabel(flight);
+        tr.setAttribute('data-flight-id', String(flight.id));
+        tr.querySelector('.req-reg').value = flight.reg || '';
+        tr.querySelector('.req-eta').value = (flight.jadwal || '').slice(0, 5);
+        closeComboList(tr.querySelector('.req-combo-list'));
     }
 
     function addRequestRow() {
         const tbody = document.getElementById('requestRows');
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><select class="form-select form-select-sm req-flight" onchange="onRequestFlightChange(this)">${buildFlightOptions()}</select></td>
+            <td>
+                <div class="req-combo position-relative">
+                    <input type="text" class="form-control form-control-sm req-flight" placeholder="Ketik / cari flight number..." autocomplete="off"
+                        onfocus="onRequestComboFocus(this)"
+                        oninput="onRequestComboInput(this)"
+                        onkeydown="onRequestComboKeydown(event, this)"
+                        onblur="setTimeout(() => closeComboList(this.closest('tr') ? this.closest('tr').querySelector('.req-combo-list') : null), 150)">
+                    <div class="req-combo-list d-none"></div>
+                </div>
+            </td>
             <td><input type="text" class="form-control form-control-sm req-reg text-uppercase" placeholder="Registrasi"></td>
             <td><input type="time" class="form-control form-control-sm req-eta"></td>
             <td><button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove()" title="Hapus baris"><i class="bi bi-x-lg"></i></button></td>
@@ -825,24 +1032,12 @@
         tbody.appendChild(tr);
     }
 
-    function onRequestFlightChange(sel) {
-        const tr = sel.closest('tr');
-        const flight = requestFlights.find(f => String(f.id) === String(sel.value));
-        if (flight) {
-            tr.querySelector('.req-reg').value = flight.reg || '';
-            tr.querySelector('.req-eta').value = (flight.jadwal || '').slice(0, 5);
-        } else {
-            tr.querySelector('.req-reg').value = '';
-            tr.querySelector('.req-eta').value = '';
-        }
-    }
-
     async function sendRequest() {
         const rows = Array.from(document.querySelectorAll('#requestRows tr'));
         const items = [];
         for (const tr of rows) {
-            const sel = tr.querySelector('.req-flight');
-            const flight = requestFlights.find(f => String(f.id) === String(sel.value));
+            const flightId = tr.getAttribute('data-flight-id');
+            const flight = flightId ? requestFlights.find(f => String(f.id) === String(flightId)) : null;
             const reg = tr.querySelector('.req-reg').value.trim().toUpperCase();
             const eta = tr.querySelector('.req-eta').value;
             if (!eta) {
