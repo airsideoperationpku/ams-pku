@@ -10,6 +10,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; overflow-x: hidden; }
         .wrapper { display: flex; width: 100%; height: 100vh; overflow: hidden; }
@@ -206,6 +208,42 @@
             .bottom-nav { display: flex; }
             .content { padding-bottom: 76px; }
         }
+        /* ===== Peta Rute PKU (Leaflet) ===== */
+        #mapRoutes { width: 100%; height: 520px; border-radius: 12px; background: #eef2f7; box-shadow: inset 0 0 0 1px rgba(15,23,42,.08); z-index: 1; }
+        @media (max-width: 768px) { #mapRoutes { height: 340px; } }
+        .leaflet-container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 0.8rem; }
+        .pku-marker { width: 34px; height: 34px; border-radius: 50%; background: #dc3545; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(220,53,69,.55); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.05rem; position: relative; }
+        .pku-marker i { transform: rotate(-45deg); }
+        .pku-marker::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; border: 2px solid rgba(220,53,69,.5); animation: pkuPulse 2s infinite; }
+        @keyframes pkuPulse { 0% { transform: scale(.65); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
+        .plane-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+        .map-dest-chip { font-size: 0.72rem; font-weight: 700; border-radius: 999px; padding: 6px 12px; border: 1px solid #dee2e6; background: #fff; color: #334155; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; }
+        .map-dest-chip:hover { background: #e8f0fe; border-color: #93c5fd; transform: translateY(-1px); }
+        .map-dest-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .map-dest-chip small { font-weight: 600; color: #64748b; }
+        .route-dest-scroll { max-height: 470px; overflow-y: auto; }
+        .pku-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #dc3545; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.15); vertical-align: middle; }
+        .lg-line { display: inline-block; width: 26px; height: 3px; border-radius: 2px; vertical-align: middle; }
+        .map-popup .table-mini th { font-size: 0.65rem; padding: 4px 6px; }
+        .map-popup .table-mini td { font-size: 0.75rem; padding: 4px 6px; }
+        body.dark-theme #mapRoutes { background: #0f172a; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+        body.dark-theme .leaflet-popup-content-wrapper, body.dark-theme .leaflet-popup-tip { background: #1f2937; color: #e5e7eb; box-shadow: 0 6px 20px rgba(0,0,0,.45); }
+        body.dark-theme .leaflet-popup-content { color: #e5e7eb; margin: 12px 14px; }
+        body.dark-theme a.leaflet-popup-close-button { color: #9ca3af; }
+        body.dark-theme .leaflet-tooltip { background: #1f2937; color: #e5e7eb; border: 1px solid #374151; }
+        body.dark-theme .leaflet-tooltip-top:before { border-top-color: #1f2937; }
+        body.dark-theme .leaflet-tooltip-bottom:before { border-bottom-color: #1f2937; }
+        body.dark-theme .leaflet-tooltip-left:before { border-left-color: #1f2937; }
+        body.dark-theme .leaflet-tooltip-right:before { border-right-color: #1f2937; }
+        body.dark-theme .leaflet-bar a { background: #1f2937; color: #e5e7eb; border-bottom: 1px solid #374151; }
+        body.dark-theme .leaflet-bar a:hover { background: #111827; }
+        body.dark-theme .leaflet-control-attribution { background: rgba(15,23,42,.85); color: #9ca3af; }
+        body.dark-theme .leaflet-control-attribution a { color: #93c5fd; }
+        body.dark-theme .map-dest-chip { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+        body.dark-theme .map-dest-chip:hover { background: #1e293b; border-color: #475569; }
+        body.dark-theme .map-dest-chip small { color: #94a3b8; }
+        body.dark-theme .map-popup .table-mini th { background: #0b1220 !important; color: #cbd5e1 !important; border-color: #1f2937 !important; }
+        body.dark-theme .map-popup .table-mini td { border-color: #1f2937 !important; color: #e2e8f0 !important; }
     </style>
 </head>
 <body>
@@ -541,7 +579,7 @@
             </div>
         </div>
 
-        <div class="card border-top border-dark border-4 mb-5">
+        <div class="card border-top border-dark border-4">
             <div class="card-header text-dark"><i class="bi bi-bar-chart-line-fill me-2"></i>9. TOP FREKUENSI TERTINGGI (TOP 5)</div>
             <div class="card-body">
                 <div class="row g-4">
@@ -549,6 +587,44 @@
                     <div class="col-12 col-md-6 col-lg-3"><h6 class="fw-bold text-center bg-light p-2 rounded small">Parking Stand</h6><table class="table table-sm table-mini"><tbody id="tbl_stand"></tbody></table></div>
                     <div class="col-12 col-md-6 col-lg-3"><h6 class="fw-bold text-center bg-light p-2 rounded small">Avio by Airline</h6><table class="table table-sm table-mini"><tbody id="tbl_avio"></tbody></table></div>
                     <div class="col-12 col-md-6 col-lg-3"><h6 class="fw-bold text-center bg-light p-2 rounded small">Tipe Pesawat</h6><table class="table table-sm table-mini"><tbody id="tbl_actype"></tbody></table></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-top border-danger border-4 mb-5" id="routeMapCard">
+            <div class="card-header text-danger d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span><i class="bi bi-geo-alt-fill me-2"></i>10. PETA RUTE DARI PKU KE SEMUA DESTINASI</span>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="badge bg-danger" id="mapStatDest">0 Destinasi</span>
+                    <span class="badge bg-secondary" id="mapStatEntries">0 Entri Jadwal</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetMapView()" title="Reset tampilan peta"><i class="bi bi-arrows-fullscreen"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="loadRouteMap()" title="Muat ulang data rute"><i class="bi bi-arrow-clockwise"></i></button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12 col-lg-8">
+                        <div id="mapRoutes">
+                            <div class="d-flex h-100 align-items-center justify-content-center small text-muted">
+                                <span class="spinner-border spinner-border-sm me-2"></span> Memuat peta &amp; rute...
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-3 mt-2 small text-muted">
+                            <span><span class="pku-dot me-1"></span> PKU (Home Base)</span>
+                            <span><span class="lg-line me-1" style="background:#0d6efd;"></span> Rute Domestik</span>
+                            <span><span class="lg-line me-1" style="background:#fd7e14;"></span> Rute Internasional</span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <h6 class="fw-bold small text-muted m-0"><i class="bi bi-signpost-split-fill me-1"></i>DAFTAR DESTINASI</h6>
+                            <small class="text-muted fw-bold" id="mapDestCount"></small>
+                        </div>
+                        <div id="mapDestList" class="d-flex flex-wrap gap-2 route-dest-scroll">
+                            <span class="small text-muted">Memuat...</span>
+                        </div>
+                        <div id="mapUnmappedNote" class="small text-warning mt-3" style="display:none;"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -657,7 +733,7 @@
         }
     });
 
-    function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) { s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); } else { s.classList.toggle('collapsed'); localStorage.setItem('ams_sidebar_collapsed', s.classList.contains('collapsed') ? '1' : '0'); } }
+    function toggleSidebar() { const s = document.getElementById('sidebar'); if (window.innerWidth <= 768) { s.classList.toggle('show'); document.getElementById('sidebarOverlay').classList.toggle('show'); } else { s.classList.toggle('collapsed'); localStorage.setItem('ams_sidebar_collapsed', s.classList.contains('collapsed') ? '1' : '0'); } if (window.invalidateRouteMapSize) window.invalidateRouteMapSize(); }
     function applySidebarState() { if (window.innerWidth <= 768) return; const s = document.getElementById('sidebar'); if (!s) return; if (localStorage.getItem('ams_sidebar_collapsed') === '1') { s.classList.add('no-transition'); s.classList.add('collapsed'); void s.offsetWidth; s.classList.remove('no-transition'); } }
     applySidebarState();
 
@@ -1092,7 +1168,7 @@
         window.location.replace('index.html');
     }
 
-    window.addEventListener('beforeunload', () => { stopDashboardRealtime(); });
+    window.addEventListener('beforeunload', () => { stopDashboardRealtime(); stopRouteMapRealtime(); });
 
     function applyTheme(theme) {
         const body = document.body;
@@ -1110,11 +1186,458 @@
         optDark.classList.toggle('active', isDark);
 
         localStorage.setItem('ams_theme', isDark ? 'dark' : 'light');
+
+        // Sinkronkan tema peta rute (Leaflet) agar tile mengikuti light/dark
+        if (typeof updateMapTheme === 'function') updateMapTheme(isDark ? 'dark' : 'light');
     }
 
     function toggleThemeBadge() {
         const isDark = document.body.classList.contains('dark-theme');
         applyTheme(isDark ? 'light' : 'dark');
+    }
+
+    // =====================================================================
+    // 10. PETA RUTE (LEAFLET): PKU -> SEMUA DESTINASI
+    //     Sumber data: tabel master_schedule (Data Master / database.html)
+    // =====================================================================
+    const PKU_AIRPORT = { code: 'PKU', lat: 0.4606, lon: 101.4406, name: 'Sultan Syarif Kasim II', city: 'Pekanbaru', country: 'Indonesia' };
+
+    // Kamus koordinat bandara (kode IATA). Destinasi yang belum ada di daftar
+    // ini akan ditampilkan sebagai catatan "belum terpetakan" di panel peta.
+    const AIRPORT_DB = {
+        // == Home base ==
+        'PKU': { lat: 0.4606, lon: 101.4406, name: 'Sultan Syarif Kasim II', city: 'Pekanbaru', country: 'Indonesia' },
+        // == Sumatera ==
+        'KNO': { lat: 3.6422, lon: 98.8853, name: 'Kualanamu', city: 'Medan', country: 'Indonesia' },
+        'BTJ': { lat: 5.5235, lon: 95.4203, name: 'Sultan Iskandar Muda', city: 'Banda Aceh', country: 'Indonesia' },
+        'LSW': { lat: 5.3622, lon: 97.1425, name: 'Malikussaleh', city: 'Lhokseumawe', country: 'Indonesia' },
+        'GNS': { lat: 1.1728, lon: 97.7778, name: 'Binaka', city: 'Gunungsitoli (Nias)', country: 'Indonesia' },
+        'PDG': { lat: -0.7873, lon: 100.2807, name: 'Minangkabau', city: 'Padang', country: 'Indonesia' },
+        'DUM': { lat: 1.6811, lon: 101.4492, name: 'Pinang Kampai', city: 'Dumai', country: 'Indonesia' },
+        'PLM': { lat: -2.8980, lon: 104.7000, name: 'Sultan Mahmud Badaruddin II', city: 'Palembang', country: 'Indonesia' },
+        'DJB': { lat: -1.6333, lon: 103.6444, name: 'Sultan Taha Syaifuddin', city: 'Jambi', country: 'Indonesia' },
+        'BKS': { lat: -3.8877, lon: 102.3390, name: 'Fatmawati Soekarno', city: 'Bengkulu', country: 'Indonesia' },
+        'TKG': { lat: -5.2387, lon: 105.2175, name: 'Raden Inten II', city: 'Bandar Lampung', country: 'Indonesia' },
+        'PGK': { lat: -2.1622, lon: 106.1390, name: 'Depati Amir', city: 'Pangkalpinang', country: 'Indonesia' },
+        'BTH': { lat: 1.1214, lon: 104.1194, name: 'Hang Nadim', city: 'Batam', country: 'Indonesia' },
+        'TNJ': { lat: 0.9244, lon: 104.5319, name: 'Raja Haji Fisabilillah', city: 'Tanjungpinang', country: 'Indonesia' },
+
+        // == Jawa ==
+        'CGK': { lat: -6.1256, lon: 106.6558, name: 'Soekarno-Hatta', city: 'Jakarta', country: 'Indonesia' },
+        'HLP': { lat: -6.2665, lon: 106.8909, name: 'Halim Perdanakusuma', city: 'Jakarta', country: 'Indonesia' },
+        'BDO': { lat: -6.9008, lon: 107.6516, name: 'Husein Sastranegara', city: 'Bandung', country: 'Indonesia' },
+        'SRG': { lat: -6.5355, lon: 110.6755, name: 'Jenderal Ahmad Yani', city: 'Semarang', country: 'Indonesia' },
+        'SOC': { lat: -7.5158, lon: 110.7572, name: 'Adisumarmo', city: 'Surakarta (Solo)', country: 'Indonesia' },
+        'JOG': { lat: -7.7882, lon: 110.4307, name: 'Adisutjipto', city: 'Yogyakarta', country: 'Indonesia' },
+        'YIA': { lat: -7.9052, lon: 110.0570, name: 'Yogyakarta International', city: 'Yogyakarta', country: 'Indonesia' },
+        'SUB': { lat: -7.3798, lon: 112.7876, name: 'Juanda', city: 'Surabaya', country: 'Indonesia' },
+        'MLG': { lat: -7.9257, lon: 112.7127, name: 'Abdul Rachman Saleh', city: 'Malang', country: 'Indonesia' },
+        // == Bali & Nusa Tenggara ==
+        'DPS': { lat: -8.7482, lon: 115.1672, name: 'I Gusti Ngurah Rai', city: 'Denpasar (Bali)', country: 'Indonesia' },
+        'LOP': { lat: -8.7566, lon: 116.2775, name: 'Zainuddin Abdul Madjid', city: 'Lombok', country: 'Indonesia' },
+        'LBJ': { lat: -8.3937, lon: 119.8947, name: 'Komodo', city: 'Labuan Bajo', country: 'Indonesia' },
+        'KOE': { lat: -10.1733, lon: 123.6720, name: 'El Tari', city: 'Kupang', country: 'Indonesia' },
+        // == Kalimantan ==
+        'PNK': { lat: -0.1508, lon: 109.4044, name: 'Supadio', city: 'Pontianak', country: 'Indonesia' },
+        'BPN': { lat: -1.2681, lon: 116.8944, name: 'Sepinggan', city: 'Balikpapan', country: 'Indonesia' },
+        'BDJ': { lat: -3.4422, lon: 114.7631, name: 'Syamsudin Noor', city: 'Banjarmasin', country: 'Indonesia' },
+        'BIK': { lat: -1.1907, lon: 136.1088, name: 'Frans Kaisiepo', city: 'Biak', country: 'Indonesia' },
+        // == Sulawesi ==
+        'UPG': { lat: -5.0617, lon: 119.5540, name: 'Sultan Hasanuddin', city: 'Makassar', country: 'Indonesia' },
+        'MDC': { lat: 1.5494, lon: 124.9264, name: 'Sam Ratulangi', city: 'Manado', country: 'Indonesia' },
+        'PLW': { lat: -0.9178, lon: 119.9099, name: 'Mutiara SIS Al-Jufrie', city: 'Palu', country: 'Indonesia' },
+        'KDI': { lat: -4.0792, lon: 122.4187, name: 'Haluoleo', city: 'Kendari', country: 'Indonesia' },
+        'GTO': { lat: 0.8678, lon: 122.8500, name: 'Jalaluddin', city: 'Gorontalo', country: 'Indonesia' },
+        // == Maluku & Papua ==
+        'AMQ': { lat: -3.7103, lon: 128.0888, name: 'Pattimura', city: 'Ambon', country: 'Indonesia' },
+        'TTE': { lat: 0.8306, lon: 127.3787, name: 'Sultan Babullah', city: 'Ternate', country: 'Indonesia' },
+        'SOQ': { lat: -0.8938, lon: 131.1216, name: 'Domine Eduard Osok', city: 'Sorong', country: 'Indonesia' },
+        'DJJ': { lat: -2.5767, lon: 140.5163, name: 'Sentani', city: 'Jayapura', country: 'Indonesia' },
+        'TIM': { lat: -4.5282, lon: 136.8878, name: 'Mozes Kilangin', city: 'Timika', country: 'Indonesia' },
+
+        // == Malaysia / Singapura / Brunei ==
+        'SIN': { lat: 1.3644, lon: 103.9915, name: 'Changi', city: 'Singapura', country: 'Singapura' },
+        'KUL': { lat: 2.7456, lon: 101.7099, name: 'Kuala Lumpur International', city: 'Kuala Lumpur', country: 'Malaysia' },
+        'SZB': { lat: 3.1306, lon: 101.5487, name: 'Sultan Abdul Aziz Shah (Subang)', city: 'Shah Alam', country: 'Malaysia' },
+        'PEN': { lat: 5.2971, lon: 100.2769, name: 'Penang International', city: 'Penang', country: 'Malaysia' },
+        'KUA': { lat: 3.7749, lon: 103.2160, name: 'Sultan Haji Ahmad Shah', city: 'Kuantan', country: 'Malaysia' },
+        'MKZ': { lat: 2.2306, lon: 102.2503, name: 'Melaka International', city: 'Melaka', country: 'Malaysia' },
+        'IPH': { lat: 4.5625, lon: 101.0960, name: 'Sultan Azlan Shah', city: 'Ipoh', country: 'Malaysia' },
+        'JHB': { lat: 1.6415, lon: 103.6672, name: 'Senai International', city: 'Johor Bahru', country: 'Malaysia' },
+        'LGK': { lat: 6.3297, lon: 99.7286, name: 'Langkawi International', city: 'Langkawi', country: 'Malaysia' },
+        'KBR': { lat: 6.1647, lon: 102.2932, name: 'Sultan Ismail Petra', city: 'Kota Bharu', country: 'Malaysia' },
+        'KCH': { lat: 1.4847, lon: 110.3469, name: 'Kuching International', city: 'Kuching', country: 'Malaysia' },
+        'BKI': { lat: 5.9372, lon: 116.0511, name: 'Kota Kinabalu International', city: 'Kota Kinabalu', country: 'Malaysia' },
+        'BWN': { lat: 4.9442, lon: 114.9277, name: 'Brunei International', city: 'Bandar Seri Begawan', country: 'Brunei' },
+        // == Timur Tengah ==
+        'JED': { lat: 21.6796, lon: 39.1565, name: 'King Abdulaziz International', city: 'Jeddah', country: 'Arab Saudi' },
+        'MED': { lat: 24.5534, lon: 39.7050, name: 'Prince Mohammad Bin Abdulaziz', city: 'Madinah', country: 'Arab Saudi' },
+        'RUH': { lat: 24.9576, lon: 46.6988, name: 'King Khalid International', city: 'Riyadh', country: 'Arab Saudi' },
+        'DMM': { lat: 26.4712, lon: 49.7979, name: 'King Fahd International', city: 'Dammam', country: 'Arab Saudi' },
+        'DXB': { lat: 25.2528, lon: 55.3644, name: 'Dubai International', city: 'Dubai', country: 'UEA' },
+        'AUH': { lat: 24.4330, lon: 54.6511, name: 'Zayed International', city: 'Abu Dhabi', country: 'UEA' },
+        'DOH': { lat: 25.2731, lon: 51.6081, name: 'Hamad International', city: 'Doha', country: 'Qatar' },
+        // == Asia lainnya ==
+        'BKK': { lat: 13.6811, lon: 100.7473, name: 'Suvarnabhumi', city: 'Bangkok', country: 'Thailand' },
+        'DMK': { lat: 13.9126, lon: 100.6068, name: 'Don Mueang International', city: 'Bangkok', country: 'Thailand' },
+        'SGN': { lat: 10.8188, lon: 106.6519, name: 'Tan Son Nhat International', city: 'Ho Chi Minh City', country: 'Vietnam' },
+        'HAN': { lat: 21.2212, lon: 105.8072, name: 'Noi Bai International', city: 'Hanoi', country: 'Vietnam' },
+        'CAN': { lat: 23.3924, lon: 113.2988, name: 'Guangzhou Baiyun International', city: 'Guangzhou', country: 'Tiongkok' },
+        'HKG': { lat: 22.3080, lon: 113.9185, name: 'Hong Kong International', city: 'Hong Kong', country: 'Hong Kong' },
+        'ICN': { lat: 37.4602, lon: 126.4407, name: 'Incheon International', city: 'Seoul', country: 'Korea Selatan' },
+        'NRT': { lat: 35.7647, lon: 140.3863, name: 'Narita International', city: 'Tokyo', country: 'Jepang' },
+        'MNL': { lat: 14.5086, lon: 121.0198, name: 'Ninoy Aquino International', city: 'Manila', country: 'Filipina' }
+    };
+
+    const ROUTE_COLORS = { DOM: '#0d6efd', INTL: '#fd7e14', MIXED: '#6f42c1' };
+    let routeMapObj = null;
+    let routeMapTileLayer = null;
+    let routeMapLayerGroup = null;
+    let routeMapChannel = null;
+    let routeMapDestIndex = {};
+    let routeMapBounds = null;
+
+    // Ambil daftar kode bandara (IATA 3 huruf) dari teks kolom "rute".
+    // Mendukung format "BTH", "PKU-CGK", "CGK - PKU", "PKU/Cgk", dll.
+    function extractAirportCodes(ruteStr) {
+        if (!ruteStr) return [];
+        return String(ruteStr).toUpperCase().split(/[^A-Z]+/).filter(t => /^[A-Z]{3}$/.test(t));
+    }
+
+    // Jadwal dianggap aktif bila belum kedaluwarsa (konsisten dengan Data Master
+    // yang otomatis menghapus jadwal dengan valid_to < hari ini).
+    function isScheduleActive(row, todayTs) {
+        if (!row.valid_to) return true;
+        const end = new Date(row.valid_to); end.setHours(0,0,0,0);
+        return end.getTime() >= todayTs;
+    }
+
+    async function fetchMasterSchedules() {
+        if (!sbClient) return [];
+        const pageSize = 1000;
+        let from = 0, all = [];
+        while (true) {
+            const { data, error } = await sbClient
+                .from('master_schedule')
+                .select('*')
+                .order('rute', { ascending: true })
+                .range(from, from + pageSize - 1);
+            if (error) throw error;
+            if (!data || data.length === 0) break;
+            all = all.concat(data);
+            if (data.length < pageSize) break;
+            from += pageSize;
+        }
+        return all;
+    }
+
+    // Agregasi destinasi: kode -> jumlah entri, DOM/INTL, daftar flight.
+    function aggregateRoutes(schedules) {
+        const destMap = {};
+        const today = new Date(); today.setHours(0,0,0,0);
+        const todayTs = today.getTime();
+        let totalEntries = 0, expired = 0, noValidCode = 0;
+
+        (schedules || []).forEach(row => {
+            if (!isScheduleActive(row, todayTs)) { expired++; return; }
+            const codes = extractAirportCodes(row.rute);
+            if (codes.length === 0) { noValidCode++; return; }
+
+            // PKU adalah home base: destinasi = semua kode selain PKU.
+            // Jika rute hanya berisi kode destinasi (mis. "CGK"), tetap valid.
+            const dests = [...new Set(codes.filter(c => c !== 'PKU'))];
+            if (dests.length === 0) { noValidCode++; return; }
+
+            totalEntries++;
+            const isIntl = String(row.dom_intl || '').toUpperCase() === 'INTL';
+            dests.forEach(code => {
+                if (!destMap[code]) destMap[code] = { code, count: 0, dom: 0, intl: 0, flights: [] };
+                const d = destMap[code];
+                d.count++;
+                if (isIntl) d.intl++; else d.dom++;
+                d.flights.push({
+                    fn: row.flight_number || '-',
+                    cs: row.callsign || '-',
+                    jadwal: row.jadwal || '-',
+                    leg: String(row.leg || '-').toUpperCase(),
+                    dos: row.dos || '-'
+                });
+            });
+        });
+
+        return { destMap, totalEntries, expired, noValidCode };
+    }
+
+    function getRouteTileUrl(isDark) {
+        return isDark
+            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+            : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    }
+
+    function getRouteTileLayer(isDark) {
+        return L.tileLayer(getRouteTileUrl(isDark), {
+            maxZoom: 19,
+            subdomains: 'abcd',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        });
+    }
+
+    function ensureRouteMap() {
+        if (routeMapObj) return routeMapObj;
+        const container = document.getElementById('mapRoutes');
+        if (!container) return null;
+        container.innerHTML = '';
+        routeMapObj = L.map(container, {
+            center: [PKU_AIRPORT.lat, PKU_AIRPORT.lon],
+            zoom: 6,
+            scrollWheelZoom: false
+        });
+        // Scroll-zoom hanya aktif setelah peta diklik (agar halaman tetap mudah digulir)
+        routeMapObj.on('click', () => routeMapObj.scrollWheelZoom.enable());
+        routeMapObj.on('mouseout', () => routeMapObj.scrollWheelZoom.disable());
+        routeMapTileLayer = getRouteTileLayer(document.body.classList.contains('dark-theme')).addTo(routeMapObj);
+        routeMapLayerGroup = L.layerGroup().addTo(routeMapObj);
+        return routeMapObj;
+    }
+
+    // Dipanggil oleh applyTheme() agar tile peta mengikuti tema light/dark
+    function updateMapTheme(theme) {
+        if (!window.L || !routeMapObj) return;
+        const isDark = theme === 'dark';
+        if (routeMapTileLayer) routeMapObj.removeLayer(routeMapTileLayer);
+        routeMapTileLayer = getRouteTileLayer(isDark).addTo(routeMapObj);
+    }
+
+    window.invalidateRouteMapSize = function () {
+        if (routeMapObj) setTimeout(() => { try { routeMapObj.invalidateSize({ animate: true }); } catch (_) {} }, 380);
+    };
+
+    // Kurva bezier kuadratik antara dua bandara (efek lengkung jalur penerbangan)
+    function buildRouteCurve(a, b, curvature) {
+        const mx = (a.lat + b.lat) / 2, my = (a.lon + b.lon) / 2;
+        const dx = b.lat - a.lat, dy = b.lon - a.lon;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const safeDist = dist || 0.0001;
+        const curv = dist < 0.05 ? 0 : curvature;
+        const off = safeDist * curv;
+        const cx = mx - (dy / safeDist) * off;
+        const cy = my + (dx / safeDist) * off;
+        const SEG = 48;
+        const pts = [];
+        for (let i = 0; i <= SEG; i++) {
+            const t = i / SEG, it = 1 - t;
+            pts.push([it * it * a.lat + 2 * it * t * cx + t * t * b.lat, it * it * a.lon + 2 * it * t * cy + t * t * b.lon]);
+        }
+        const mid = { lat: 0.25 * a.lat + 0.5 * cx + 0.25 * b.lat, lon: 0.25 * a.lon + 0.5 * cy + 0.25 * b.lon };
+        const bearing = Math.atan2(b.lon - a.lon, b.lat - a.lat) * 180 / Math.PI;
+        return { pts, mid, bearing };
+    }
+
+    function buildDestPopup(d, ap) {
+        const shown = d.flights.slice(0, 10).map(f => `<tr>
+            <td class="fw-bold">${escapeHtml(f.fn)}</td>
+            <td>${escapeHtml(f.cs)}</td>
+            <td>${escapeHtml(String(f.jadwal).slice(0, 5))}</td>
+            <td>${escapeHtml(f.leg)}</td>
+            <td>${escapeHtml(f.dos)}</td>
+        </tr>`).join('');
+        const more = d.flights.length - Math.min(d.flights.length, 10);
+        return `<div class="map-popup">
+            <h6 class="fw-bold mb-1">${d.code} - ${escapeHtml(ap.name)}</h6>
+            <div class="small text-muted mb-2">${escapeHtml(ap.city)}, ${escapeHtml(ap.country)}</div>
+            <div class="mb-2">
+                ${d.dom > 0 ? `<span class="badge bg-primary me-1">DOM: ${d.dom}</span>` : ''}
+                ${d.intl > 0 ? `<span class="badge bg-warning text-dark">INTL: ${d.intl}</span>` : ''}
+                <span class="badge bg-secondary">Total: ${d.count} entri</span>
+            </div>
+            <table class="table table-sm table-mini mb-1">
+                <thead><tr><th>Flight</th><th>CS</th><th>Time</th><th>Leg</th><th>DOS</th></tr></thead>
+                <tbody>${shown}</tbody>
+            </table>
+            ${more > 0 ? `<div class="small text-muted">+${more} entri lainnya</div>` : ''}
+        </div>`;
+    }
+
+    // Gambar seluruh rute (garis lengkung), marker PKU & destinasi.
+    // Mengembalikan daftar kode destinasi yang belum terpetakan.
+    function renderRoutesOnMap(agg) {
+        const map = ensureRouteMap();
+        if (!map) return { unmapped: [], mappedCount: 0 };
+        routeMapLayerGroup.clearLayers();
+        routeMapDestIndex = {};
+        routeMapBounds = L.latLngBounds([PKU_AIRPORT.lat, PKU_AIRPORT.lon]);
+
+        const mappedDests = Object.values(agg.destMap).filter(d => !!AIRPORT_DB[d.code]);
+
+        // Marker PKU (home base) dengan efek denyut
+        const pkuIcon = L.divIcon({
+            className: '',
+            html: '<div class="pku-marker"><i class="bi bi-airplane-fill"></i></div>',
+            iconSize: [34, 34],
+            iconAnchor: [17, 17]
+        });
+        L.marker([PKU_AIRPORT.lat, PKU_AIRPORT.lon], { icon: pkuIcon, zIndexOffset: 2000 })
+            .addTo(routeMapLayerGroup)
+            .bindTooltip('PKU - Sultan Syarif Kasim II (Pekanbaru) • Home Base', { direction: 'top', offset: [0, -12] })
+            .bindPopup(`<div class="map-popup">
+                <h6 class="fw-bold mb-1"><i class="bi bi-geo-alt-fill text-danger me-1"></i>PKU - Sultan Syarif Kasim II</h6>
+                <div class="small text-muted mb-2">Pekanbaru, Indonesia • Home Base</div>
+                <div class="small">Total destinasi: <strong>${mappedDests.length}</strong><br>Total entri jadwal aktif: <strong>${fmt(agg.totalEntries)}</strong></div>
+            </div>`);
+
+        const unmapped = [];
+        const dests = Object.values(agg.destMap).sort((a, b) => b.count - a.count);
+
+        dests.forEach(d => {
+            const ap = AIRPORT_DB[d.code];
+            if (!ap) { unmapped.push(d.code); return; }
+            routeMapDestIndex[d.code] = d;
+            routeMapBounds.extend([ap.lat, ap.lon]);
+
+            // Garis rute per tipe: DOM solid biru, INTL putus-putus oranye
+            ['DOM', 'INTL'].forEach(type => {
+                const n = type === 'DOM' ? d.dom : d.intl;
+                if (n <= 0) return;
+                const color = ROUTE_COLORS[type];
+                const curve = buildRouteCurve(PKU_AIRPORT, ap, type === 'DOM' ? 0.13 : 0.22);
+                L.polyline(curve.pts, {
+                    color: color, weight: 2.6, opacity: 0.85,
+                    dashArray: type === 'INTL' ? '8 6' : null
+                })
+                    .addTo(routeMapLayerGroup)
+                    .bindTooltip(`PKU ⇄ ${d.code} • ${type} • ${n} entri`, { sticky: true });
+
+                // Ikon pesawat kecil di tengah kurva, diarahkan menuju destinasi
+                const planeIcon = L.divIcon({
+                    className: '',
+                    html: `<div class="plane-icon" style="transform: rotate(${curve.bearing.toFixed(1)}deg); color:${color};"><svg width="17" height="17" viewBox="0 0 24 24"><path d="M12 1.5 L18.5 22 L12 17.5 L5.5 22 Z" fill="currentColor" stroke="#ffffff" stroke-width="1.3"/></svg></div>`,
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+                L.marker([curve.mid.lat, curve.mid.lon], { icon: planeIcon, interactive: false, keyboard: false, zIndexOffset: -1000 })
+                    .addTo(routeMapLayerGroup);
+            });
+
+            // Marker destinasi (ungu bila DOM & INTL sekaligus)
+            const isMixed = d.dom > 0 && d.intl > 0;
+            const fillColor = isMixed ? ROUTE_COLORS.MIXED : (d.intl > 0 ? ROUTE_COLORS.INTL : ROUTE_COLORS.DOM);
+            const marker = L.circleMarker([ap.lat, ap.lon], {
+                radius: 8, color: '#ffffff', weight: 2.5, fillColor: fillColor, fillOpacity: 1
+            })
+                .addTo(routeMapLayerGroup)
+                .bindTooltip(`<strong>${d.code}</strong> - ${escapeHtml(ap.name)} (${escapeHtml(ap.city)}) • ${d.count} entri`, { direction: 'top' })
+                .bindPopup(buildDestPopup(d, ap), { maxWidth: 330 });
+            d._marker = marker;
+        });
+
+        // Sesuaikan tampilan agar seluruh rute terlihat
+        if (mappedDests.length > 0) {
+            map.fitBounds(routeMapBounds.pad(0.18), { maxZoom: 7, animate: false });
+        } else {
+            map.setView([PKU_AIRPORT.lat, PKU_AIRPORT.lon], 6, { animate: false });
+        }
+        setTimeout(() => { try { routeMapObj.invalidateSize(); } catch (_) {} }, 120);
+
+        return { unmapped: unmapped, mappedCount: mappedDests.length };
+    }
+
+    function renderDestChips(agg) {
+        const listEl = document.getElementById('mapDestList');
+        if (!listEl) return;
+        const dests = Object.values(agg.destMap).sort((a, b) => b.count - a.count);
+        if (dests.length === 0) {
+            listEl.innerHTML = '<span class="small text-muted">Belum ada rute dari PKU pada Data Master (master_schedule).</span>';
+            return;
+        }
+        listEl.innerHTML = dests.map(d => {
+            const ap = AIRPORT_DB[d.code];
+            const isMixed = d.dom > 0 && d.intl > 0;
+            const color = ap ? (isMixed ? ROUTE_COLORS.MIXED : (d.intl > 0 ? ROUTE_COLORS.INTL : ROUTE_COLORS.DOM)) : '#6c757d';
+            const label = ap ? `${d.code} · ${escapeHtml(ap.city)}` : `${d.code} · ?`;
+            return `<button type="button" class="map-dest-chip" onclick="flyToDest('${d.code}')">
+                <span class="dot" style="background:${color};"></span>${label} <small>${d.count}×</small>
+            </button>`;
+        }).join('');
+    }
+
+    function renderMapNotes(agg, unmapped) {
+        const noteEl = document.getElementById('mapUnmappedNote');
+        if (!noteEl) return;
+        const notes = [];
+        if (unmapped && unmapped.length > 0) {
+            notes.push(`<div><i class="bi bi-exclamation-triangle-fill me-1"></i>Kode destinasi belum terpetakan (koordinat belum tersedia): <strong>${unmapped.map(escapeHtml).join(', ')}</strong></div>`);
+        }
+        if (agg.expired > 0) {
+            notes.push(`<div><i class="bi bi-clock-history me-1"></i>${agg.expired} entri kedaluwarsa disembunyikan (sesuai status di Data Master).</div>`);
+        }
+        if (notes.length > 0) {
+            noteEl.innerHTML = notes.join('');
+            noteEl.style.display = 'block';
+        } else {
+            noteEl.style.display = 'none';
+        }
+    }
+
+    function updateMapStats(agg, mappedCount) {
+        setT('mapStatDest', `${mappedCount} Destinasi`);
+        setT('mapStatEntries', `${fmt(agg.totalEntries)} Entri Jadwal`);
+        setT('mapDestCount', agg.totalEntries > 0 ? `${agg.totalEntries} entri` : '');
+    }
+
+    async function loadRouteMap() {
+        const mapEl = document.getElementById('mapRoutes');
+        if (!window.L || !window.L.map) {
+            if (mapEl) mapEl.innerHTML = '<div class="d-flex h-100 align-items-center justify-content-center small text-muted px-3 text-center">Library peta (Leaflet) gagal dimuat dari CDN. Periksa koneksi lalu muat ulang halaman.</div>';
+            return;
+        }
+        if (!sbClient) {
+            if (mapEl && !routeMapObj) mapEl.innerHTML = '<div class="d-flex h-100 align-items-center justify-content-center small text-muted">Koneksi Supabase tidak tersedia.</div>';
+            return;
+        }
+        try {
+            const schedules = await fetchMasterSchedules();
+            const agg = aggregateRoutes(schedules);
+            const result = renderRoutesOnMap(agg);
+            renderDestChips(agg);
+            renderMapNotes(agg, result.unmapped);
+            updateMapStats(agg, result.mappedCount);
+        } catch (err) {
+            console.error('Route Map Error:', err);
+            if (mapEl && !routeMapObj) mapEl.innerHTML = `<div class="d-flex h-100 align-items-center justify-content-center small text-danger px-3 text-center">Gagal memuat rute: ${escapeHtml(err.message || 'kesalahan tidak diketahui')}</div>`;
+        }
+    }
+
+    function flyToDest(code) {
+        const d = routeMapDestIndex[code];
+        const ap = AIRPORT_DB[code];
+        if (!routeMapObj || !d || !ap) return;
+        routeMapObj.flyTo([ap.lat, ap.lon], 7, { duration: 0.9 });
+        if (d._marker) setTimeout(() => d._marker.openPopup(), 950);
+    }
+
+    function resetMapView() {
+        if (!routeMapObj) return;
+        if (routeMapBounds && routeMapBounds.isValid()) {
+            routeMapObj.flyToBounds(routeMapBounds.pad(0.18), { maxZoom: 7, duration: 0.8 });
+        } else {
+            routeMapObj.flyTo([PKU_AIRPORT.lat, PKU_AIRPORT.lon], 6, { duration: 0.8 });
+        }
+    }
+
+    function stopRouteMapRealtime() {
+        if (!sbClient || !routeMapChannel) return;
+        try { sbClient.removeChannel(routeMapChannel); } catch (_) {}
+        routeMapChannel = null;
+    }
+
+    // Peta otomatis diperbarui saat Data Master (master_schedule) berubah
+    function startRouteMapRealtime() {
+        if (!sbClient) return;
+        stopRouteMapRealtime();
+        routeMapChannel = sbClient
+            .channel('master-schedule-route-map-live')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'master_schedule' }, () => loadRouteMap())
+            .subscribe();
     }
 
     window.onload = async () => {
@@ -1126,6 +1649,8 @@
         startNotifRealtime();
         triggerDashboardLoad();
         startDashboardRealtime();
+        loadRouteMap();
+        startRouteMapRealtime();
     };
 </script>
 <nav class="bottom-nav">
