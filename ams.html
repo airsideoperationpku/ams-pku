@@ -386,6 +386,133 @@
         .fab-tambah:hover { background: #0b5ed7; transform: scale(1.06); }
         .fab-tambah.hidden { opacity: 0; pointer-events: none; transform: scale(0.75); }
         body.dark-theme .fab-tambah { background: #2563eb; }
+
+        /* ===== Toggle Tampilan Tabel / Gantt ===== */
+        .view-toggle-group { background: #fff; border-radius: 999px; padding: 3px; }
+        .view-toggle-group .btn { border: none; background: transparent; color: #64748b; font-size: .74rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; transition: all .18s ease; }
+        .view-toggle-group .btn i { font-size: .95rem; }
+        .view-toggle-group .btn:hover { color: #0d6efd; background: #eef4ff; }
+        .view-toggle-group .btn.active { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; box-shadow: 0 3px 10px rgba(37, 99, 235, .35); }
+        body.dark-theme .view-toggle-group { background: #0f172a; }
+        body.dark-theme .view-toggle-group .btn { color: #94a3b8; }
+        body.dark-theme .view-toggle-group .btn:hover { color: #93c5fd; background: #1e293b; }
+
+        /* ===== Gantt Chart Penerbangan ===== */
+        .gantt-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+        .gantt-toolbar .gantt-title { font-weight: 800; color: #475569; font-size: .85rem; }
+        .gantt-zoom { display: inline-flex; align-items: center; gap: 2px; background: #f1f5f9; border-radius: 999px; padding: 2px; }
+        .gantt-zoom button { border: none; background: #fff; color: #475569; width: 26px; height: 24px; border-radius: 999px; font-size: .8rem; line-height: 1; box-shadow: 0 1px 3px rgba(15,23,42,.15); }
+        .gantt-zoom button:hover { color: #0d6efd; }
+        .gantt-zoom .gantt-zoom-label { font-size: .65rem; font-weight: 800; color: #64748b; padding: 0 6px; }
+        .gantt-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: .65rem; font-weight: 800; color: #64748b; }
+        .gantt-legend span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+        .gantt-legend .lg { display: inline-block; width: 13px; height: 9px; border-radius: 3px; }
+        .gantt-legend .lg-a { background: #16a34a; } .gantt-legend .lg-d { background: #2563eb; }
+        .gantt-legend .lg-pair { background: linear-gradient(90deg, #16a34a, #2563eb); }
+        .gantt-legend .lg-ron { background: #64748b; } .gantt-legend .lg-unloc { background: #f59e0b; }
+        .gantt-legend .svg-ico { display: inline-flex; align-items: center; gap: 4px; color: #475569; }
+        .pl-svg { width: 12px; height: 12px; display: block; }
+        .gantt-legend .svg-ico .pl-svg { width: 15px; height: 15px; }
+        .gantt-scroll { position: relative; overflow: auto; max-height: 68vh; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; }
+        .gantt-canvas { position: relative; width: max-content; min-width: 100%; }
+        .g-row { display: flex; align-items: stretch; position: relative; border-bottom: 1px solid #eef1f6; }
+        .g-row:last-child { border-bottom: none; }
+        .g-label { position: sticky; left: 0; z-index: 4; flex: 0 0 var(--label-w); width: var(--label-w); background: #fff; border-right: 1px solid #e2e8f0; padding: 4px 8px; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+        .g-label .g-stand { font-size: .78rem; font-weight: 800; color: #1e293b; line-height: 1.1; }
+        .g-label .g-meta { font-size: .58rem; font-weight: 800; color: #94a3b8; letter-spacing: .2px; }
+        .g-track { position: relative; flex: 0 0 auto; width: var(--track-w); background-image: repeating-linear-gradient(to right, rgba(148,163,184,.25) 0 1px, transparent 1px var(--hour-w)); }
+        .g-ruler { position: sticky; top: 0; z-index: 9; }
+        .g-ruler .g-label { background: #f1f5f9; z-index: 10; }
+        .g-ruler .g-track { background: #f1f5f9; height: 32px; background-image: repeating-linear-gradient(to right, rgba(100,116,139,.28) 0 1px, transparent 1px var(--hour-w)); }
+        .g-hour { position: absolute; top: 0; height: 100%; padding: 6px 0 0 4px; font-size: .6rem; font-weight: 800; color: #64748b; }
+        .g-hour.night { background: rgba(15,23,42,.06); color: #94a3b8; }
+        .g-row-label { background: #f8fafc !important; border-top: 1px solid #e2e8f0; }
+        .g-row-label .g-stand { color: #334155; font-size: .68rem; letter-spacing: .6px; }
+        .g-row-unlocated { background: #fffbeb; }
+        .g-row-unlocated .g-label { background: #fffbeb; border-right-color: #fcd34d; }
+        .g-row-unlocated .g-label .g-stand { color: #b45309; }
+        .g-row-empty .g-label { background: #fcfdfe; }
+        .g-row-empty .g-track { background-color: rgba(241,245,249,.55); }
+        .g-empty .g-stand { color: #cbd5e1 !important; }
+        .g-nowline { position: absolute; top: 38px; bottom: 0; width: 0; border-left: 2px dashed #ef4444; z-index: 7; pointer-events: none; }
+        .g-nowline::before { content: 'NOW'; position: absolute; top: 1px; left: 3px; font-size: .52rem; font-weight: 800; color: #fff; background: #ef4444; border-radius: 3px; padding: 0 3px; }
+
+        .g-bar { position: absolute; height: 20px; display: flex; align-items: center; border-radius: 6px; box-shadow: 0 2px 6px rgba(15,23,42,.16); cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+        .g-bar:hover { transform: translateY(-1px); box-shadow: 0 5px 12px rgba(15,23,42,.28); z-index: 8; }
+        .g-bar .g-seg { flex: 0 0 auto; height: 100%; }
+        .g-bar .g-seg-a { background: #16a34a; border-radius: 6px 0 0 6px; }
+        .g-bar .g-seg-d { background: #2563eb; border-radius: 0 6px 6px 0; }
+        .g-bar .g-mid { flex: 1 1 auto; min-width: 0; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: nowrap; background: repeating-linear-gradient(135deg, rgba(255,255,255,.28) 0 5px, rgba(255,255,255,0) 5px 11px), linear-gradient(90deg, #16a34a, #2563eb); color: #fff; font-size: .56rem; font-weight: 800; letter-spacing: .2px; padding: 0 4px; }
+        .g-bar .g-tag { padding: 0 5px 0 12px; color: #fff; font-size: .56rem; font-weight: 800; white-space: nowrap; overflow: hidden; }
+        .g-bar .g-tag.tag-end { padding: 0 12px 0 5px; }
+        .g-bar.solo-a { background: #16a34a; }
+        .g-bar.solo-d { background: #2563eb; }
+        .g-bar.overnight .g-mid, .g-bar.solo-a.overnight, .g-bar.solo-d.overnight { background: repeating-linear-gradient(135deg, rgba(255,255,255,.3) 0 4px, rgba(255,255,255,0) 4px 9px), linear-gradient(90deg, #475569, #64748b); }
+        .g-bar.no-time { background: repeating-linear-gradient(135deg, #fbbf24 0 5px, #fde68a 5px 10px); border: 1px dashed #d97706; box-shadow: none; }
+        .g-bar.no-time .g-tag { color: #7c2d12; }
+        .g-bar.unlocated-bar { outline: 2px solid #f59e0b; outline-offset: 1px; }
+        .g-ico { position: absolute; top: 50%; width: 17px; height: 17px; display: inline-flex; align-items: center; justify-content: center; background: #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(15,23,42,.35); transform: translateY(-50%); z-index: 2; }
+        .g-ico.landing { left: -8px; color: #16a34a; } .g-ico.takeoff { right: -8px; color: #2563eb; }
+        .g-ico svg { width: 12px; height: 12px; display: block; }
+        .gantt-empty { padding: 46px 16px; text-align: center; color: #94a3b8; }
+        .gantt-empty i { font-size: 2rem; display: block; margin-bottom: 6px; }
+        .gantt-hint { font-size: .65rem; color: #94a3b8; font-weight: 700; }
+        .g-flash { animation: ganttFlash 1.6s ease; }
+        @keyframes ganttFlash { 0%, 60% { background: #dbeafe !important; } 100% { background: transparent; } }
+
+        /* ===== Drag & drop baris UNLOCATED ke baris stand ===== */
+        .g-bar[draggable="true"] { cursor: grab; }
+        .g-bar[draggable="true"]:active { cursor: grabbing; }
+        .g-bar.dragging { opacity: .45; }
+        .g-track.drop-target { outline: 2px dashed #2563eb; outline-offset: -2px; background-color: rgba(37, 99, 235, .08); }
+        body.dark-theme .g-track.drop-target { outline-color: #60a5fa; background-color: rgba(96, 165, 250, .14); }
+
+        /* ===== ALERT BENTROK: flight tumpang tindih di parking stand ===== */
+        .gantt-alert { display: none; align-items: center; gap: 8px; padding: 8px 12px; margin-bottom: 8px; border: 2px solid #ef4444; border-radius: 10px; background: #fee2e2; color: #b91c1c; font-size: .72rem; font-weight: 800; line-height: 1.35; }
+        .gantt-alert.show { display: flex; animation: ganttAlertBlink 1s steps(1) infinite; }
+        .gantt-alert i { font-size: 1rem; flex: 0 0 auto; }
+        @keyframes ganttAlertBlink { 0%, 49% { background: #fee2e2; border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, .35); } 50%, 100% { background: #fff; border-color: #fecaca; box-shadow: none; } }
+        body.dark-theme .gantt-alert { background: #450a0a; color: #fecaca; }
+        @keyframes ganttAlertBlinkDark { 0%, 49% { background: #450a0a; border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, .35); } 50%, 100% { background: #1c1917; border-color: #7f1d1d; box-shadow: none; } }
+        body.dark-theme .gantt-alert.show { animation-name: ganttAlertBlinkDark; }
+        .g-bar.g-conflict { z-index: 6; outline: 2px solid #ef4444; outline-offset: 1px; animation: ganttConflictBlink .9s steps(1) infinite; }
+        .g-bar.g-conflict::after { content: ''; position: absolute; inset: 0; border-radius: 6px; background: rgba(239, 68, 68, .6); z-index: 3; pointer-events: none; animation: ganttConflictOverlay .9s steps(1) infinite; }
+        @keyframes ganttConflictBlink { 0%, 49% { box-shadow: 0 0 0 3px rgba(239, 68, 68, .55), 0 2px 6px rgba(15, 23, 42, .16); } 50%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), 0 2px 6px rgba(15, 23, 42, .16); } }
+        @keyframes ganttConflictOverlay { 0%, 49% { opacity: 1; } 50%, 100% { opacity: .12; } }
+
+        /* ===== POPUP GANTT: isian baris FL.NO yang diklik ===== */
+        #ganttPopupTable { min-width: 1150px; }
+        #ganttPopupTable tbody tr.flight-row:nth-child(odd) { background-color: #ffffff !important; }
+        #ganttPopupTable tbody tr.flight-row:nth-child(even) { background-color: #f2f7ff !important; }
+        #ganttPopupTable tbody tr.flight-row:hover { background-color: #e3edff !important; }
+        #ganttPopupTable tbody tr.popup-a { box-shadow: inset 3px 0 0 #16a34a; }
+        #ganttPopupTable tbody tr.popup-d { box-shadow: inset 3px 0 0 #2563eb; }
+        body.dark-theme #ganttPopupTable tbody tr.flight-row:nth-child(odd) { background-color: #0b1324 !important; }
+        body.dark-theme #ganttPopupTable tbody tr.flight-row:nth-child(even) { background-color: #111b32 !important; }
+        body.dark-theme #ganttPopupTable tbody tr.flight-row:hover { background-color: #1e293b !important; }
+
+        body.dark-theme .gantt-scroll { background: #111827; border-color: #1f2937; }
+        body.dark-theme .g-row { border-color: #1f2937; }
+        body.dark-theme .g-label { background: #111827; border-right-color: #1f2937; }
+        body.dark-theme .g-label .g-stand { color: #e5e7eb; }
+        body.dark-theme .g-ruler .g-label, body.dark-theme .g-ruler .g-track { background: #0f172a; }
+        body.dark-theme .g-hour { color: #9ca3af; }
+        body.dark-theme .g-row-label { background: #0f172a !important; border-top-color: #1f2937; }
+        body.dark-theme .g-row-label .g-stand { color: #cbd5e1; }
+        body.dark-theme .g-row-unlocated { background: #2a1d06; }
+        body.dark-theme .g-row-unlocated .g-label { background: #2a1d06; border-right-color: #78350f; }
+        body.dark-theme .g-row-unlocated .g-label .g-stand { color: #fbbf24; }
+        body.dark-theme .g-row-empty .g-label { background: #0d1424; }
+        body.dark-theme .g-row-empty .g-track { background-color: rgba(15,23,42,.6); }
+        body.dark-theme .g-empty .g-stand { color: #475569 !important; }
+        body.dark-theme .gantt-toolbar .gantt-title { color: #cbd5e1; }
+        body.dark-theme .gantt-legend { color: #9ca3af; }
+        body.dark-theme .gantt-zoom { background: #1f2937; }
+        body.dark-theme .gantt-zoom button { background: #0f172a; color: #cbd5e1; }
+        body.dark-theme .g-ico { background: #0b1220; }
+        body.dark-theme .gantt-empty { color: #64748b; }
+        body.dark-theme .g-flash { animation: ganttFlashDark 1.6s ease; }
+        @keyframes ganttFlashDark { 0%, 60% { background: #1e3a8a !important; } 100% { background: transparent; } }
         @media (max-width: 768px) {
             .fab-tambah { bottom: 88px; right: 16px; }
         }
@@ -522,8 +649,12 @@
                 </div>
             </div>
 
-            <div class="d-flex justify-content-between align-items-end mb-2 mt-4">
+            <div class="d-flex justify-content-between align-items-end mb-2 mt-4 flex-wrap gap-2">
                 <h6 class="fw-bold text-secondary m-0"><i class="bi bi-table me-2"></i> Data Penerbangan <small class="d-md-none text-muted fw-normal" style="font-size:.65rem;">— ketuk baris untuk mengisi data</small></h6>
+                <div class="btn-group view-toggle-group shadow-sm ms-auto me-1" role="group" aria-label="Pilih tampilan data penerbangan">
+                    <button type="button" id="btnViewTable" class="btn active" onclick="setSheetView('table')" title="Tampilan Tabel"><i class="bi bi-table"></i> <span class="d-none d-md-inline">Tabel</span></button>
+                    <button type="button" id="btnViewGantt" class="btn" onclick="setSheetView('gantt')" title="Tampilan Gantt Chart"><i class="bi bi-bar-chart-steps"></i> <span class="d-none d-md-inline">Gantt Chart</span></button>
+                </div>
                 <div class="input-group input-group-sm bg-white border rounded shadow-sm search-input-group" style="max-width: 250px;">
                     <span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-search"></i></span>
                     <input type="text" id="searchInput" class="form-control border-0 ps-1 bg-transparent" placeholder="Cari data di tabel..." oninput="filterTable()">
@@ -537,7 +668,7 @@
                 <button type="button" class="btn btn-sm btn-outline-danger ms-1 fw-bold" onclick="retryLoadSheet()"><i class="bi bi-arrow-clockwise me-1"></i>Muat Ulang</button>
             </div>
 
-            <div class="table-responsive shadow-sm mb-3">
+            <div class="table-responsive shadow-sm mb-3" id="apronTableView">
                 <table class="table table-spreadsheet table-hover" id="apronTable">
                     <thead>
                         <tr>
@@ -552,6 +683,46 @@
                         <tr><td colspan="20" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Pilih DOS untuk memuat jadwal hari ini.</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- ===== VIEW GANTT CHART ===== -->
+            <div id="ganttChartView" class="d-none mb-3">
+                <div class="card p-3 p-md-4">
+                    <div class="gantt-toolbar mb-2">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="gantt-title"><i class="bi bi-bar-chart-steps me-1 text-primary"></i>Timeline Parkir Penerbangan</span>
+                            <span class="badge bg-light text-secondary border fw-bold" id="ganttRangeLabel">-</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="gantt-zoom" title="Perbesar / perkecil timeline">
+                                <button type="button" onclick="changeGanttZoom(-1)" title="Perkecil"><i class="bi bi-dash-lg"></i></button>
+                                <span class="gantt-zoom-label">ZOOM</span>
+                                <button type="button" onclick="changeGanttZoom(1)" title="Perbesar"><i class="bi bi-plus-lg"></i></button>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" onclick="renderGanttChart()" title="Muat ulang timeline"><i class="bi bi-arrow-clockwise"></i></button>
+                        </div>
+                    </div>
+                    <div class="gantt-alert" id="ganttConflictAlert" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span id="ganttConflictText"></span>
+                    </div>
+                    <div class="gantt-legend pb-2 mb-2 border-bottom">
+                        <span><i class="lg lg-a"></i> Leg Arrival (A)</span>
+                        <span><i class="lg lg-d"></i> Leg Departure (D)</span>
+                        <span class="svg-ico" id="ganttLegendLand"></span>
+                        <span class="svg-ico" id="ganttLegendTakeoff"></span>
+                        <span><i class="lg lg-pair"></i> Pairing FL.NO Arrival ↔ Departure (Arr → Dep, BT jika terisi)</span>
+                        <span><i class="lg lg-ron"></i> RON: Arrival (BT/Jadwal) → 23:59</span>
+                        <span><i class="lg lg-ron"></i> ExRON: 00:00 → Departure (BT/Jadwal)</span>
+                        <span><i class="lg lg-unloc"></i> Unlocated ↔ Stand — seret dua arah</span>
+                        <span><i class="lg" style="background:#ef4444"></i> Bentrok — batang berkedip merah</span>
+                        <span><i class="bi bi-stopwatch"></i> Sebelum Block Time terisi → Jadwal; sesudahnya → Block Time</span>
+                        <span class="gantt-hint ms-auto"><i class="bi bi-hand-index-thumb"></i> ketuk batang → popup isian FL.NO (pairing: Arrival + Departure) &bull; <i class="bi bi-grip-vertical"></i> seret batang dua arah: Unlocated ↔ Stand ↔ Stand lain</span>
+                    </div>
+                    <div class="gantt-scroll" id="ganttScroll">
+                        <div class="gantt-empty"><i class="bi bi-hourglass-split"></i>Memuat timeline...</div>
+                    </div>
+                </div>
             </div>
 
             <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 mb-5">
@@ -688,6 +859,39 @@
             </div>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL POPUP GANTT — isian baris FL.NO yang diklik pada diagram batang -->
+<div class="modal fade" id="modalGanttRow" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-table me-2"></i><span id="ganttPopupTitle">Data Penerbangan</span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="table-responsive">
+          <table class="table table-spreadsheet table-hover" id="ganttPopupTable">
+            <thead>
+              <tr>
+                <th class="col-cs">CS</th><th class="col-no">Fl. No</th><th class="col-rute">Rute</th><th class="col-jadwal">Jadwal</th>
+                <th class="col-reg">Reg.</th><th class="col-ron">RON</th><th class="col-tipe">Tipe A/C</th><th class="col-seat">Seat</th>
+                <th class="col-dom">Tipe</th><th class="col-leg">Leg</th><th class="col-stand">Stand</th><th class="col-avio">Avio</th>
+                <th class="col-bt">Block Time</th><th class="col-pax">Pax</th><th class="col-lf">L/F</th><th class="col-bagasi">Bagasi</th>
+                <th class="col-kargo">Kargo</th><th class="col-fltype">Flight Type</th><th class="col-status">Status</th><th class="col-aksi">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="ganttPopupBody"></tbody>
+          </table>
+        </div>
+        <div class="gantt-hint mt-2"><i class="bi bi-info-circle me-1"></i> Isian pada popup ini tersimpan otomatis ke tabel penerbangan (autosave) — baris hijau = Arrival, biru = Departure.</div>
+      </div>
+      <div class="modal-footer border-0 bg-light">
+        <button type="button" class="btn btn-outline-primary btn-sm fw-bold" id="ganttPopupOpenTable"><i class="bi bi-table me-1"></i> Buka di tabel utama</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
       </div>
     </div>
   </div>
@@ -1125,6 +1329,11 @@
         document.getElementById('currentSelectedDate').value = dateStr;
         document.getElementById('sheetDateDisplay').innerText = new Date(dateStr).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
+        // MODE DEFAULT setelah klik kalender = TABEL (bukan Gantt).
+        // Pilihan Gantt sebelumnya di localStorage tidak lagi dipakai saat
+        // membuka tanggal; user bisa memilih Gantt lewat tombol toggle.
+        setSheetView('table');
+
         await applySheetDataForDate(dateStr);
         startRealtimeSyncForDate(dateStr);
     }
@@ -1297,7 +1506,7 @@
         updateSortHeaderIndicator();
     }
 
-    function filterTable() { const term = document.getElementById("searchInput").value.toLowerCase(); document.querySelectorAll("#apronTable tbody tr.flight-row").forEach(row => { row.style.display = Array.from(row.querySelectorAll("input, select")).map(i=>i.value.toLowerCase()).join(" ").includes(term) ? "" : "none"; }); }
+    function filterTable() { const term = document.getElementById("searchInput").value.toLowerCase(); document.querySelectorAll("#apronTable tbody tr.flight-row").forEach(row => { row.style.display = Array.from(row.querySelectorAll("input, select")).map(i=>i.value.toLowerCase()).join(" ").includes(term) ? "" : "none"; }); scheduleGanttRender(300); }
     function calculateLF(el) { const row = el.closest("tr"); const pax = parseFloat(row.querySelector(".input-pax").value); const seat = parseFloat(row.querySelector(".input-seat").value); row.querySelector(".input-lf").value = (!isNaN(pax) && !isNaN(seat) && seat > 0) ? ((pax/seat)*100).toFixed(1) + "%" : ""; }
     function updateRonDisplay(el) { const row = el.closest("tr"); const chk = row.querySelector(".ron-checkbox").checked; const span = row.querySelector(".suffix-reg"); if(chk) { span.classList.remove("d-none"); span.innerText = row.querySelector(".input-leg").value === 'A' ? "(RON)" : "(ExRON)"; row.querySelector(".input-reg").style.paddingRight = "45px"; } else { span.classList.add("d-none"); span.innerText = ""; row.querySelector(".input-reg").style.paddingRight = ""; } }
     function updateLegColor(sel) { sel.className = `form-select input-leg ${sel.value === 'D' ? 'text-primary' : 'text-success'}`; updateRonDisplay(sel); }
@@ -1453,6 +1662,7 @@
         const saveBtn = row.querySelector('td.col-aksi button[onclick^="simpanBaris"]');
         if (saveBtn) simpanBaris(saveBtn);
         closeRowEditor();
+        scheduleGanttRender(350);
     }
 
     function hapusModalBaris() {
@@ -1818,6 +2028,780 @@
     } else if (fabTambahManualEl) {
         fabTambahManualEl.classList.add('hidden');
     }
+
+    /* ==========================================================================
+       GANTT CHART — Timeline parkir penerbangan per Parking Stand (D1..D12)
+       Timeline TETAP 00:00 — 23:59 (1440 menit).
+       - EXRON (leg D + checkbox RON): batang dari 00:00 → waktu departure
+       - RON   (leg A + checkbox RON): batang dari waktu arrival → akhir
+         timeline (23:59 / nextday)
+       - SUMBER WAKTU: sebelum Block Time terisi, batang merujuk JADWAL;
+         setelah Block Time diinput, batang mengikuti timeline BLOCK TIME
+         (berlaku untuk RON, ExRON, solo, dan pairing).
+       - Pairing A↔D: label batang memakai FL.NO Arrival & Departure; batang
+         mulai tepat di waktu ARRIVAL (Jadwal; jika Block Time arrival terisi
+         → Block Time arrival) dan selesai tepat di waktu DEPARTURE (Jadwal;
+         jika Block Time departure terisi → Block Time departure). Jadwal
+         departure di tabel TIDAK diubah — hanya visualisasi. Pairing tetap
+         terjalin meski jadwal before/delay (urutan jadwal).
+       - Klasifikasi lokasi berbasis PARKING STAND dengan DRAG & DROP DUA ARAH:
+         UNLOCATED → stand, antar stand D1–D12, dan stand → UNLOCATED. Saat
+         dijatuhkan ke baris stand, kolom Parking Stand pada tabel terisi dan
+         batang langsung pindah ke timeline stand tersebut; saat dikembalikan
+         ke UNLOCATED, Parking Stand di tabel kembali default kosong/-.
+       - ALERT BENTROK: bila waktu parkir dua flight tumpang tindih di stand
+         yang sama (D1–D12), batang yang bertabrakan berkedip MERAH dan
+         banner peringatan berkedip muncul di atas diagram.
+       - KLIK BATANG: membuka POPUP isian (tabel mini) berisi baris sesuai
+         FL.NO yang diklik — batang pairing menampilkan baris Arrival dan
+         Departure sekaligus. Isian popup disinkron ke tabel penerbangan
+         (autosave, status, LF, avio tetap berjalan).
+       ========================================================================== */
+    const GANTT_MAIN_STANDS = ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'D11', 'D12'];
+    const GANTT_LANE_H = 30;      // tinggi satu lajur bar dalam satu baris stand
+    const GANTT_SOLO_MIN = 96;    // lebar minimum batang leg tunggal (px)
+    const GANTT_LABEL_W = 116;    // lebar kolom label kiri
+    const GANTT_VIEW_KEY = 'ams_sheet_view';
+    const GANTT_ZOOMS = [0.5, 0.75, 1, 1.5, 2, 3, 4]; // px per menit
+    let ganttZoomIdx = 2;
+    let ganttRange = { start: 0, end: 1440 };   // timeline TETAP 00:00 — 23:59
+    let ganttRenderTimer = null;
+    let ganttNowTimer = null;
+
+    function ganttPlaneSvg(deg) {
+        // Pesawat dimiringkan: deg>0 = hidung naik (berangkat), deg>90 = hidung turun (mendarat)
+        return '<svg class="pl-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
+               '<g transform="rotate(' + deg + ' 12 12)"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g>' +
+               '<rect x="2" y="21" width="20" height="1.6" rx=".8" opacity=".5"/></svg>';
+    }
+    const GANTT_ICON_LAND = ganttPlaneSvg(160);
+    const GANTT_ICON_TAKEOFF = ganttPlaneSvg(20);
+
+    function ganttPxPerMin() { return GANTT_ZOOMS[ganttZoomIdx] || 1; }
+    function ganttVars() {
+        const px = ganttPxPerMin();
+        const w = Math.round((ganttRange.end - ganttRange.start) * px);
+        return '--label-w:' + GANTT_LABEL_W + 'px;--track-w:' + w + 'px;--hour-w:' + Math.round(60 * px) + 'px;';
+    }
+    function ganttParseTime(v) {
+        const m = String(v == null ? '' : v).trim().match(/^(\d{1,2})[:.](\d{2})/);
+        if (!m) return null;
+        const h = parseInt(m[1], 10), mi = parseInt(m[2], 10);
+        if (h > 23 || mi > 59) return null;
+        return h * 60 + mi;
+    }
+    function ganttHM(min) {
+        const m = ((Math.round(min) % 1440) + 1440) % 1440;
+        return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+    }
+    function ganttDur(min) {
+        const h = Math.floor(Math.abs(min) / 60), m = Math.round(Math.abs(min) % 60);
+        return (h ? h + 'j ' : '') + m + 'm';
+    }
+    function ganttIsMainStand(s) { return GANTT_MAIN_STANDS.indexOf(String(s || '').trim().toUpperCase()) > -1; }
+    function ganttSheetDateStr() { return (document.getElementById('currentSelectedDate') || {}).value || ''; }
+    function ganttTodayStr() {
+        const t = new Date();
+        return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+    }
+
+    // Ambil data langsung dari tabel (sumber yang sama dengan autosave)
+    function collectGanttFlights() {
+        const out = [];
+        document.querySelectorAll('#apronTable tbody tr.flight-row').forEach((tr, idx) => {
+            if (tr.style.display === 'none') return; // sedang difilter pencarian
+            const el = sel => tr.querySelector(sel);
+            const val = sel => { const e = el(sel); return e ? String(e.value == null ? '' : e.value).trim() : ''; };
+            const legEl = el('.input-leg');
+            const bt = ganttParseTime(val('.input-blocktime'));
+            out.push({
+                idx,
+                callsign: val('.col-cs input').toUpperCase(),
+                flight_number: val('.col-no input'),
+                rute: val('.col-rute input').toUpperCase(),
+                reg: val('.input-reg').toUpperCase(),
+                tipe: val('.input-tipe').toUpperCase(),
+                leg: (legEl ? legEl.value : 'D') === 'A' ? 'A' : 'D',
+                stand: val('.input-stand').toUpperCase(),
+                jadwal: val('.col-jadwal input'),
+                block_time: val('.input-blocktime'),
+                ron: !!(el('.ron-checkbox') && el('.ron-checkbox').checked),
+                status: val('.status-val'),
+                // waktu aktual (block time) lebih didahulukan, fallback ke jadwal
+                time: bt != null ? bt : ganttParseTime(val('.col-jadwal input'))
+            });
+        });
+        return out;
+    }
+
+    // ===== PEMBENTUKAN BLOK DIAGRAM BATANG =====
+    // SUMBER WAKTU batang: BLOCK TIME bila sudah diinput → batang mengikuti
+    // timeline block time; sebelum block time terisi → merujuk JADWAL.
+    // (f.time di collectGanttFlights sudah berprioritas block time → jadwal.)
+    function ganttSchedTime(f) {
+        if (Number.isFinite(f.time)) return f.time;
+        const s = ganttParseTime(f.jadwal);
+        return s != null ? s : null;
+    }
+    function ganttSoloBlock(f) {
+        return { kind: 'solo', leg: f.leg, start: Number.isFinite(f.time) ? f.time : null, end: null,
+                 stand: f.stand, reg: f.reg, ron: !!f.ron, crossDay: false, rows: [f] };
+    }
+    // EXRON (leg D + checkbox RON): batang dari 00:00 → waktu departure
+    // RON   (leg A + checkbox RON): batang dari waktu arrival → akhir timeline (23:59/nextday)
+    // Waktu mengikuti Block Time bila sudah diinput, sebelumnya merujuk Jadwal.
+    function ganttSpanBlock(f) {
+        const sched = ganttSchedTime(f);
+        if (!Number.isFinite(sched)) return ganttSoloBlock(f); // jadwal & block time kosong
+        if (f.leg === 'D') {
+            const end = Math.max(1, Math.min(sched, 1440));
+            return { kind: 'solo', span: 'exron', leg: 'D', start: 0, end: end,
+                     stand: f.stand, reg: f.reg, ron: true, crossDay: false, rows: [f] };
+        }
+        const start = Math.max(0, Math.min(sched, 1439));
+        return { kind: 'solo', span: 'ron', leg: 'A', start: start, end: 1440,
+                 stand: f.stand, reg: f.reg, ron: true, crossDay: false, rows: [f] };
+    }
+    // Batang PAIR: mulai tepat di waktu ARRIVAL, selesai tepat di waktu DEPARTURE.
+    //   start = Jadwal Arrival; jika Block Time arrival terisi → Block Time arrival
+    //   end   = Jadwal Departure; jika Block Time departure terisi → Block Time departure
+    // Berlaku untuk kondisi before/delay: pairing tetap terjalin (urutan
+    // jadwal), hanya geometri batang yang menyesuaikan waktu.
+    function ganttPairBlock(a, d) {
+        const start = Math.max(0, Math.min(Number.isFinite(a.time) ? a.time : (ganttSchedTime(a) || 0), 1439)); // arrival (BT jika terisi → jadwal)
+        const depT = Number.isFinite(d.time) ? d.time : (ganttSchedTime(d) || start);
+        const end = Math.min(1440, Math.max(start, depT));            // departure (BT jika terisi → jadwal)
+        return { kind: 'pair', leg: 'AD', start: start, end: end, stand: a.stand, reg: a.reg || d.reg,
+                 ron: !!(a.ron || d.ron) || (end - start) >= 360, crossDay: false, rows: [a, d] };
+    }
+    function buildGanttBlocks(flights) {
+        const blocks = [], timed = [];
+        flights.forEach(f => {
+            if (!Number.isFinite(f.time)) { blocks.push(ganttSoloBlock(f)); return; }
+            // RON / ExRON diwakili span khusus (00:00 / 24:00) dan TIDAK ikut pairing,
+            // agar departure pagi (ExRON) tidak salah memasangkan arrival malam
+            // yang datang dari penerbangan hari sebelumnya.
+            if (f.ron) { blocks.push(ganttSpanBlock(f)); return; }
+            timed.push(f);
+        });
+
+        const byKey = new Map();
+        timed.forEach(f => {
+            const key = f.reg ? ('R:' + f.reg) : ('X:' + (f.callsign + f.flight_number).toUpperCase());
+            if (!byKey.has(key)) byKey.set(key, []);
+            byKey.get(key).push(f);
+        });
+
+        byKey.forEach(list => {
+            list.sort((a, b) => a.time - b.time);
+            const usedD = new Set();
+            // pass: Arrival ↔ Departure (registrasi & stand sama) = PAIRING.
+            // Pemilihan pasangan memakai urutan JADWAL (bukan waktu aktual),
+            // sehingga departure TETAP terpairing ke arrival meski jadwal
+            // before/delay. Bila urutan jadwal berkebalikan sekalipun, tetap
+            // dipasangkan (fallback kandidat pertama) — geometri batang yang
+            // menyesuaikan, bukan data di tabel.
+            list.forEach(d => {
+                if (d.leg !== 'D') return;
+                const cands = list.filter(x => x.leg === 'A' && !x._used && x.stand === d.stand);
+                if (!cands.length) return;
+                const dj = ganttParseTime(d.jadwal);
+                let a = null;
+                if (Number.isFinite(dj)) {
+                    a = cands.find(x => { const xj = ganttParseTime(x.jadwal); return Number.isFinite(xj) && xj <= dj; });
+                }
+                if (!a) a = cands[0]; // before/delay: pairing tetap terjalin
+                a._used = true; usedD.add(d); blocks.push(ganttPairBlock(a, d));
+            });
+            // Pass pairing cross-midnight dihapus: perjalanan semalam diwakili oleh
+            // RON (arrival → akhir timeline) & ExRON (awal hari → departure).
+            list.forEach(a => { if (a.leg === 'A' && !a._used) blocks.push(ganttSoloBlock(a)); });
+            list.forEach(d => { if (d.leg === 'D' && !usedD.has(d)) blocks.push(ganttSoloBlock(d)); });
+        });
+        return blocks;
+    }
+
+    // ===== DETEKSI BENTROK (overlap) DI PARKING STAND =====
+    // Dua flight dianggap BENTROK bila rentang waktunya tumpang tindih pada
+    // stand yang sama (D1–D12). Blok tanpa `end` (leg tunggal) dianggap
+    // menempati 45 menit — sama dengan lebar default batang di timeline.
+    // Blok yang bertabrakan diberi flag `conflict` → dirender BERKEDIP MERAH.
+    function ganttDetectConflicts(blocks) {
+        const conflicts = [];
+        blocks.forEach(b => { b.conflict = false; b.conflictWith = null; });
+        const flno = r => r.flight_number || r.callsign || '-';
+        GANTT_MAIN_STANDS.forEach(st => {
+            const list = blocks
+                .filter(b => b.stand === st && Number.isFinite(b.start))
+                .map(b => ({ b: b, s: b.start, e: Math.max(Number.isFinite(b.end) ? b.end : b.start + 45, b.start + 1) }))
+                .sort((x, y) => x.s - y.s);
+            for (let i = 0; i < list.length; i++) {
+                // sorted by start → begitu list[j].s >= list[i].e, tidak mungkin
+                // ada overlap lebih lanjut untuk i ini
+                for (let j = i + 1; j < list.length && list[j].s < list[i].e; j++) {
+                    const A = list[i].b, B = list[j].b;
+                    const la = flno(A.rows[0]), lb = flno(B.rows[0]);
+                    A.conflict = B.conflict = true;
+                    A.conflictWith = A.conflictWith || [];
+                    B.conflictWith = B.conflictWith || [];
+                    if (A.conflictWith.indexOf(lb) < 0) A.conflictWith.push(lb);
+                    if (B.conflictWith.indexOf(la) < 0) B.conflictWith.push(la);
+                    conflicts.push({ stand: st, a: la, b: lb });
+                }
+            }
+        });
+        return conflicts;
+    }
+    function ganttUpdateConflictAlert(conflicts) {
+        const box = document.getElementById('ganttConflictAlert');
+        const txt = document.getElementById('ganttConflictText');
+        if (!box || !txt) return;
+        if (!conflicts || !conflicts.length) {
+            box.classList.remove('show');
+            txt.textContent = '';
+            return;
+        }
+        const byStand = {};
+        conflicts.forEach(c => {
+            if (!byStand[c.stand]) byStand[c.stand] = [];
+            byStand[c.stand].push(c.a + ' \u2194 ' + c.b);
+        });
+        const parts = Object.keys(byStand).map(st => st + ': ' + byStand[st].join(', '));
+        txt.textContent = conflicts.length + ' bentrok parkir \u2014 ' + parts.join(' | ');
+        box.classList.add('show');
+    }
+
+    // ===== RENDER GANTT =====
+    function ganttBlockWidth(b, px) {
+        if (!Number.isFinite(b.start)) return 124;                 // waktu belum diisi
+        if (!Number.isFinite(b.end)) return Math.max(GANTT_SOLO_MIN, 45 * px); // leg tunggal
+        return Math.max(26, (b.end - b.start) * px);               // pasangan tersambung
+    }
+    function ganttRowHtml(standLabel, metaText, blocks, unlocated) {
+        const px = ganttPxPerMin();
+        const sorted = blocks.slice().sort((a, b) => (a.start == null ? -1 : b.start == null ? 1 : a.start - b.start));
+        const lanes = [];
+        sorted.forEach(b => {
+            const w = ganttBlockWidth(b, px);
+            const left = Number.isFinite(b.start) ? (b.start - ganttRange.start) * px : 4;
+            let lane = -1;
+            for (let i = 0; i < lanes.length; i++) { if (left + 2 >= lanes[i]) { lane = i; break; } }
+            if (lane < 0) { lanes.push(0); lane = lanes.length - 1; }
+            lanes[lane] = left + w + 6;
+            b._lane = lane;
+        });
+        let bars = '';
+        blocks.forEach(b => { bars += ganttBarHtml(b, unlocated); });
+        const cls = 'g-row' + (unlocated ? ' g-row-unlocated' : '') + (blocks.length ? '' : ' g-row-empty');
+        const h = Math.max(1, lanes.length) * GANTT_LANE_H + 6;
+        // Target drop DUA ARAH: baris stand D1–D12 (stand) dan baris UNLOCATED
+        // (data-stand="" → mengembalikan Parking Stand ke default kosong/-)
+        const standAttr = unlocated ? ' data-stand=""'
+            : (ganttIsMainStand(standLabel) ? ' data-stand="' + escapeHtml(standLabel) + '"' : '');
+        return '<div class="' + cls + '" style="' + ganttVars() + '">' +
+               '<div class="g-label"><span class="g-stand">' + escapeHtml(standLabel) + '</span>' +
+               '<span class="g-meta">' + escapeHtml(metaText) + '</span></div>' +
+               '<div class="g-track"' + standAttr + ' style="height:' + h + 'px">' + bars + '</div></div>';
+    }
+    function renderGanttChart() {
+        const host = document.getElementById('ganttScroll');
+        if (!host) return;
+        const flights = collectGanttFlights();
+        if (!flights.length) {
+            host.innerHTML = '<div class="gantt-empty"><i class="bi bi-inbox"></i>Belum ada data penerbangan pada tanggal ini. Pilih DOS atau tambahkan data manual.</div>';
+            const rl = document.getElementById('ganttRangeLabel');
+            if (rl) rl.textContent = '-';
+            ganttUpdateConflictAlert([]);   // tidak ada data → tidak ada peringatan
+            return;
+        }
+        const blocks = buildGanttBlocks(flights);
+        // Tandai batang yang rentang parkirnya tumpang tindih di stand yang sama
+        const conflicts = ganttDetectConflicts(blocks);
+        ganttUpdateConflictAlert(conflicts);
+
+        // Timeline SELALU 00:00 — 23:59 (1440 menit), tidak bergantung pada data
+        const min = 0, max = 1440;
+        ganttRange = { start: min, end: max };
+
+        const px = ganttPxPerMin();
+        let html = '<div class="gantt-canvas" style="' + ganttVars() + '">';
+        html += '<div class="g-row g-ruler" style="' + ganttVars() + '"><div class="g-label"><span class="g-stand">STAND</span><span class="g-meta">TIMELINE</span></div><div class="g-track">';
+        for (let t = min; t < max; t += 60) {
+            const h = t / 60;
+            if (px * 60 < 34 && h % 2 !== 0) continue; // zoom terkecil: label tiap 2 jam saja
+            html += '<div class="g-hour' + ((h >= 19 || h < 6) ? ' night' : '') + '" style="left:' + Math.round((t - min) * px) + 'px;width:' + Math.round(60 * px) + 'px">' + ganttHM(t) + '</div>';
+        }
+        html += '</div></div>';
+
+        // Klasifikasi berdasar PARKING STAND saja (registrasi tidak lagi syarat):
+        // setelah drag & drop dari UNLOCATED, batang langsung pindah/menyesuaikan
+        // ke baris timeline stand yang dituju meski kolom Registrasi masih kosong.
+        const unloc = blocks.filter(b => !ganttIsMainStand(b.stand));
+        html += ganttRowHtml('UNLOCATED', unloc.length ? (unloc.length + ' blok tanpa stand — seret ke D1–D12') : 'semua sudah punya stand', unloc, true);
+        html += '<div class="g-row g-row-label" style="' + ganttVars() + '"><div class="g-label"><span class="g-stand">PARKING STAND</span><span class="g-meta">D1 — D12</span></div><div class="g-track"></div></div>';
+        GANTT_MAIN_STANDS.forEach(st => {
+            const list = blocks.filter(b => b.stand === st);
+            html += ganttRowHtml(st, list.length ? (list.length + ' blok parkir') : 'kosong', list, false);
+        });
+        html += '</div>';
+        host.innerHTML = html;
+
+        const rl = document.getElementById('ganttRangeLabel');
+        if (rl) rl.textContent = '00:00 — 23:59';
+        ganttUpdateNowLine();
+    }
+
+    function ganttBarHtml(b, unlocated) {
+        const px = ganttPxPerMin();
+        const trackW = (ganttRange.end - ganttRange.start) * px;
+        let w = ganttBlockWidth(b, px);
+        let left = Number.isFinite(b.start) ? (b.start - ganttRange.start) * px : 4;
+        if (Number.isFinite(b.start)) { // jangan keluar dari timeline 00:00 — 23:59
+            left = Math.max(0, Math.min(left, trackW));
+            w = Math.max(26, Math.min(w, trackW - left));
+        }
+        const top = 3 + (b._lane || 0) * GANTT_LANE_H;
+        const f0 = b.rows[0], f1 = b.rows[b.rows.length - 1];
+        // Label batang memakai FL.NO Arrival & Departure (fallback: callsign)
+        const flno = r => r.flight_number || r.callsign || '-';
+        const standTxt = ganttIsMainStand(b.stand) ? b.stand : (b.stand || 'BELUM ADA');
+        const tips = [];
+        if (b.kind === 'pair') {
+            tips.push('PAIRING FL.NO  ' + flno(f0) + ' → ' + flno(f1));
+            tips.push('Registrasi: ' + (b.reg || '-'));
+            tips.push('Parking Stand: ' + standTxt);
+            tips.push('Arrival  ' + (f0.block_time ? 'Block On ' : 'Jadwal ') + ganttHM(f0.time));
+            tips.push('Batang mulai ' + ganttHM(b.start) + ' (' + (f0.block_time ? 'Block Time' : 'Jadwal') + ' arrival)');
+            tips.push('Departure ' + (f1.block_time ? 'Block Off ' : 'Jadwal ') + ganttHM(Number.isFinite(f1.time) ? f1.time : b.end));
+            tips.push('Batang selesai ' + ganttHM(b.end) + ' (' + (f1.block_time ? 'Block Time' : 'Jadwal') + ' departure)');
+            tips.push('Jadwal Departure di tabel tetap ' + (f1.jadwal || '-') + ' — tidak berubah');
+            tips.push('Lama parkir: ' + ganttDur(b.end - b.start));
+        } else if (b.span === 'ron') {
+            tips.push('RON (overnight)  FL.NO ' + flno(f0));
+            tips.push('Registrasi: ' + (b.reg || 'BELUM ADA'));
+            tips.push('Parking Stand: ' + standTxt);
+            tips.push((f0.block_time ? 'Block Time Arrival ' : 'Schedule Arrival ') + ganttHM(b.start) + ' → akhir timeline 23:59 (nextday)');
+            tips.push('Lama parkir: ' + ganttDur(b.end - b.start));
+        } else if (b.span === 'exron') {
+            tips.push('EXRON (Ex-Overnight)  FL.NO ' + flno(f0));
+            tips.push('Registrasi: ' + (b.reg || 'BELUM ADA'));
+            tips.push('Parking Stand: ' + standTxt);
+            tips.push('00:00 → ' + (f0.block_time ? 'Block Time Departure ' : 'Schedule Departure ') + ganttHM(b.end));
+            tips.push('Lama parkir: ' + ganttDur(b.end - b.start));
+        } else {
+            tips.push((b.leg === 'A' ? 'ARRIVAL (A)' : 'DEPARTURE (D)') + '  FL.NO ' + flno(f0));
+            tips.push('Registrasi: ' + (b.reg || 'BELUM ADA'));
+            tips.push('Parking Stand: ' + standTxt);
+            tips.push((f0.block_time ? 'Block Time ' : 'Jadwal ') + ganttHM(Number.isFinite(f0.time) ? f0.time : 0));
+        }
+        if (!Number.isFinite(b.start)) tips.push('Waktu belum diisi');
+        if (b.crossDay && !b.span) tips.push('Menyambung lewat tengah malam');
+        if (b.conflict && b.conflictWith && b.conflictWith.length) tips.push('BENTROK dengan FL.NO ' + b.conflictWith.join(', '));
+        tips.push('Status: ' + (f0.status || 'NO OPS'));
+        if (!isRestrictedUser) tips.push('Seret (drag) dua arah: UNLOCATED ↔ Stand D1–D12 ↔ stand lain (Parking Stand di tabel ikut menyesuaikan; ke UNLOCATED → kembali kosong/-)');
+
+        const cls = ['g-bar',
+            b.kind === 'pair' ? 'paired' : (!Number.isFinite(b.start) ? 'no-time' : (b.leg === 'A' ? 'solo-a' : 'solo-d')),
+            unlocated ? 'unlocated-bar' : '',
+            b.conflict ? 'g-conflict' : '',
+            b.ron ? 'overnight' : ''].filter(Boolean).join(' ');
+
+        let inner = '';
+        if (b.kind === 'pair') {
+            inner = '<span class="g-seg g-seg-a" style="width:18px"></span>' +
+                    '<span class="g-mid">' + escapeHtml(flno(f0) + ' → ' + flno(f1)) + '</span>' +
+                    '<span class="g-seg g-seg-d" style="width:18px"></span>' +
+                    '<span class="g-ico landing">' + GANTT_ICON_LAND + '</span>' +
+                    '<span class="g-ico takeoff">' + GANTT_ICON_TAKEOFF + '</span>';
+        } else if (!Number.isFinite(b.start)) {
+            inner = '<span class="g-tag">' + escapeHtml(flno(f0) + ' · waktu kosong') + '</span>';
+        } else if (b.kind === 'solo') {
+            const suffix = b.span === 'ron' ? ' · RON' : (b.span === 'exron' ? ' · EXRON' : (b.ron ? ' · RON' : ''));
+            const tag = '<span class="g-tag' + (b.leg === 'D' ? ' tag-end' : '') + '">' + escapeHtml(flno(f0) + suffix) + '</span>';
+            const ico = '<span class="g-ico ' + (b.leg === 'A' ? 'landing' : 'takeoff') + '">' + (b.leg === 'A' ? GANTT_ICON_LAND : GANTT_ICON_TAKEOFF) + '</span>';
+            inner = b.leg === 'A' ? (tag + ico) : (ico + tag);
+        }
+        // SEMUA batang bisa diseret dua arah: UNLOCATED ↔ stand D1–D12 ↔ stand lain
+        const dragAttr = isRestrictedUser ? '' : ' draggable="true"';
+        return '<div class="' + cls + '" data-rows="' + b.rows.map(r => r.idx).join(',') + '"' + dragAttr + ' title="' + escapeHtml(tips.join('\n')) + '" ' +
+               'style="left:' + Math.round(left) + 'px;width:' + Math.round(w) + 'px;top:' + top + 'px">' + inner + '</div>';
+    }
+
+    // ===== DROP DUA ARAH: UNLOCATED ↔ stand D1–D12 ↔ stand lain =====
+    // stand = '' (target track UNLOCATED) → Parking Stand baris di tabel
+    // dikembalikan ke default kosong/- (hanya bila sebelumnya stand utama).
+    function ganttDropAssignStand(rowIdxs, stand) {
+        if (isRestrictedUser) return;
+        stand = String(stand == null ? '' : stand).trim().toUpperCase();
+        if (stand !== '' && !GANTT_MAIN_STANDS.includes(stand)) return;
+        const rows = document.querySelectorAll('#apronTable tbody tr.flight-row');
+        let changed = false;
+        rowIdxs.forEach(i => {
+            const tr = rows[i];
+            if (!tr) return;
+            const sel = tr.querySelector('.input-stand');
+            if (!sel) return;
+            if (stand === '') {
+                // Kembali ke UNLOCATED: hanya reset bila sebelumnya stand utama
+                // D1–D12 (NA/SA/dll yang sudah di baris UNLOCATED tidak disentuh)
+                if (!GANTT_MAIN_STANDS.includes(String(sel.value || '').trim().toUpperCase())) return;
+            } else if (sel.value === stand) return;
+            sel.value = stand;             // isi / reset kolom Parking Stand di tabel
+            checkParkingStand(sel);        // avio otomatis (stand D5–D8 → aktif, selain itu → off)
+            checkRowStatus(sel);           // perbarui badge status
+            changed = true;
+        });
+        if (changed) markAsIncomplete();   // autosave → tabel penerbangan (Supabase)
+        // Render ulang SEKETIKA agar diagram batang langsung menyesuaikan ke
+        // baris timeline yang dituju (kolom jadwal pada tabel tidak disentuh).
+        if (getSheetViewMode() === 'gantt') renderGanttChart();
+        scheduleGanttRender(350);          // render ulang lagi sebagai jaring pengaman
+    }
+    function ganttDropRowIdxs(raw) {
+        return String(raw == null ? '' : raw).split(',')
+               .map(s => parseInt(s, 10))
+               .filter(n => Number.isFinite(n) && n >= 0);
+    }
+
+    // ===== POPUP GANTT: TABEL ISIAN BARIS FL.NO YANG DIKLIK =====
+    // Klik batang → modal berisi clone baris tabel sesuai FL.NO pada batang.
+    // Batang pairing (A↔D) menampilkan dua baris: Arrival + Departure.
+    // Struktur clone identik, SEMUA handler inline dibuang (cegah aksi ganda);
+    // perubahan di popup diteruskan ke baris ASLI lalu event di-dispatch ke
+    // handler inline baris asli (autosave Supabase, status, LF, avio, RON)
+    // dan nilai turunan disalin balik ke popup.
+    function ganttPopupFindSrc(popRow) {
+        if (!popRow) return null;
+        const rid = popRow.getAttribute('data-row-id');
+        if (rid) {
+            const byId = document.querySelector('#apronTable tbody tr.flight-row[data-row-id="' + rid + '"]');
+            if (byId) return byId;
+        }
+        const idx = parseInt(popRow.getAttribute('data-popup-src'), 10);
+        if (!Number.isFinite(idx)) return null;
+        return document.querySelectorAll('#apronTable tbody tr.flight-row')[idx] || null;
+    }
+    function ganttPopupCopySrcToPopup(popRow, srcRow) {
+        if (!popRow || !srcRow) return;
+        const sEls = srcRow.querySelectorAll('input, select, textarea');
+        const pEls = popRow.querySelectorAll('input, select, textarea');
+        sEls.forEach((s, i) => {
+            const p = pEls[i];
+            if (!p) return;
+            if (p === document.activeElement) return;   // jangan reset caret saat mengetik
+            if (s.type === 'checkbox' || s.type === 'radio') p.checked = s.checked;
+            else p.value = s.value;
+        });
+        // nilai turunan: badge status, hidden status, suffix RON, warna leg, padding reg
+        const sbS = srcRow.querySelector('.status-badge'), sbP = popRow.querySelector('.status-badge');
+        if (sbS && sbP) { sbP.className = sbS.className; sbP.textContent = sbS.textContent; }
+        const vS = srcRow.querySelector('.status-val'), vP = popRow.querySelector('.status-val');
+        if (vS && vP) vP.value = vS.value;
+        const sfxS = srcRow.querySelector('.suffix-reg'), sfxP = popRow.querySelector('.suffix-reg');
+        if (sfxS && sfxP) { sfxP.className = sfxS.className; sfxP.textContent = sfxS.textContent; }
+        const legS = srcRow.querySelector('.input-leg'), legP = popRow.querySelector('.input-leg');
+        if (legS && legP) legP.className = legS.className;
+        const regS = srcRow.querySelector('.input-reg'), regP = popRow.querySelector('.input-reg');
+        if (regS && regP) regP.style.paddingRight = regS.style.paddingRight;
+    }
+    function ganttPopupSyncToSrc(popRow, el, evtType) {
+        if (!popRow || !el || isRestrictedUser) return;
+        const srcRow = ganttPopupFindSrc(popRow);
+        if (!srcRow) return;
+        // pasangan elemen sumber → urutan dokumen sama persis (strukturnya clone)
+        const pEls = popRow.querySelectorAll('input, select, textarea');
+        const sEls = srcRow.querySelectorAll('input, select, textarea');
+        let idx = -1;
+        pEls.forEach((p, i) => { if (p === el) idx = i; });
+        const srcEl = idx >= 0 ? sEls[idx] : null;
+        if (!srcEl) return;
+        if (srcEl.type === 'checkbox' || srcEl.type === 'radio' || el.type === 'checkbox') srcEl.checked = el.checked;
+        else srcEl.value = el.value;
+        // dispatch → handler inline baris ASLI jalan (autosave, status, LF, avio)
+        // + listener tbody → render ulang Gantt otomatis
+        try { srcEl.dispatchEvent(new Event(evtType, { bubbles: true })); } catch (_) {}
+        // tarik nilai turunan (badge, LF, seat, suffix) balik ke popup
+        ganttPopupCopySrcToPopup(popRow, srcRow);
+    }
+    function openGanttBarPopup(rowIdxs) {
+        const popBody = document.getElementById('ganttPopupBody');
+        const modalEl = document.getElementById('modalGanttRow');
+        if (!popBody || !modalEl || !window.bootstrap) return;
+        const rows = document.querySelectorAll('#apronTable tbody tr.flight-row');
+        popBody.innerHTML = '';
+        const labels = [];
+        rowIdxs.forEach(idx => {
+            const src = rows[idx];
+            if (!src) return;
+            const clone = src.cloneNode(true);
+            // buang SEMUA handler inline clone → aksi diarahkan lewat listener popup
+            Array.prototype.forEach.call(clone.querySelectorAll('*'), el => {
+                ['onclick', 'oninput', 'onchange', 'onsubmit', 'onmousedown'].forEach(h => el.removeAttribute(h));
+            });
+            ['onclick', 'oninput', 'onchange'].forEach(h => clone.removeAttribute(h));
+            clone.setAttribute('data-popup-src', String(idx));
+            // judul: FL.NO + leg (Arrival / Departure)
+            const flEl = clone.querySelector('.col-no input');
+            const legEl = clone.querySelector('.input-leg');
+            const leg = legEl ? legEl.value : '';
+            labels.push((flEl && flEl.value ? flEl.value : '-') + (leg === 'A' ? ' (Arrival)' : leg === 'D' ? ' (Departure)' : ''));
+            clone.classList.add(leg === 'A' ? 'popup-a' : 'popup-d');
+            popBody.appendChild(clone);
+            // salin nilai LIVE dari baris asli (cloneNode hanya bawa atribut awal)
+            ganttPopupCopySrcToPopup(clone, src);
+            if (isRestrictedUser) {
+                Array.prototype.forEach.call(clone.querySelectorAll('input, select, textarea, button'), el => { el.setAttribute('disabled', 'disabled'); });
+            }
+        });
+        if (!popBody.children.length) return;
+        const titleEl = document.getElementById('ganttPopupTitle');
+        if (titleEl) titleEl.textContent = labels.length > 1 ? 'Pairing: FL.NO ' + labels.join(' + ') : 'FL.NO ' + labels[0];
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+    function changeGanttZoom(dir) {
+        const next = Math.min(GANTT_ZOOMS.length - 1, Math.max(0, ganttZoomIdx + dir));
+        if (next === ganttZoomIdx) return;
+        ganttZoomIdx = next;
+        renderGanttChart();
+    }
+    function ganttUpdateNowLine() {
+        const host = document.getElementById('ganttScroll');
+        if (!host) return;
+        const canvas = host.querySelector('.gantt-canvas');
+        if (!canvas) return;
+        let line = canvas.querySelector('.g-nowline');
+        const now = new Date();
+        const nowMin = now.getHours() * 60 + now.getMinutes();
+        const show = ganttSheetDateStr() === ganttTodayStr() && nowMin >= ganttRange.start && nowMin <= Math.min(ganttRange.end, 1440);
+        if (!show) { if (line) line.remove(); return; }
+        const left = GANTT_LABEL_W + (nowMin - ganttRange.start) * ganttPxPerMin();
+        if (!line) { line = document.createElement('div'); line.className = 'g-nowline'; canvas.appendChild(line); }
+        line.style.left = Math.round(left) + 'px';
+    }
+
+    // ===== TUKAR VIEW TABEL <-> GANTT CHART =====
+    function getSheetViewMode() {
+        const g = document.getElementById('ganttChartView');
+        return g && !g.classList.contains('d-none') ? 'gantt' : 'table';
+    }
+    function setSheetView(mode) {
+        const wantGantt = mode === 'gantt';
+        const tableView = document.getElementById('apronTableView');
+        const ganttView = document.getElementById('ganttChartView');
+        const btnT = document.getElementById('btnViewTable');
+        const btnG = document.getElementById('btnViewGantt');
+        if (!tableView || !ganttView) return;
+        tableView.classList.toggle('d-none', wantGantt);
+        ganttView.classList.toggle('d-none', !wantGantt);
+        if (btnT) btnT.classList.toggle('active', !wantGantt);
+        if (btnG) btnG.classList.toggle('active', wantGantt);
+        try { localStorage.setItem(GANTT_VIEW_KEY, wantGantt ? 'gantt' : 'table'); } catch (_) {}
+        if (wantGantt) renderGanttChart();
+    }
+    function scheduleGanttRender(delay) {
+        clearTimeout(ganttRenderTimer);
+        ganttRenderTimer = setTimeout(() => {
+            ganttRenderTimer = null;
+            if (getSheetViewMode() === 'gantt') renderGanttChart();
+        }, delay || 500);
+    }
+
+    (function initGanttChart() {
+        const legendA = document.getElementById('ganttLegendLand');
+        const legendD = document.getElementById('ganttLegendTakeoff');
+        if (legendA) legendA.innerHTML = GANTT_ICON_LAND + ' mendarat (leg A)';
+        if (legendD) legendD.innerHTML = GANTT_ICON_TAKEOFF + ' berangkat (leg D)';
+
+        const scroll = document.getElementById('ganttScroll');
+        if (scroll) {
+            // Klik batang → POPUP isian baris FL.NO yang diklik.
+            // Batang pairing membuka baris Arrival & Departure sekaligus.
+            let ganttBarClickSuppressUntil = 0;
+            scroll.addEventListener('click', (e) => {
+                if (Date.now() < ganttBarClickSuppressUntil) return; // sisa gestur drag & drop
+                const bar = e.target && e.target.closest ? e.target.closest('.g-bar') : null;
+                if (!bar) return;
+                const idxs = ganttDropRowIdxs(bar.getAttribute('data-rows'));
+                if (!idxs.length) return;
+                openGanttBarPopup(idxs);
+            });
+
+            /* ===== DRAG & DROP DUA ARAH: UNLOCATED ↔ stand D1–D12 ↔ stand lain =====
+               Batang dijatuhkan ke baris stand → kolom Parking Stand tabel
+               terisi; dijatuhkan ke baris UNLOCATED → Parking Stand kembali
+               default kosong/- (lalu autosave & render ulang). */
+            const ganttClearTargets = () => scroll.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+
+            scroll.addEventListener('dragstart', (e) => {
+                if (isRestrictedUser) { e.preventDefault(); return; }
+                const bar = e.target && e.target.closest ? e.target.closest('.g-bar[draggable="true"]') : null;
+                if (!bar || !e.dataTransfer) return;
+                e.dataTransfer.setData('text/plain', bar.getAttribute('data-rows') || '');
+                e.dataTransfer.effectAllowed = 'move';
+                bar.classList.add('dragging');
+            });
+            scroll.addEventListener('dragend', (e) => {
+                const bar = e.target && e.target.closest ? e.target.closest('.g-bar') : null;
+                if (bar) bar.classList.remove('dragging');
+                ganttClearTargets();
+                ganttBarClickSuppressUntil = Date.now() + 400; // cegah popup terbuka oleh sisa drag
+            });
+            scroll.addEventListener('dragover', (e) => {
+                const track = e.target && e.target.closest ? e.target.closest('.g-track[data-stand]') : null;
+                if (!track) return;
+                e.preventDefault();
+                if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+                scroll.querySelectorAll('.drop-target').forEach(el => { if (el !== track) el.classList.remove('drop-target'); });
+                track.classList.add('drop-target');
+            });
+            scroll.addEventListener('dragleave', (e) => {
+                const track = e.target && e.target.closest ? e.target.closest('.g-track[data-stand]') : null;
+                if (track && (!e.relatedTarget || !track.contains(e.relatedTarget))) track.classList.remove('drop-target');
+            });
+            scroll.addEventListener('drop', (e) => {
+                const track = e.target && e.target.closest ? e.target.closest('.g-track[data-stand]') : null;
+                if (!track) return;
+                e.preventDefault();
+                ganttClearTargets();
+                if (isRestrictedUser || !e.dataTransfer) return;
+                const idxs = ganttDropRowIdxs(e.dataTransfer.getData('text/plain'));
+                if (!idxs.length) return;
+                ganttBarClickSuppressUntil = Date.now() + 400; // cegah popup terbuka oleh sisa drag
+                ganttDropAssignStand(idxs, (track.getAttribute('data-stand') || '').toUpperCase());
+            });
+
+            // Fallback sentuh (mobile): seret memakai jari karena HTML5 DnD tidak jalan di layar sentuh
+            let ganttTouch = null;
+            scroll.addEventListener('touchstart', (e) => {
+                if (isRestrictedUser) return;
+                const bar = e.target && e.target.closest ? e.target.closest('.g-bar[draggable="true"]') : null;
+                if (!bar) return;
+                const t = e.touches[0];
+                ganttTouch = { rows: bar.getAttribute('data-rows') || '', barEl: bar,
+                               startX: t.clientX, startY: t.clientY, moved: false };
+            }, { passive: true });
+            scroll.addEventListener('touchmove', (e) => {
+                if (!ganttTouch) return;
+                const t = e.touches[0];
+                if (!ganttTouch.moved) {
+                    const dx = Math.abs(t.clientX - ganttTouch.startX);
+                    const dy = Math.abs(t.clientY - ganttTouch.startY);
+                    if (dx < 8 && dy < 8) return;        // masih dianggap ketukan
+                    ganttTouch.moved = true;
+                    ganttTouch.barEl.classList.add('dragging');
+                }
+                e.preventDefault();                       // kunci scroll saat menyeret
+                const el = document.elementFromPoint(t.clientX, t.clientY);
+                const track = el && el.closest ? el.closest('.g-track[data-stand]') : null;
+                scroll.querySelectorAll('.drop-target').forEach(x => { if (x !== track) x.classList.remove('drop-target'); });
+                if (track) track.classList.add('drop-target');
+            }, { passive: false });
+            scroll.addEventListener('touchend', (e) => {
+                if (!ganttTouch) return;
+                const info = ganttTouch; ganttTouch = null;
+                ganttClearTargets();
+                info.barEl.classList.remove('dragging');
+                if (!info.moved || isRestrictedUser) return;   // ketukan biasa → serahkan ke click
+                ganttBarClickSuppressUntil = Date.now() + 400; // cegah popup terbuka oleh sisa drag
+                const t = e.changedTouches[0];
+                const el = document.elementFromPoint(t.clientX, t.clientY);
+                const track = el && el.closest ? el.closest('.g-track[data-stand]') : null;
+                if (!track) return;
+                const idxs = ganttDropRowIdxs(info.rows);
+                if (!idxs.length) return;
+                e.preventDefault();
+                ganttDropAssignStand(idxs, (track.getAttribute('data-stand') || '').toUpperCase());
+            });
+            scroll.addEventListener('touchcancel', () => {
+                if (ganttTouch) {
+                    ganttTouch.barEl.classList.remove('dragging');
+                    if (ganttTouch.moved) ganttBarClickSuppressUntil = Date.now() + 400;
+                    ganttTouch = null;
+                }
+                ganttClearTargets();
+            });
+        }
+
+        // ===== POPUP GANTT: koneksi isian popup ↔ tabel penerbangan =====
+        const ganttPopBody = document.getElementById('ganttPopupBody');
+        if (ganttPopBody) {
+            ganttPopBody.addEventListener('input', (e) => {
+                const popRow = e.target.closest ? e.target.closest('tr') : null;
+                ganttPopupSyncToSrc(popRow, e.target, 'input');
+            });
+            ganttPopBody.addEventListener('change', (e) => {
+                const popRow = e.target.closest ? e.target.closest('tr') : null;
+                ganttPopupSyncToSrc(popRow, e.target, 'change');
+            });
+            ganttPopBody.addEventListener('click', (e) => {
+                const btn = e.target.closest ? e.target.closest('button') : null;
+                if (!btn) return;
+                const popRow = btn.closest('tr');
+                if (!popRow) return;
+                const srcRow = ganttPopupFindSrc(popRow);
+                if (!srcRow) return;
+                e.preventDefault(); e.stopPropagation();
+                if (btn.classList.contains('btn-delete-row')) {
+                    // Arahkan ke baris ASLI di tabel penerbangan (bukan clone popup)
+                    const delIdx = parseInt(popRow.getAttribute('data-popup-src'), 10);
+                    const delBtn = srcRow.querySelector('td.col-aksi button.btn-delete-row');
+                    if (delBtn) hapusBaris(delBtn);
+                    if (!document.body.contains(srcRow)) {     // benar-benar terhapus
+                        popRow.remove();
+                        // baris setelah indeks terhapus bergeser satu slot
+                        Array.prototype.forEach.call(ganttPopBody.querySelectorAll('tr'), r => {
+                            const i = parseInt(r.getAttribute('data-popup-src'), 10);
+                            if (Number.isFinite(i) && i > delIdx) r.setAttribute('data-popup-src', String(i - 1));
+                        });
+                        if (!ganttPopBody.children.length && window.bootstrap) {
+                            const m = bootstrap.Modal.getInstance(document.getElementById('modalGanttRow'));
+                            if (m) m.hide();
+                        }
+                    }
+                    return;
+                }
+                // Tombol Save → jalankan pada baris ASLI, lalu tarik badge kembali
+                const saveBtn = srcRow.querySelector('td.col-aksi button[onclick^="simpanBaris"]');
+                if (saveBtn) { simpanBaris(saveBtn); ganttPopupCopySrcToPopup(popRow, srcRow); }
+            });
+        }
+        const ganttPopOpenTable = document.getElementById('ganttPopupOpenTable');
+        if (ganttPopOpenTable) {
+            ganttPopOpenTable.addEventListener('click', () => {
+                const popBody = document.getElementById('ganttPopupBody');
+                const modalEl = document.getElementById('modalGanttRow');
+                const first = popBody ? popBody.querySelector('tr') : null;
+                if (modalEl && window.bootstrap) {
+                    const m = bootstrap.Modal.getInstance(modalEl);
+                    if (m) m.hide();
+                }
+                setSheetView('table');
+                const idx = first ? parseInt(first.getAttribute('data-popup-src'), 10) : NaN;
+                const row = Number.isFinite(idx) ? document.querySelectorAll('#apronTable tbody tr.flight-row')[idx] : null;
+                if (!row) return;
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                row.classList.remove('g-flash');
+                void row.offsetWidth;
+                row.classList.add('g-flash');
+                setTimeout(() => row.classList.remove('g-flash'), 1700);
+            });
+        }
+
+        // Muat ulang timeline setiap isi tabel berubah (autosave / edit / tambah / hapus)
+        const tbody = document.querySelector('#apronTable tbody');
+        if (tbody) {
+            if (window.MutationObserver) new MutationObserver(() => scheduleGanttRender(600)).observe(tbody, { childList: true });
+            ['input', 'change'].forEach(evt => tbody.addEventListener(evt, () => scheduleGanttRender(800), true));
+        }
+
+        if (ganttNowTimer) clearInterval(ganttNowTimer);
+        ganttNowTimer = setInterval(() => { if (getSheetViewMode() === 'gantt') ganttUpdateNowLine(); }, 60000);
+
+        // MODE DEFAULT sheet = TABEL. Klik kalender selalu membuka tabel
+        // (openSheet memanggil setSheetView('table')); localStorage yang lama
+        // (aksen 'gantt') tidak lagi di-recall saat load halaman.
+        setSheetView('table');
+    })();
 
     window.onload = async () => {
         const savedTheme = localStorage.getItem('ams_theme') || 'light';
