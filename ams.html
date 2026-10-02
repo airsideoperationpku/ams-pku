@@ -428,9 +428,9 @@
         .g-hour.night { background: rgba(15,23,42,.06); color: #94a3b8; }
         .g-row-label { background: #f8fafc !important; border-top: 1px solid #e2e8f0; }
         .g-row-label .g-stand { color: #334155; font-size: .68rem; letter-spacing: .6px; }
-        .g-row-unlocated { background: #fffbeb; }
-        .g-row-unlocated .g-label { background: #fffbeb; border-right-color: #fcd34d; }
-        .g-row-unlocated .g-label .g-stand { color: #b45309; }
+        .g-row-UNALLOCATED { background: #fffbeb; }
+        .g-row-UNALLOCATED .g-label { background: #fffbeb; border-right-color: #fcd34d; }
+        .g-row-UNALLOCATED .g-label .g-stand { color: #b45309; }
         .g-row-empty .g-label { background: #fcfdfe; }
         .g-row-empty .g-track { background-color: rgba(241,245,249,.55); }
         .g-empty .g-stand { color: #cbd5e1 !important; }
@@ -450,7 +450,7 @@
         .g-bar.overnight .g-mid, .g-bar.solo-a.overnight, .g-bar.solo-d.overnight { background: repeating-linear-gradient(135deg, rgba(255,255,255,.3) 0 4px, rgba(255,255,255,0) 4px 9px), linear-gradient(90deg, #475569, #64748b); }
         .g-bar.no-time { background: repeating-linear-gradient(135deg, #fbbf24 0 5px, #fde68a 5px 10px); border: 1px dashed #d97706; box-shadow: none; }
         .g-bar.no-time .g-tag { color: #7c2d12; }
-        .g-bar.unlocated-bar { outline: 2px solid #f59e0b; outline-offset: 1px; }
+        .g-bar.UNALLOCATED-bar { outline: 2px solid #f59e0b; outline-offset: 1px; }
         .g-ico { position: absolute; top: 50%; width: 17px; height: 17px; display: inline-flex; align-items: center; justify-content: center; background: #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(15,23,42,.35); transform: translateY(-50%); z-index: 2; }
         .g-ico.landing { left: -8px; color: #16a34a; } .g-ico.takeoff { right: -8px; color: #2563eb; }
         .g-ico svg { width: 12px; height: 12px; display: block; }
@@ -460,7 +460,7 @@
         .g-flash { animation: ganttFlash 1.6s ease; }
         @keyframes ganttFlash { 0%, 60% { background: #dbeafe !important; } 100% { background: transparent; } }
 
-        /* ===== Drag & drop baris UNLOCATED ke baris stand ===== */
+        /* ===== Drag & drop baris UNALLOCATED ke baris stand ===== */
         .g-bar[draggable="true"] { cursor: grab; }
         .g-bar[draggable="true"]:active { cursor: grabbing; }
         .g-bar.dragging { opacity: .45; }
@@ -499,9 +499,9 @@
         body.dark-theme .g-hour { color: #9ca3af; }
         body.dark-theme .g-row-label { background: #0f172a !important; border-top-color: #1f2937; }
         body.dark-theme .g-row-label .g-stand { color: #cbd5e1; }
-        body.dark-theme .g-row-unlocated { background: #2a1d06; }
-        body.dark-theme .g-row-unlocated .g-label { background: #2a1d06; border-right-color: #78350f; }
-        body.dark-theme .g-row-unlocated .g-label .g-stand { color: #fbbf24; }
+        body.dark-theme .g-row-UNALLOCATED { background: #2a1d06; }
+        body.dark-theme .g-row-UNALLOCATED .g-label { background: #2a1d06; border-right-color: #78350f; }
+        body.dark-theme .g-row-UNALLOCATED .g-label .g-stand { color: #fbbf24; }
         body.dark-theme .g-row-empty .g-label { background: #0d1424; }
         body.dark-theme .g-row-empty .g-track { background-color: rgba(15,23,42,.6); }
         body.dark-theme .g-empty .g-stand { color: #475569 !important; }
@@ -714,10 +714,10 @@
                         <span><i class="lg lg-pair"></i> Pairing FL.NO Arrival ↔ Departure (Arr → Dep, BT jika terisi)</span>
                         <span><i class="lg lg-ron"></i> RON: Arrival (BT/Jadwal) → 23:59</span>
                         <span><i class="lg lg-ron"></i> ExRON: 00:00 → Departure (BT/Jadwal)</span>
-                        <span><i class="lg lg-unloc"></i> Unlocated ↔ Stand — seret dua arah</span>
+                        <span><i class="lg lg-unloc"></i> UNALLOCATED ↔ Stand — seret dua arah</span>
                         <span><i class="lg" style="background:#ef4444"></i> Bentrok — batang berkedip merah</span>
                         <span><i class="bi bi-stopwatch"></i> Sebelum Block Time terisi → Jadwal; sesudahnya → Block Time</span>
-                        <span class="gantt-hint ms-auto"><i class="bi bi-hand-index-thumb"></i> ketuk batang → popup isian FL.NO (pairing: Arrival + Departure) &bull; <i class="bi bi-grip-vertical"></i> seret batang dua arah: Unlocated ↔ Stand ↔ Stand lain</span>
+                        <span class="gantt-hint ms-auto"><i class="bi bi-hand-index-thumb"></i> ketuk batang → popup isian FL.NO (pairing: Arrival + Departure) &bull; <i class="bi bi-grip-vertical"></i> seret batang dua arah: UNALLOCATED ↔ Stand ↔ Stand lain</span>
                     </div>
                     <div class="gantt-scroll" id="ganttScroll">
                         <div class="gantt-empty"><i class="bi bi-hourglass-split"></i>Memuat timeline...</div>
@@ -2045,10 +2045,10 @@
          departure di tabel TIDAK diubah — hanya visualisasi. Pairing tetap
          terjalin meski jadwal before/delay (urutan jadwal).
        - Klasifikasi lokasi berbasis PARKING STAND dengan DRAG & DROP DUA ARAH:
-         UNLOCATED → stand, antar stand D1–D12, dan stand → UNLOCATED. Saat
+         UNALLOCATED → stand, antar stand D1–D12, dan stand → UNALLOCATED. Saat
          dijatuhkan ke baris stand, kolom Parking Stand pada tabel terisi dan
          batang langsung pindah ke timeline stand tersebut; saat dikembalikan
-         ke UNLOCATED, Parking Stand di tabel kembali default kosong/-.
+         ke UNALLOCATED, Parking Stand di tabel kembali default kosong/-.
        - ALERT BENTROK: bila waktu parkir dua flight tumpang tindih di stand
          yang sama (D1–D12), batang yang bertabrakan berkedip MERAH dan
          banner peringatan berkedip muncul di atas diagram.
@@ -2277,7 +2277,7 @@
         if (!Number.isFinite(b.end)) return Math.max(GANTT_SOLO_MIN, 45 * px); // leg tunggal
         return Math.max(26, (b.end - b.start) * px);               // pasangan tersambung
     }
-    function ganttRowHtml(standLabel, metaText, blocks, unlocated) {
+    function ganttRowHtml(standLabel, metaText, blocks, UNALLOCATED) {
         const px = ganttPxPerMin();
         const sorted = blocks.slice().sort((a, b) => (a.start == null ? -1 : b.start == null ? 1 : a.start - b.start));
         const lanes = [];
@@ -2291,12 +2291,12 @@
             b._lane = lane;
         });
         let bars = '';
-        blocks.forEach(b => { bars += ganttBarHtml(b, unlocated); });
-        const cls = 'g-row' + (unlocated ? ' g-row-unlocated' : '') + (blocks.length ? '' : ' g-row-empty');
+        blocks.forEach(b => { bars += ganttBarHtml(b, UNALLOCATED); });
+        const cls = 'g-row' + (UNALLOCATED ? ' g-row-UNALLOCATED' : '') + (blocks.length ? '' : ' g-row-empty');
         const h = Math.max(1, lanes.length) * GANTT_LANE_H + 6;
-        // Target drop DUA ARAH: baris stand D1–D12 (stand) dan baris UNLOCATED
+        // Target drop DUA ARAH: baris stand D1–D12 (stand) dan baris UNALLOCATED
         // (data-stand="" → mengembalikan Parking Stand ke default kosong/-)
-        const standAttr = unlocated ? ' data-stand=""'
+        const standAttr = UNALLOCATED ? ' data-stand=""'
             : (ganttIsMainStand(standLabel) ? ' data-stand="' + escapeHtml(standLabel) + '"' : '');
         return '<div class="' + cls + '" style="' + ganttVars() + '">' +
                '<div class="g-label"><span class="g-stand">' + escapeHtml(standLabel) + '</span>' +
@@ -2334,10 +2334,10 @@
         html += '</div></div>';
 
         // Klasifikasi berdasar PARKING STAND saja (registrasi tidak lagi syarat):
-        // setelah drag & drop dari UNLOCATED, batang langsung pindah/menyesuaikan
+        // setelah drag & drop dari UNALLOCATED, batang langsung pindah/menyesuaikan
         // ke baris timeline stand yang dituju meski kolom Registrasi masih kosong.
         const unloc = blocks.filter(b => !ganttIsMainStand(b.stand));
-        html += ganttRowHtml('UNLOCATED', unloc.length ? (unloc.length + ' blok tanpa stand — seret ke D1–D12') : 'semua sudah punya stand', unloc, true);
+        html += ganttRowHtml('UNALLOCATED', unloc.length ? (unloc.length + ' blok tanpa stand — seret ke D1–D12') : 'semua sudah punya stand', unloc, true);
         html += '<div class="g-row g-row-label" style="' + ganttVars() + '"><div class="g-label"><span class="g-stand">PARKING STAND</span><span class="g-meta">D1 — D12</span></div><div class="g-track"></div></div>';
         GANTT_MAIN_STANDS.forEach(st => {
             const list = blocks.filter(b => b.stand === st);
@@ -2351,7 +2351,7 @@
         ganttUpdateNowLine();
     }
 
-    function ganttBarHtml(b, unlocated) {
+    function ganttBarHtml(b, UNALLOCATED) {
         const px = ganttPxPerMin();
         const trackW = (ganttRange.end - ganttRange.start) * px;
         let w = ganttBlockWidth(b, px);
@@ -2398,11 +2398,11 @@
         if (b.crossDay && !b.span) tips.push('Menyambung lewat tengah malam');
         if (b.conflict && b.conflictWith && b.conflictWith.length) tips.push('BENTROK dengan FL.NO ' + b.conflictWith.join(', '));
         tips.push('Status: ' + (f0.status || 'NO OPS'));
-        if (!isRestrictedUser) tips.push('Seret (drag) dua arah: UNLOCATED ↔ Stand D1–D12 ↔ stand lain (Parking Stand di tabel ikut menyesuaikan; ke UNLOCATED → kembali kosong/-)');
+        if (!isRestrictedUser) tips.push('Seret (drag) dua arah: UNALLOCATED ↔ Stand D1–D12 ↔ stand lain (Parking Stand di tabel ikut menyesuaikan; ke UNALLOCATED → kembali kosong/-)');
 
         const cls = ['g-bar',
             b.kind === 'pair' ? 'paired' : (!Number.isFinite(b.start) ? 'no-time' : (b.leg === 'A' ? 'solo-a' : 'solo-d')),
-            unlocated ? 'unlocated-bar' : '',
+            UNALLOCATED ? 'UNALLOCATED-bar' : '',
             b.conflict ? 'g-conflict' : '',
             b.ron ? 'overnight' : ''].filter(Boolean).join(' ');
 
@@ -2421,14 +2421,14 @@
             const ico = '<span class="g-ico ' + (b.leg === 'A' ? 'landing' : 'takeoff') + '">' + (b.leg === 'A' ? GANTT_ICON_LAND : GANTT_ICON_TAKEOFF) + '</span>';
             inner = b.leg === 'A' ? (tag + ico) : (ico + tag);
         }
-        // SEMUA batang bisa diseret dua arah: UNLOCATED ↔ stand D1–D12 ↔ stand lain
+        // SEMUA batang bisa diseret dua arah: UNALLOCATED ↔ stand D1–D12 ↔ stand lain
         const dragAttr = isRestrictedUser ? '' : ' draggable="true"';
         return '<div class="' + cls + '" data-rows="' + b.rows.map(r => r.idx).join(',') + '"' + dragAttr + ' title="' + escapeHtml(tips.join('\n')) + '" ' +
                'style="left:' + Math.round(left) + 'px;width:' + Math.round(w) + 'px;top:' + top + 'px">' + inner + '</div>';
     }
 
-    // ===== DROP DUA ARAH: UNLOCATED ↔ stand D1–D12 ↔ stand lain =====
-    // stand = '' (target track UNLOCATED) → Parking Stand baris di tabel
+    // ===== DROP DUA ARAH: UNALLOCATED ↔ stand D1–D12 ↔ stand lain =====
+    // stand = '' (target track UNALLOCATED) → Parking Stand baris di tabel
     // dikembalikan ke default kosong/- (hanya bila sebelumnya stand utama).
     function ganttDropAssignStand(rowIdxs, stand) {
         if (isRestrictedUser) return;
@@ -2442,8 +2442,8 @@
             const sel = tr.querySelector('.input-stand');
             if (!sel) return;
             if (stand === '') {
-                // Kembali ke UNLOCATED: hanya reset bila sebelumnya stand utama
-                // D1–D12 (NA/SA/dll yang sudah di baris UNLOCATED tidak disentuh)
+                // Kembali ke UNALLOCATED: hanya reset bila sebelumnya stand utama
+                // D1–D12 (NA/SA/dll yang sudah di baris UNALLOCATED tidak disentuh)
                 if (!GANTT_MAIN_STANDS.includes(String(sel.value || '').trim().toUpperCase())) return;
             } else if (sel.value === stand) return;
             sel.value = stand;             // isi / reset kolom Parking Stand di tabel
@@ -2626,9 +2626,9 @@
                 openGanttBarPopup(idxs);
             });
 
-            /* ===== DRAG & DROP DUA ARAH: UNLOCATED ↔ stand D1–D12 ↔ stand lain =====
+            /* ===== DRAG & DROP DUA ARAH: UNALLOCATED ↔ stand D1–D12 ↔ stand lain =====
                Batang dijatuhkan ke baris stand → kolom Parking Stand tabel
-               terisi; dijatuhkan ke baris UNLOCATED → Parking Stand kembali
+               terisi; dijatuhkan ke baris UNALLOCATED → Parking Stand kembali
                default kosong/- (lalu autosave & render ulang). */
             const ganttClearTargets = () => scroll.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
 
