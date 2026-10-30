@@ -35,6 +35,7 @@
         .user-profile-box .name { font-size: 0.9rem; font-weight: 700; color: #2c3e50; line-height: 1.2; }
         .user-profile-box .email { font-size: 0.75rem; color: #6c757d; }
         .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
+        .nav-link i { font-size: 1.25rem; }
         .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
         
         .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; transition: all 0.3s ease; }
@@ -92,8 +93,8 @@
         }
         .theme-badge-toggle .option i { font-size: 0.8rem; }
         .theme-badge-toggle .option.active { color: #0f172a; transform: scale(1.03); }
-        .theme-badge-toggle.dark { background: linear-gradient(135deg, #1e293b, #0f172a); }
-        .theme-badge-toggle.dark .pill { transform: translateX(62px); background: #1f2937; }
+        .theme-badge-toggle.dark { background: linear-gradient(135deg, #3d4f6a, #263347); }
+        .theme-badge-toggle.dark .pill { transform: translateX(62px); background: #3d4f6a; }
         .theme-badge-toggle.dark .option { color: #cbd5e1; }
         .theme-badge-toggle.dark .option.active { color: #f8fafc; }
 
@@ -160,11 +161,11 @@
         .notif-item .notif-title { font-weight: 700; font-size: 0.85rem; color: #1e293b; }
         .notif-item .notif-meta { font-size: 0.75rem; color: #6c757d; }
         .notif-empty { padding: 24px; text-align: center; color: #94a3b8; font-size: 0.85rem; }
-        body.dark-theme .notification-bell { background: #1f2937; color: #cbd5e1; }
-        body.dark-theme .notification-panel { background: #111827; border-color: #1f2937; }
-        body.dark-theme .notification-panel .notif-header { border-color: #1f2937; }
-        body.dark-theme .notif-item { border-color: #1f2937; }
-        body.dark-theme .notif-item .notif-title { color: #e5e7eb; }
+        body.dark-theme .notification-bell { background: #3d4f6a; color: #cbd5e1; }
+        body.dark-theme .notification-panel { background: #263347; border-color: #3d4f6a; }
+        body.dark-theme .notification-panel .notif-header { border-color: #3d4f6a; }
+        body.dark-theme .notif-item { border-color: #3d4f6a; }
+        body.dark-theme .notif-item .notif-title { color: #f8fafc; }
         body.dark-theme .notif-item .notif-meta { color: #9ca3af; }
 
         @media (max-width: 768px) {
@@ -179,22 +180,22 @@
             .notification-list { max-height: 62vh; }
         }
 
-        body.dark-theme { background-color: #0b1220 !important; color: #e2e8f0; }
+        body.dark-theme { background-color: #263347 !important; color: #f8fafc; }
         body.dark-theme .sidebar,
         body.dark-theme .card-custom,
         body.dark-theme .user-profile-box,
         body.dark-theme .preview-container,
         body.dark-theme .check-group {
-            background-color: #111827 !important;
-            color: #e5e7eb !important;
-            border-color: #1f2937 !important;
+            background-color: #2d3d55 !important;
+            color: #f8fafc !important;
+            border-color: #3d4f6a !important;
         }
         body.dark-theme .nav-link { color: #cbd5e1 !important; }
         body.dark-theme .nav-link:hover,
-        body.dark-theme .nav-link.active { background-color: #1e293b !important; color: #93c5fd !important; }
-        body.dark-theme .table-preview thead { background: #0f172a !important; }
-        body.dark-theme .table-preview th, body.dark-theme .table-preview td { color: #e2e8f0 !important; border-color: #1f2937 !important; }
-        body.dark-theme .form-control, body.dark-theme .form-check-input { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+        body.dark-theme .nav-link.active { background-color: #3d4f6a !important; color: #93c5fd !important; }
+        body.dark-theme .table-preview thead { background: #263347 !important; }
+        body.dark-theme .table-preview th, body.dark-theme .table-preview td { color: #e2e8f0 !important; border-color: #3d4f6a !important; }
+        body.dark-theme .form-control, body.dark-theme .form-check-input { background-color: #2d3d55 !important; color: #f8fafc !important; border-color: #3d4f6a !important; }
 
         body.dark-theme h4.fw-bold.text-dark,
         body.dark-theme .text-dark { color: #e5e7eb !important; }
@@ -204,15 +205,15 @@
         body.dark-theme .table-preview tbody,
         body.dark-theme .table-preview tr,
         body.dark-theme .table-preview td {
-            background-color: #111827 !important;
+            background-color: #2d3d55 !important;
             color: #e5e7eb !important;
         }
 
         body.dark-theme .table-preview thead,
         body.dark-theme .table-preview thead th {
-            background-color: #0f172a !important;
+            background-color: #263347 !important;
             color: #e5e7eb !important;
-            border-color: #1f2937 !important;
+            border-color: #3d4f6a !important;
         }
 
         @media (max-width: 768px) { .sidebar { position: fixed; left: -250px; height: 100vh; } .sidebar.show { left: 0; box-shadow: 2px 0 15px rgba(0,0,0,0.2); } .sidebar-overlay.show { display: block; } .content { padding: 15px; } }
@@ -221,7 +222,7 @@
         .bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px calc(8px + env(safe-area-inset-bottom)); font-size: 0.62rem; font-weight: 600; color: #8a94a6; text-decoration: none; transition: color 0.2s ease; }
         .bottom-nav-item i { font-size: 1.35rem; line-height: 1; }
         .bottom-nav-item.active { color: #0d6efd; }
-        body.dark-theme .bottom-nav { background: #111827; border-color: #1f2937; }
+        body.dark-theme .bottom-nav { background: #263347; border-color: #3d4f6a; }
         body.dark-theme .bottom-nav-item { color: #9ca3af; }
         body.dark-theme .bottom-nav-item.active { color: #93c5fd; }
         @media (max-width: 768px) {
