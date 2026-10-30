@@ -37,6 +37,7 @@
         .user-profile-box .name { font-size: 0.9rem; font-weight: 700; color: #2c3e50; line-height: 1.2; }
         .user-profile-box .email { font-size: 0.75rem; color: #6c757d; }
         .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
+        .nav-link i { font-size: 1.25rem; }
         .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
         .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; }
         .card { border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 6px 20px rgba(15,23,42,0.05); margin-bottom: 20px; background: #fff; }
@@ -181,12 +182,12 @@
         }
 
         .theme-badge-toggle.dark {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
+            background: linear-gradient(135deg, #3d4f6a, #263347);
         }
 
         .theme-badge-toggle.dark .pill {
             transform: translateX(62px);
-            background: #1f2937;
+            background: #3d4f6a;
         }
 
         .theme-badge-toggle.dark .option {
@@ -260,11 +261,11 @@
         .notif-item .notif-title { font-weight: 700; font-size: 0.85rem; color: #1e293b; }
         .notif-item .notif-meta { font-size: 0.75rem; color: #6c757d; }
         .notif-empty { padding: 24px; text-align: center; color: #94a3b8; font-size: 0.85rem; }
-        body.dark-theme .notification-bell { background: #1f2937; color: #cbd5e1; }
-        body.dark-theme .notification-panel { background: #111827; border-color: #1f2937; }
-        body.dark-theme .notification-panel .notif-header { border-color: #1f2937; }
-        body.dark-theme .notif-item { border-color: #1f2937; }
-        body.dark-theme .notif-item .notif-title { color: #e5e7eb; }
+        body.dark-theme .notification-bell { background: #3d4f6a; color: #cbd5e1; }
+        body.dark-theme .notification-panel { background: #263347; border-color: #3d4f6a; }
+        body.dark-theme .notification-panel .notif-header { border-color: #3d4f6a; }
+        body.dark-theme .notif-item { border-color: #3d4f6a; }
+        body.dark-theme .notif-item .notif-title { color: #f8fafc; }
         body.dark-theme .notif-item .notif-meta { color: #9ca3af; }
 
         @media (max-width: 768px) {
@@ -280,8 +281,8 @@
         }
 
         body.dark-theme {
-            background-color: #0b1220 !important;
-            color: #e2e8f0;
+            background-color: #263347 !important;
+            color: #f8fafc;
         }
 
         body.dark-theme .sidebar,
@@ -289,9 +290,9 @@
         body.dark-theme .table-responsive,
         body.dark-theme .modal-content,
         body.dark-theme .user-profile-box {
-            background-color: #111827 !important;
-            color: #e5e7eb !important;
-            border-color: #1f2937 !important;
+            background-color: #2d3d55 !important;
+            color: #f8fafc !important;
+            border-color: #3d4f6a !important;
         }
 
         body.dark-theme .sidebar-header h5,
@@ -299,32 +300,42 @@
         body.dark-theme h5,
         body.dark-theme h6,
         body.dark-theme .form-label {
-            color: #e5e7eb !important;
+            color: #f8fafc !important;
         }
 
         body.dark-theme .nav-link {
             color: #cbd5e1 !important;
         }
+        body.dark-theme .nav-link i { color: #cbd5e1 !important; }
         body.dark-theme .nav-link:hover,
         body.dark-theme .nav-link.active {
-            background-color: #1e293b !important;
+            background-color: #3d4f6a !important;
             color: #93c5fd !important;
         }
 
-        body.dark-theme .table-spreadsheet th {
-            background-color: #0f172a !important;
-            color: #cbd5e1 !important;
-            border-color: #1f2937 !important;
+        body.dark-theme .btn-kembali {
+            background-color: #263347 !important;
+            color: #93c5fd !important;
+            border-color: #3d4f6a !important;
         }
-        body.dark-theme #apronTable tbody tr.flight-row:nth-child(odd) { background-color: #0b1324 !important; }
-        body.dark-theme #apronTable tbody tr.flight-row:nth-child(even) { background-color: #111b32 !important; }
+        body.dark-theme .btn-kembali:hover {
+            background-color: #3d4f6a !important;
+            color: #f8fafc !important;
+        }
+        body.dark-theme .table-spreadsheet th {
+            background-color: #263347 !important;
+            color: #cbd5e1 !important;
+            border-color: #3d4f6a !important;
+        }
+        body.dark-theme #apronTable tbody tr.flight-row:nth-child(odd) { background-color: #2d3d55 !important; }
+        body.dark-theme #apronTable tbody tr.flight-row:nth-child(even) { background-color: #34425c !important; }
 
         body.dark-theme .form-control,
         body.dark-theme .form-select,
         body.dark-theme .input-group {
-            background-color: #0f172a !important;
-            color: #e2e8f0 !important;
-            border-color: #1f2937 !important;
+            background-color: #2d3d55 !important;
+            color: #f8fafc !important;
+            border-color: #3d4f6a !important;
         }
         body.dark-theme .form-control::placeholder { color: #94a3b8 !important; }
 
@@ -338,21 +349,21 @@
         }
         body.dark-theme .table-spreadsheet .form-control:hover,
         body.dark-theme .table-spreadsheet .form-select:hover {
-            border-color: #334155 !important;
-            background-color: rgba(15, 23, 42, 0.55) !important;
+            border-color: #475875 !important;
+            background-color: rgba(38, 51, 71, 0.55) !important;
         }
         body.dark-theme .table-spreadsheet .form-control:focus,
         body.dark-theme .table-spreadsheet .form-select:focus {
             border-color: #60a5fa !important;
-            background-color: #0f172a !important;
+            background-color: #263347 !important;
             box-shadow: none !important;
         }
 
         body.dark-theme .calendar-day {
-            background: #0f172a;
-            border-color: #1f2937;
+            background: #2d3d55;
+            border-color: #3d4f6a;
         }
-        body.dark-theme .calendar-day h5 { color: #e2e8f0; }
+        body.dark-theme .calendar-day h5 { color: #f8fafc; }
         body.dark-theme .cal-empty small { color: #94a3b8; }
 
         @media (max-width: 768px) {
@@ -374,7 +385,7 @@
         .bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px calc(8px + env(safe-area-inset-bottom)); font-size: 0.62rem; font-weight: 600; color: #8a94a6; text-decoration: none; transition: color 0.2s ease; }
         .bottom-nav-item i { font-size: 1.35rem; line-height: 1; }
         .bottom-nav-item.active { color: #0d6efd; }
-        body.dark-theme .bottom-nav { background: #111827; border-color: #1f2937; }
+        body.dark-theme .bottom-nav { background: #263347; border-color: #3d4f6a; }
         body.dark-theme .bottom-nav-item { color: #9ca3af; }
         body.dark-theme .bottom-nav-item.active { color: #93c5fd; }
         @media (max-width: 768px) {
@@ -393,9 +404,9 @@
         .view-toggle-group .btn i { font-size: .95rem; }
         .view-toggle-group .btn:hover { color: #0d6efd; background: #eef4ff; }
         .view-toggle-group .btn.active { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; box-shadow: 0 3px 10px rgba(37, 99, 235, .35); }
-        body.dark-theme .view-toggle-group { background: #0f172a; }
+        body.dark-theme .view-toggle-group { background: #263347; }
         body.dark-theme .view-toggle-group .btn { color: #94a3b8; }
-        body.dark-theme .view-toggle-group .btn:hover { color: #93c5fd; background: #1e293b; }
+        body.dark-theme .view-toggle-group .btn:hover { color: #93c5fd; background: #3d4f6a; }
 
         /* ===== Gantt Chart Penerbangan ===== */
         .gantt-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
@@ -487,30 +498,30 @@
         #ganttPopupTable tbody tr.flight-row:hover { background-color: #e3edff !important; }
         #ganttPopupTable tbody tr.popup-a { box-shadow: inset 3px 0 0 #16a34a; }
         #ganttPopupTable tbody tr.popup-d { box-shadow: inset 3px 0 0 #2563eb; }
-        body.dark-theme #ganttPopupTable tbody tr.flight-row:nth-child(odd) { background-color: #0b1324 !important; }
-        body.dark-theme #ganttPopupTable tbody tr.flight-row:nth-child(even) { background-color: #111b32 !important; }
-        body.dark-theme #ganttPopupTable tbody tr.flight-row:hover { background-color: #1e293b !important; }
+        body.dark-theme #ganttPopupTable tbody tr.flight-row:nth-child(odd) { background-color: #2d3d55 !important; }
+        body.dark-theme #ganttPopupTable tbody tr.flight-row:nth-child(even) { background-color: #34425c !important; }
+        body.dark-theme #ganttPopupTable tbody tr.flight-row:hover { background-color: #3d4f6a !important; }
 
-        body.dark-theme .gantt-scroll { background: #111827; border-color: #1f2937; }
-        body.dark-theme .g-row { border-color: #1f2937; }
-        body.dark-theme .g-label { background: #111827; border-right-color: #1f2937; }
-        body.dark-theme .g-label .g-stand { color: #e5e7eb; }
-        body.dark-theme .g-ruler .g-label, body.dark-theme .g-ruler .g-track { background: #0f172a; }
+        body.dark-theme .gantt-scroll { background: #263347; border-color: #3d4f6a; }
+        body.dark-theme .g-row { border-color: #3d4f6a; }
+        body.dark-theme .g-label { background: #2d3d55; border-right-color: #3d4f6a; }
+        body.dark-theme .g-label .g-stand { color: #f8fafc; }
+        body.dark-theme .g-ruler .g-label, body.dark-theme .g-ruler .g-track { background: #263347; }
         body.dark-theme .g-hour { color: #9ca3af; }
-        body.dark-theme .g-row-label { background: #0f172a !important; border-top-color: #1f2937; }
+        body.dark-theme .g-row-label { background: #263347 !important; border-top-color: #3d4f6a; }
         body.dark-theme .g-row-label .g-stand { color: #cbd5e1; }
         body.dark-theme .g-row-unlocated { background: #2a1d06; }
         body.dark-theme .g-row-unlocated .g-label { background: #2a1d06; border-right-color: #78350f; }
         body.dark-theme .g-row-unlocated .g-label .g-stand { color: #fbbf24; }
-        body.dark-theme .g-row-empty .g-label { background: #0d1424; }
-        body.dark-theme .g-row-empty .g-track { background-color: rgba(15,23,42,.6); }
-        body.dark-theme .g-empty .g-stand { color: #475569 !important; }
+        body.dark-theme .g-row-empty .g-label { background: #263347; }
+        body.dark-theme .g-row-empty .g-track { background-color: rgba(38, 51, 71, .6); }
+        body.dark-theme .g-empty .g-stand { color: #94a3b8 !important; }
         body.dark-theme .gantt-toolbar .gantt-title { color: #cbd5e1; }
         body.dark-theme .gantt-legend { color: #9ca3af; }
-        body.dark-theme .gantt-zoom { background: #1f2937; }
-        body.dark-theme .gantt-zoom button { background: #0f172a; color: #cbd5e1; }
-        body.dark-theme .g-ico { background: #0b1220; }
-        body.dark-theme .gantt-empty { color: #64748b; }
+        body.dark-theme .gantt-zoom { background: #3d4f6a; }
+        body.dark-theme .gantt-zoom button { background: #263347; color: #cbd5e1; }
+        body.dark-theme .g-ico { background: #263347; }
+        body.dark-theme .gantt-empty { color: #94a3b8; }
         body.dark-theme .g-flash { animation: ganttFlashDark 1.6s ease; }
         @keyframes ganttFlashDark { 0%, 60% { background: #1e3a8a !important; } 100% { background: transparent; } }
         @media (max-width: 768px) {
@@ -605,7 +616,7 @@
 
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex gap-2">
-                    <button class="btn btn-light border fw-bold text-secondary shadow-sm" onclick="showCalendar()"><i class="bi bi-arrow-left me-1"></i> Kembali</button>
+                    <button class="btn btn-light border fw-bold text-secondary shadow-sm btn-kembali" onclick="showCalendar()"><i class="bi bi-arrow-left me-1"></i> Kembali</button>
                     <button class="btn btn-outline-danger fw-bold shadow-sm" onclick="resetDataHariIni()"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Data</button>
                 </div>
                 <span class="badge bg-primary fs-6 d-none d-md-inline-block shadow-sm"><i class="bi bi-calendar-event me-1"></i> <span id="sheetDateDisplay"></span></span>
@@ -714,10 +725,10 @@
                         <span><i class="lg lg-pair"></i> Pairing FL.NO Arrival ↔ Departure (Arr → Dep, BT jika terisi)</span>
                         <span><i class="lg lg-ron"></i> RON: Arrival (BT/Jadwal) → 23:59</span>
                         <span><i class="lg lg-ron"></i> ExRON: 00:00 → Departure (BT/Jadwal)</span>
-                        <span><i class="lg lg-unloc"></i> Unlocated ↔ Stand — seret dua arah</span>
+                        <span><i class="lg lg-unloc"></i> UnAllocated ↔ Stand — seret dua arah</span>
                         <span><i class="lg" style="background:#ef4444"></i> Bentrok — batang berkedip merah</span>
                         <span><i class="bi bi-stopwatch"></i> Sebelum Block Time terisi → Jadwal; sesudahnya → Block Time</span>
-                        <span class="gantt-hint ms-auto"><i class="bi bi-hand-index-thumb"></i> ketuk batang → popup isian FL.NO (pairing: Arrival + Departure) &bull; <i class="bi bi-grip-vertical"></i> seret batang dua arah: Unlocated ↔ Stand ↔ Stand lain</span>
+                        <span class="gantt-hint ms-auto"><i class="bi bi-hand-index-thumb"></i> ketuk batang → popup isian FL.NO (pairing: Arrival + Departure) &bull; <i class="bi bi-grip-vertical"></i> seret batang dua arah: UnAllocated ↔ Stand ↔ Stand lain</span>
                     </div>
                     <div class="gantt-scroll" id="ganttScroll">
                         <div class="gantt-empty"><i class="bi bi-hourglass-split"></i>Memuat timeline...</div>
@@ -2045,10 +2056,10 @@
          departure di tabel TIDAK diubah — hanya visualisasi. Pairing tetap
          terjalin meski jadwal before/delay (urutan jadwal).
        - Klasifikasi lokasi berbasis PARKING STAND dengan DRAG & DROP DUA ARAH:
-         UNLOCATED → stand, antar stand D1–D12, dan stand → UNLOCATED. Saat
+         UNALLOCATED → stand, antar stand D1–D12, dan stand → UNALLOCATED. Saat
          dijatuhkan ke baris stand, kolom Parking Stand pada tabel terisi dan
          batang langsung pindah ke timeline stand tersebut; saat dikembalikan
-         ke UNLOCATED, Parking Stand di tabel kembali default kosong/-.
+         ke UNALLOCATED, Parking Stand di tabel kembali default kosong/-.
        - ALERT BENTROK: bila waktu parkir dua flight tumpang tindih di stand
          yang sama (D1–D12), batang yang bertabrakan berkedip MERAH dan
          banner peringatan berkedip muncul di atas diagram.
