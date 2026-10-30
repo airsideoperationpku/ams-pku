@@ -35,6 +35,7 @@
         .user-profile-box .name { font-size: 0.9rem; font-weight: 700; color: #2c3e50; line-height: 1.2; }
         .user-profile-box .email { font-size: 0.75rem; color: #6c757d; }
         .nav-link { color: #666; font-weight: 500; padding: 12px 20px; margin: 4px 15px; border-radius: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
+        .nav-link i { font-size: 1.25rem; }
         .nav-link:hover, .nav-link.active { background-color: #e8f0fe; color: #0d6efd; }
         
         .content { flex-grow: 1; padding: 20px 30px; overflow-y: auto; min-width: 0; transition: all 0.3s ease; }
@@ -204,30 +205,30 @@
         }
         .theme-badge-toggle .option i { font-size: 0.8rem; }
         .theme-badge-toggle .option.active { color: #0f172a; transform: scale(1.03); }
-        .theme-badge-toggle.dark { background: linear-gradient(135deg, #1e293b, #0f172a); }
-        .theme-badge-toggle.dark .pill { transform: translateX(62px); background: #1f2937; }
+        .theme-badge-toggle.dark { background: linear-gradient(135deg, #3d4f6a, #263347); }
+        .theme-badge-toggle.dark .pill { transform: translateX(62px); background: #3d4f6a; }
         .theme-badge-toggle.dark .option { color: #cbd5e1; }
         .theme-badge-toggle.dark .option.active { color: #f8fafc; }
 
-        body.dark-theme { background-color: #0b1220 !important; color: #e2e8f0; }
+        body.dark-theme { background-color: #263347 !important; color: #f8fafc; }
         body.dark-theme .sidebar,
         body.dark-theme .user-profile-box,
         body.dark-theme .content,
         body.dark-theme .stand-card,
         body.dark-theme .pair-box,
         body.dark-theme .next-flight-banner {
-            background-color: #111827 !important;
-            color: #e5e7eb !important;
-            border-color: #1f2937 !important;
+            background-color: #2d3d55 !important;
+            color: #f8fafc !important;
+            border-color: #3d4f6a !important;
         }
-        body.dark-theme .stand-header { border-bottom-color: #1f2937; }
-        body.dark-theme .modal-content { background-color: #111827 !important; color: #e5e7eb !important; border-color: #1f2937 !important; }
+        body.dark-theme .stand-header { border-bottom-color: #3d4f6a; }
+        body.dark-theme .modal-content { background-color: #2d3d55 !important; color: #f8fafc !important; border-color: #3d4f6a !important; }
         body.dark-theme .modal .form-control,
-        body.dark-theme .modal .form-select { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #1f2937 !important; }
-        body.dark-theme .modal .table-light { background-color: #0f172a !important; color: #cbd5e1 !important; }
+        body.dark-theme .modal .form-select { background-color: #2d3d55 !important; color: #f8fafc !important; border-color: #3d4f6a !important; }
+        body.dark-theme .modal .table-light { background-color: #263347 !important; color: #cbd5e1 !important; }
         body.dark-theme .flight-info,
         body.dark-theme .flight-info * {
-            color: #e5e7eb !important;
+            color: #f8fafc !important;
         }
         body.dark-theme .flight-info .text-dark,
         body.dark-theme .flight-info .text-muted {
@@ -235,22 +236,22 @@
         }
         body.dark-theme .nav-link { color: #cbd5e1 !important; }
         body.dark-theme .nav-link:hover,
-        body.dark-theme .nav-link.active { background-color: #1e293b !important; color: #93c5fd !important; }
+        body.dark-theme .nav-link.active { background-color: #3d4f6a !important; color: #93c5fd !important; }
 
         body.dark-theme h4.fw-bold.text-dark { color: #e5e7eb !important; }
         body.dark-theme .stand-card .text-dark { color: #e5e7eb !important; }
         body.dark-theme .stand-card .text-muted { color: #9ca3af !important; }
         body.dark-theme .stand-card.occupied .pair-box,
-        body.dark-theme .stand-card.standby .pair-box { background: #0f172a !important; }
+        body.dark-theme .stand-card.standby .pair-box { background: #263347 !important; }
         body.dark-theme .next-flight-banner .details,
         body.dark-theme .next-flight-banner .title { color: #f1f5f9 !important; }
 
-        body.dark-theme .req-combo-list { background: #111827; border-color: #1f2937; }
-        body.dark-theme .req-combo-list .req-combo-item { border-bottom-color: #1f2937; }
+        body.dark-theme .req-combo-list { background: #263347; border-color: #3d4f6a; }
+        body.dark-theme .req-combo-list .req-combo-item { border-bottom-color: #3d4f6a; }
         body.dark-theme .req-combo-list .req-combo-item:hover,
-        body.dark-theme .req-combo-list .req-combo-item.active { background: #1e293b; color: #93c5fd; }
+        body.dark-theme .req-combo-list .req-combo-item.active { background: #3d4f6a; color: #93c5fd; }
         body.dark-theme .req-combo-list .req-combo-item .text-muted { color: #9ca3af !important; }
-        body.dark-theme .req-combo-list .req-combo-count { background: #0f172a; border-top-color: #1f2937; }
+        body.dark-theme .req-combo-list .req-combo-count { background: #263347; border-top-color: #3d4f6a; }
 
         /* Fix kontras teks status penting pada dark theme */
         body.dark-theme .stand-card .text-danger { color: #f87171 !important; }   /* ON BLOCK */
@@ -265,7 +266,7 @@
         .bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px calc(8px + env(safe-area-inset-bottom)); font-size: 0.62rem; font-weight: 600; color: #8a94a6; text-decoration: none; transition: color 0.2s ease; }
         .bottom-nav-item i { font-size: 1.35rem; line-height: 1; }
         .bottom-nav-item.active { color: #0d6efd; }
-        body.dark-theme .bottom-nav { background: #111827; border-color: #1f2937; }
+        body.dark-theme .bottom-nav { background: #263347; border-color: #3d4f6a; }
         body.dark-theme .bottom-nav-item { color: #9ca3af; }
         body.dark-theme .bottom-nav-item.active { color: #93c5fd; }
         @media (max-width: 768px) {
