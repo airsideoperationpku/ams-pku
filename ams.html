@@ -625,6 +625,13 @@
             <datalist id="list-petugas"></datalist>
 
             <div class="card info-panel p-3 border-top border-primary border-3 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold text-secondary m-0"><i class="bi bi-info-circle me-2"></i>Info Shift &amp; DOS</h6>
+                    <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" onclick="toggleInfoPanel()" title="Sembunyikan / Tampilkan Panel">
+                        <i class="bi bi-chevron-up" id="infoPanelToggleIcon"></i> <span id="infoPanelToggleText">Sembunyikan</span>
+                    </button>
+                </div>
+                <div class="collapse show" id="infoPanelCollapse">
                 <div class="row g-3">
                     <input type="hidden" id="currentSelectedDate">
                     
@@ -657,6 +664,7 @@
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
 
@@ -1735,6 +1743,19 @@
             e.stopPropagation();
             openRowEditor(row);
         }, true);
+    }
+
+    function updateInfoPanelToggle(visible) {
+        const icon = document.getElementById('infoPanelToggleIcon');
+        const text = document.getElementById('infoPanelToggleText');
+        if (icon) icon.className = visible ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
+        if (text) text.textContent = visible ? 'Sembunyikan' : 'Tampilkan';
+    }
+    function toggleInfoPanel() {
+        const ip = document.getElementById('infoPanelCollapse');
+        if (!ip || !window.bootstrap) return;
+        const inst = bootstrap.Collapse.getOrCreateInstance(ip, { toggle: false });
+        if (ip.classList.contains('show')) inst.hide(); else inst.show();
     }
 
     let saveTimeout;
@@ -2824,6 +2845,16 @@
     window.onload = async () => {
         const savedTheme = localStorage.getItem('ams_theme') || 'light';
         applyTheme(savedTheme);
+
+        const infoPanelCollapseEl = document.getElementById('infoPanelCollapse');
+        if (infoPanelCollapseEl && window.bootstrap) {
+            const savedHidden = localStorage.getItem('ams_info_panel_hidden') === '1';
+            if (savedHidden) infoPanelCollapseEl.classList.remove('show');
+            const ipInst = bootstrap.Collapse.getOrCreateInstance(infoPanelCollapseEl, { toggle: false });
+            infoPanelCollapseEl.addEventListener('shown.bs.collapse', () => { localStorage.setItem('ams_info_panel_hidden', '0'); updateInfoPanelToggle(true); });
+            infoPanelCollapseEl.addEventListener('hidden.bs.collapse', () => { localStorage.setItem('ams_info_panel_hidden', '1'); updateInfoPanelToggle(false); });
+            updateInfoPanelToggle(!savedHidden);
+        }
 
         await initUserProfile();
         await loadRequests();
