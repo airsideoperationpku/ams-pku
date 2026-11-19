@@ -580,6 +580,25 @@
             border-color: #fca5a5 !important;
             box-shadow: none !important;
         }
+
+        /* ===== Garis tabel tipis pada dark mode ===== */
+        body.dark-theme .table-spreadsheet thead th {
+            border-bottom: 1px solid #3d4f6a !important;
+            border-right: 1px solid #3d4f6a !important;
+        }
+        body.dark-theme .table-spreadsheet thead th:last-child {
+            border-right: none !important;
+        }
+        body.dark-theme .table-spreadsheet tbody td {
+            border-bottom: 1px solid #3d4f6a !important;
+            border-right: 1px solid #3d4f6a !important;
+        }
+        body.dark-theme .table-spreadsheet tbody td:last-child {
+            border-right: none !important;
+        }
+        body.dark-theme .table-responsive {
+            border: 1px solid #3d4f6a !important;
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased">
